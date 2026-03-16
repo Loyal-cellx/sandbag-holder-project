@@ -1,0 +1,182 @@
+{% extends "base.html" %}
+
+{% block title %}Log Sale — Sandbag Sales{% endblock %}
+
+{% block extra_style %}
+  .form-card {
+    background: #1a1d27;
+    border: 1px solid #2d3148;
+    border-radius: 10px;
+    padding: 1.75rem;
+    max-width: 480px;
+    margin: 0 auto;
+    transition: transform 0.22s ease, box-shadow 0.22s ease;
+  }
+  .form-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 32px rgba(124,58,237,0.18), 0 0 0 1px rgba(124,58,237,0.12);
+  }
+  .form-title {
+    font-size: 1.1rem;
+    font-weight: 600;
+    margin-bottom: 1.5rem;
+    background: linear-gradient(135deg, #f97316 30%, #facc15);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+  .field {
+    margin-bottom: 1.1rem;
+    transition: background-color 0.12s ease;
+    border-radius: 6px;
+    padding: 0.25rem 0.5rem;
+    margin-left: -0.5rem;
+    margin-right: -0.5rem;
+  }
+  .field:hover {
+    background-color: rgba(255,255,255,0.025);
+  }
+  label {
+    display: block;
+    font-size: 0.8rem;
+    color: #94a3b8;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    margin-bottom: 0.35rem;
+  }
+  input, select, textarea {
+    width: 100%;
+    background: #0f1117;
+    border: 1px solid #2d3148;
+    border-radius: 6px;
+    color: #e2e8f0;
+    font-size: 0.95rem;
+    padding: 0.6rem 0.8rem;
+    outline: none;
+    transition: border-color 0.15s;
+    font-family: inherit;
+  }
+  input:focus, select:focus, textarea:focus {
+    border-color: #7c3aed;
+    box-shadow: 0 0 0 3px rgba(124,58,237,0.18);
+  }
+  textarea { resize: vertical; min-height: 80px; }
+  select option { background: #1a1d27; }
+  @keyframes btn-pulse {
+    0%, 100% { box-shadow: 0 0 0 0 rgba(124,58,237,0.0); }
+    50%       { box-shadow: 0 0 0 6px rgba(124,58,237,0.22); }
+  }
+  @keyframes field-in {
+    from { opacity: 0; transform: translateY(8px); }
+    to   { opacity: 1; transform: translateY(0); }
+  }
+  .field, .submit-btn {
+    opacity: 0;
+    animation: field-in 0.35s ease forwards;
+  }
+  .submit-btn {
+    width: 100%;
+    background: #7c3aed;
+    color: #fff;
+    border: none;
+    border-radius: 6px;
+    padding: 0.7rem;
+    font-size: 1rem;
+    font-weight: 600;
+    cursor: pointer;
+    margin-top: 0.5rem;
+    transition: background 0.15s;
+    animation: field-in 0.35s ease forwards, btn-pulse 2.4s ease-in-out infinite;
+  }
+  .submit-btn:hover { background: #6d28d9; }
+  .required { color: #f87171; margin-left: 2px; }
+  .presets {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.4rem;
+    margin-top: 0.4rem;
+  }
+  .preset-chip {
+    background: #0f1117;
+    border: 1px solid #2d3148;
+    border-radius: 20px;
+    color: #94a3b8;
+    font-size: 0.75rem;
+    padding: 0.25rem 0.65rem;
+    cursor: pointer;
+    transition: border-color 0.15s, color 0.15s, background 0.15s;
+    white-space: nowrap;
+  }
+  .preset-chip:hover {
+    border-color: #7c3aed;
+    color: #e2e8f0;
+    background: rgba(124,58,237,0.1);
+  }
+  .preset-chip.selected {
+    border-color: #7c3aed;
+    color: #e2e8f0;
+    background: rgba(124,58,237,0.18);
+  }
+{% endblock %}
+
+{% block content %}
+<div class="form-card">
+  <h2 class="form-title">Log a Sale</h2>
+  <form id="saleForm" method="POST" action="{{ url_for('log_sale') }}">
+    <div class="field">
+      <label>Date <span class="required">*</span></label>
+      <input type="date" name="date" value="{{ today }}" required />
+    </div>
+    <div class="field">
+      <label>Amount ($) <span class="required">*</span></label>
+      <input type="number" name="amount" step="0.01" min="0.01" placeholder="69.00" required />
+    </div>
+    <div class="field">
+      <label>Location <span class="required">*</span></label>
+      <input type="text" name="location" id="locationInput" placeholder="e.g. Miami, FL" required />
+      {% if locations %}
+      <div class="presets">
+        {% for loc in locations %}
+        <button type="button" class="preset-chip" data-loc="{{ loc }}">{{ loc }}</button>
+        {% endfor %}
+      </div>
+      {% endif %}
+    </div>
+    <div class="field">
+      <label>Platform <span class="required">*</span></label>
+      <select name="platform" required>
+        <option value="Amazon">Amazon</option>
+        <option value="eBay">eBay</option>
+      </select>
+    </div>
+    <div class="field">
+      <label>Notes</label>
+      <textarea name="notes" placeholder="Optional notes..."></textarea>
+    </div>
+    <button type="submit" class="submit-btn">Save Sale</button>
+  </form>
+</div>
+
+<script>
+document.getElementById('saleForm').addEventListener('submit', function(e) {
+  const amount = parseFloat(this.amount.value);
+  const location = this.location.value.trim();
+  if (!location || isNaN(amount) || amount <= 0) {
+    e.preventDefault();
+    alert('Please fill in a valid amount and location.');
+  }
+});
+
+document.querySelectorAll('.preset-chip').forEach(chip => {
+  chip.addEventListener('click', () => {
+    document.getElementById('locationInput').value = chip.dataset.loc;
+    document.querySelectorAll('.preset-chip').forEach(c => c.classList.remove('selected'));
+    chip.classList.add('selected');
+  });
+});
+
+document.querySelectorAll('.field, .submit-btn').forEach((el, i) => {
+  el.style.animationDelay = (i * 80) + 'ms';
+});
+</script>
+{% endblock %}

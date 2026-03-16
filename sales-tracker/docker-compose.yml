@@ -1,0 +1,24 @@
+services:
+  sales-tracker:
+    build: .
+    ports:
+      - "5050:5050"
+    env_file:
+      - .env
+    volumes:
+      - db-data:/app/data
+    environment:
+      - DB_PATH=/app/data/sales.db
+    restart: unless-stopped
+
+  db-editor:
+    image: coleifer/sqlite-web
+    ports:
+      - "5051:8080"
+    volumes:
+      - db-data:/data
+    command: ["sqlite_web", "/data/sales.db", "--host", "0.0.0.0", "--port", "8080", "--no-browser"]
+    restart: unless-stopped
+
+volumes:
+  db-data:

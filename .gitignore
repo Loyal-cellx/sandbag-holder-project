@@ -1,0 +1,6 @@
+.claude/
+sales-tracker/venv/
+sales-tracker/__pycache__/
+sales-tracker/*.pyc
+sales-tracker/.env
+sales-tracker/sales.db

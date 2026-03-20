@@ -1,4 +1,10 @@
 .claude/
+01_raw-media/
+02_product-assets/
+03_compressed/
+04_videos/
+05_insert-paper/
+06_documents/
 sales-tracker/venv/
 sales-tracker/__pycache__/
 sales-tracker/*.pyc

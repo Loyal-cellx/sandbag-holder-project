@@ -17,7 +17,7 @@ cd sales-tracker
 py -m venv venv                  # Windows: use `py`, not `python`
 venv\Scripts\activate
 pip install -r requirements.txt
-cp .env.example .env             # fill in GMAIL_USER, GMAIL_APP_PASSWORD, and SECRET_KEY
+cp .env.example .env             # fill in SECRET_KEY
 py app.py                        # http://localhost:5050
 ```
 
@@ -52,7 +52,6 @@ docker compose logs -f
 |---|---|
 | `app.py` | Flask routes: `/` dashboard, `/log` sale form, `/api/sales` + `/api/stats` (JSON, for headless access) |
 | `database.py` | All SQLite access. `db_init()` must run before first request. |
-| `notifier.py` | Sends a Gmail email via SMTP_SSL on each new sale; includes full stats summary |
 | `templates/base.html` | Nav, global CSS, Chart.js CDN import |
 | `templates/index.html` | Dashboard: KPI cards, Platform donut + By Month bar charts, transactions table |
 | `templates/log_sale.html` | Sale entry form with location preset chips |
@@ -96,15 +95,9 @@ sales: id, date (TEXT ISO-8601), amount (REAL), location (TEXT),
 
 `index.html` uses `by_platform[0]` and `by_location[0]` for the Top Platform / Top State KPI cards — guard with `{% if stats.by_platform %}` before indexing. `by_week` always covers every Monday from the first sale date to today; missing weeks are injected with `revenue: 0, count: 0` in Python (not in SQL).
 
-### Notifications
-
-`notifier.py` sends a Gmail email via SMTP_SSL on each new sale. Calls `get_stats()` internally to include the full stats summary in the body. Requires `GMAIL_USER` and `GMAIL_APP_PASSWORD` (Gmail App Password) in `.env`. If either is unset it logs a warning and returns — the app never crashes on notification failure.
-
 ### Environment variables (`.env`)
 
 ```
-GMAIL_USER=           # your Gmail address
-GMAIL_APP_PASSWORD=   # 16-char App Password (Google Account → Security → 2-Step Verification → App passwords)
 SECRET_KEY=           # Flask session secret
 PORT=5050
 DB_PATH=              # optional: override SQLite file path (Docker sets this to /app/data/sales.db)

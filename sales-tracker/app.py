@@ -1,13 +1,10 @@
 from flask import Flask, render_template, request, redirect, url_for, jsonify, flash
 from database import db_init, add_sale, get_all_sales, get_stats, get_distinct_locations
-from notifier import send_sale_notification
 from datetime import date
 import os
-import logging
 from dotenv import load_dotenv
 
 load_dotenv()
-logging.basicConfig(level=logging.INFO)
 
 app = Flask(__name__)
 app.secret_key = os.getenv("SECRET_KEY", "change-me-in-env")
@@ -49,12 +46,6 @@ def log_sale():
             return redirect(url_for("log_sale"))
 
         add_sale(sale_date, amount, location, platform, notes)
-
-        try:
-            send_sale_notification(sale_date, amount, location, platform)
-        except Exception as e:
-            logging.error(f"Notification error: {e}")
-
         return redirect(url_for("index"))
 
     today = date.today().isoformat()

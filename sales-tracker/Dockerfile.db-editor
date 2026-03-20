@@ -1,4 +1,0 @@
-FROM python:3.11-slim
-RUN pip install --no-cache-dir sqlite-web
-EXPOSE 8080
-CMD ["sqlite_web", "/data/sales.db", "--host", "0.0.0.0", "--port", "8080", "--no-browser"]

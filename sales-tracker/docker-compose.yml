@@ -11,15 +11,6 @@ services:
       - DB_PATH=/app/data/sales.db
     restart: unless-stopped
 
-  db-editor:
-    build:
-      context: .
-      dockerfile: Dockerfile.db-editor
-    ports:
-      - "5051:8080"
-    volumes:
-      - db-data:/data
-    restart: unless-stopped
 
 volumes:
   db-data:

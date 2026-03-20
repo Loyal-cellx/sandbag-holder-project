@@ -214,12 +214,12 @@
 <!-- Charts -->
 <div class="chart-card">
   <h3>Platform Split</h3>
-  <canvas id="chartPlatform" height="90"></canvas>
+  <canvas id="chartPlatform"></canvas>
 </div>
 
 <div class="chart-card">
   <h3>Revenue by State</h3>
-  <canvas id="chartState" height="90"></canvas>
+  <canvas id="chartState"></canvas>
 </div>
 
 <div class="chart-card">
@@ -312,6 +312,7 @@ const gridColor = 'rgba(255,255,255,0.06)';
 
 // Platform bar
 const platformList = stats.by_platform;
+document.getElementById('chartPlatform').style.height = Math.max(120, platformList.length * 45) + 'px';
 new Chart(document.getElementById('chartPlatform'), {
   type: 'bar',
   data: {
@@ -325,6 +326,7 @@ new Chart(document.getElementById('chartPlatform'), {
   options: {
     indexAxis: 'y',
     responsive: true,
+    maintainAspectRatio: false,
     plugins: {
       legend: { display: false },
       tooltip: { ...darkTooltip, callbacks: { label: ctx => '  ' + ctx.parsed.x + ' sales' } }
@@ -337,6 +339,7 @@ new Chart(document.getElementById('chartPlatform'), {
 });
 
 // State bar
+document.getElementById('chartState').style.height = Math.max(120, stats.by_location.length * 45) + 'px';
 new Chart(document.getElementById('chartState'), {
   type: 'bar',
   data: {
@@ -350,6 +353,7 @@ new Chart(document.getElementById('chartState'), {
   options: {
     indexAxis: 'y',
     responsive: true,
+    maintainAspectRatio: false,
     plugins: {
       legend: { display: false },
       tooltip: { ...darkTooltip, callbacks: { label: ctx => '  $' + ctx.parsed.x.toFixed(2) } }

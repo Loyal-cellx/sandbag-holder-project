@@ -12,12 +12,13 @@ services:
     restart: unless-stopped
 
   db-editor:
-    image: coleifer/sqlite-web
+    build:
+      context: .
+      dockerfile: Dockerfile.db-editor
     ports:
       - "5051:8080"
     volumes:
       - db-data:/data
-    command: ["sqlite_web", "/data/sales.db", "--host", "0.0.0.0", "--port", "8080", "--no-browser"]
     restart: unless-stopped
 
 volumes:

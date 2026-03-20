@@ -30,14 +30,9 @@ py seed.py   # create this as a throwaway script using database.add_sale()
 
 ### Deployment on the Pi (Docker)
 
-The app runs as two Docker containers managed by `docker-compose.yml`:
+The Flask app runs as a single Docker container managed by `docker-compose.yml`, with a named volume (`db-data`) mounting the SQLite file at `/app/data/sales.db`. Port: 5050.
 
-| Service | Port | Purpose |
-|---|---|---|
-| `sales-tracker` | 5050 | Flask app (built from `Dockerfile`) |
-| `db-editor` | 5051 | sqlite-web — browse/edit raw rows |
-
-Both share a named Docker volume (`db-data`) so they access the same `sales.db`.
+The Pi is reachable via Tailscale as `dataworks` (e.g. `ssh user@dataworks`, `scp file user@dataworks:~/path`).
 
 ```bash
 # Copy to Pi, SSH in, then:
@@ -52,9 +47,17 @@ docker compose logs -f
 |---|---|
 | `app.py` | Flask routes: `/` dashboard, `/log` sale form, `/api/sales` + `/api/stats` (JSON, for headless access) |
 | `database.py` | All SQLite access. `db_init()` must run before first request. |
-| `templates/base.html` | Nav, global CSS, Chart.js CDN import |
-| `templates/index.html` | Dashboard: KPI cards, Platform donut + By Month bar charts, transactions table |
+| `templates/base.html` | Nav, global CSS, Chart.js 4.4.0 + ChartDataLabels CDN imports |
+| `templates/index.html` | Dashboard: KPI cards, 4 charts (see below), transactions table |
 | `templates/log_sale.html` | Sale entry form with location preset chips |
+
+**Dashboard charts** (`index.html`):
+| Chart | Type | Data source |
+|---|---|---|
+| Platform Split | Horizontal bar (count) | `by_platform` |
+| State Split | Horizontal bar (count) | `by_location` |
+| By Month | Vertical bar + ChartDataLabels | `by_month` |
+| Weekly Revenue | Line | `by_week` |
 
 ### `database.py` public API
 
@@ -102,6 +105,10 @@ SECRET_KEY=           # Flask session secret
 PORT=5050
 DB_PATH=              # optional: override SQLite file path (Docker sets this to /app/data/sales.db)
 ```
+
+### Dependencies note
+
+`sqlite-web` remains in `requirements.txt` as a leftover from a removed `db-editor` service — it is unused and can be deleted.
 
 ### UI design notes
 

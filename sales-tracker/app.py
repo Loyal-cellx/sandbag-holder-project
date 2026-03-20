@@ -1,6 +1,6 @@
 from flask import Flask, render_template, request, redirect, url_for, jsonify, flash
 from database import db_init, add_sale, get_all_sales, get_stats, get_distinct_locations
-from datetime import date
+from datetime import date, datetime
 import os
 from dotenv import load_dotenv
 
@@ -16,7 +16,7 @@ VALID_PLATFORMS = {"Amazon", "eBay"}
 def index():
     sales = get_all_sales()
     stats = get_stats()
-    return render_template("index.html", sales=sales, stats=stats)
+    return render_template("index.html", sales=sales, stats=stats, year=datetime.now().year)
 
 
 @app.route("/log", methods=["GET", "POST"])

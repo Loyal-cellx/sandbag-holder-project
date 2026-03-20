@@ -331,7 +331,7 @@ new Chart(document.getElementById('chartPlatform'), {
     },
     scales: {
       x: { grid: { color: gridColor }, ticks: { color: '#64748b', callback: v => v + ' sales' } },
-      y: { afterFit: scale => { if (scale.width < 60) scale.width = 60; }, grid: { color: gridColor }, ticks: { color: '#64748b' } }
+      y: { afterFit: scale => { if (scale.width < 60) scale.width = 60; }, grid: { color: gridColor }, ticks: { color: '#64748b', autoSkip: false } }
     }
   }
 });
@@ -356,7 +356,7 @@ new Chart(document.getElementById('chartState'), {
     },
     scales: {
       x: { grid: { color: gridColor }, ticks: { color: '#64748b', callback: v => '$' + v } },
-      y: { afterFit: scale => { if (scale.width < 80) scale.width = 80; }, grid: { color: gridColor }, ticks: { color: '#64748b' } }
+      y: { afterFit: scale => { if (scale.width < 80) scale.width = 80; }, grid: { color: gridColor }, ticks: { color: '#64748b', autoSkip: false } }
     }
   }
 });

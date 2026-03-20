@@ -36,7 +36,7 @@ The Pi is reachable via Tailscale as `dataworks`. SSH user is `loyal`, project l
 
 ```bash
 # Standard deploy: push to GitHub, then on the Pi:
-ssh loyal@dataworks "cd ~/sandbag && git pull && cd sales-tracker && docker compose restart"
+ssh loyal@dataworks "cd ~/sandbag && git pull && docker compose -f sales-tracker/docker-compose.yml up --build -d"
 
 # First-time setup on the Pi:
 cp .env.example .env && nano .env
@@ -108,10 +108,6 @@ SECRET_KEY=           # Flask session secret
 PORT=5050
 DB_PATH=              # optional: override SQLite file path (Docker sets this to /app/data/sales.db)
 ```
-
-### Dependencies note
-
-`sqlite-web` remains in `requirements.txt` as a leftover from a removed `db-editor` service — it is unused and can be deleted.
 
 ### UI design notes
 

@@ -32,10 +32,13 @@ py seed.py   # create this as a throwaway script using database.add_sale()
 
 The Flask app runs as a single Docker container managed by `docker-compose.yml`, with a named volume (`db-data`) mounting the SQLite file at `/app/data/sales.db`. Port: 5050.
 
-The Pi is reachable via Tailscale as `dataworks` (e.g. `ssh user@dataworks`, `scp file user@dataworks:~/path`).
+The Pi is reachable via Tailscale as `dataworks`. SSH user is `loyal`, project lives at `~/sandbag/sales-tracker/` (docker-compose.yml is in that subdirectory).
 
 ```bash
-# Copy to Pi, SSH in, then:
+# Standard deploy: push to GitHub, then on the Pi:
+ssh loyal@dataworks "cd ~/sandbag && git pull && cd sales-tracker && docker compose restart"
+
+# First-time setup on the Pi:
 cp .env.example .env && nano .env
 docker compose up -d
 docker compose logs -f

@@ -180,6 +180,66 @@
     font-size: 0.75rem;
     padding: 0.25rem 0 1rem;
   }
+
+  /* ── % change pill ── */
+  .pct-up   { color: #4ade80; font-size: 0.7rem; font-weight: 700; }
+  .pct-down { color: #f87171; font-size: 0.7rem; font-weight: 700; }
+  .pct-flat { color: #64748b; font-size: 0.7rem; }
+
+  /* ── streak badge ── */
+  .streak-badge {
+    display: inline-block;
+    background: rgba(249,115,22,0.15);
+    border: 1px solid rgba(249,115,22,0.3);
+    color: #fb923c;
+    font-size: 0.65rem; font-weight: 700;
+    padding: 0.1rem 0.5rem;
+    border-radius: 20px;
+    margin-left: 0.35rem;
+    vertical-align: middle;
+  }
+
+  /* ── milestone bar ── */
+  .milestone-wrap {
+    background: #1e2130;
+    border: 1px solid #2d3148;
+    border-radius: 12px;
+    padding: 0.875rem 1rem;
+    margin-bottom: 0.75rem;
+  }
+  .milestone-track {
+    background: #0f1117;
+    border-radius: 6px;
+    height: 8px;
+    overflow: hidden;
+    margin: 0.5rem 0 0.3rem;
+  }
+  .milestone-fill {
+    height: 100%;
+    border-radius: 6px;
+    background: linear-gradient(90deg, #f97316, #facc15);
+    transition: width 1.2s cubic-bezier(0.22, 1, 0.36, 1);
+    width: 0;
+  }
+
+  /* ── toast ── */
+  .sale-toast {
+    position: fixed;
+    top: 1rem; right: 1rem;
+    background: #1e2130;
+    border: 1px solid #2d3148;
+    border-left: 3px solid #f97316;
+    border-radius: 10px;
+    padding: 0.75rem 1rem;
+    max-width: 280px;
+    color: #f1f5f9;
+    font-size: 0.8125rem;
+    z-index: 200;
+    transform: translateX(calc(100% + 1.5rem));
+    transition: transform 0.4s cubic-bezier(0.22, 1, 0.36, 1);
+    box-shadow: 0 8px 24px rgba(0,0,0,0.4);
+  }
+  .sale-toast.show { transform: translateX(0); }
 {% endblock %}
 
 {% block content %}
@@ -195,12 +255,12 @@
   <div class="kpi-card kpi-orange">
     <div class="kpi-label">Total Revenue</div>
     <div class="kpi-value kpi-value-hero" id="kpiRevenue">${{ "%.0f"|format(stats.total_revenue) }}</div>
-    <div class="kpi-sub">{{ stats.total_sales }} units sold &bull; avg ${{ "%.0f"|format(stats.avg_sale) }}</div>
+    <div class="kpi-sub">{{ stats.total_sales }} units sold &bull; avg ${{ "%.0f"|format(stats.avg_sale) }} &bull; <span id="kpiVelocity"></span></div>
   </div>
   <div class="kpi-card kpi-blue">
-    <div class="kpi-label">This Month</div>
-    <div class="kpi-value kpi-value-sm">${{ "%.0f"|format(stats.this_month_revenue) }}</div>
-    <div class="kpi-sub">{{ stats.this_month_sales }} sale{{ 's' if stats.this_month_sales != 1 else '' }} this month</div>
+    <div class="kpi-label">This Month <span id="streakBadge" style="display:none" class="streak-badge"></span></div>
+    <div class="kpi-value kpi-value-sm" id="kpiMonth">$…</div>
+    <div class="kpi-sub">{{ stats.this_month_sales }} sale{{ 's' if stats.this_month_sales != 1 else '' }} this month &nbsp;<span id="monthPct"></span></div>
   </div>
   <div class="kpi-card kpi-green">
     <div class="kpi-label">Top State</div>
@@ -222,6 +282,20 @@
       <div class="kpi-sub">No data yet</div>
     {% endif %}
   </div>
+</div>
+
+<!-- Milestone bar -->
+<div class="milestone-wrap">
+  <div style="display:flex; justify-content:space-between; align-items:baseline;">
+    <span style="color:#94a3b8; font-size:0.6875rem; font-weight:700; text-transform:uppercase; letter-spacing:0.06em;">
+      🎯 Next Milestone
+    </span>
+    <span id="milestoneLabel" style="color:#64748b; font-size:0.75rem;"></span>
+  </div>
+  <div class="milestone-track">
+    <div class="milestone-fill" id="milestoneFill"></div>
+  </div>
+  <div id="milestoneSub" style="color:#64748b; font-size:0.7rem;"></div>
 </div>
 
 <!-- Charts -->
@@ -306,6 +380,8 @@
 
 <div class="footer">Sandbag Holder Sales Automation &bull; {{ year }}</div>
 
+<div class="sale-toast" id="saleToast"></div>
+
 <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2/dist/chartjs-plugin-datalabels.min.js"></script>
 <script>
 const stats = {{ stats | tojson }};
@@ -324,19 +400,76 @@ const darkTooltip = {
 };
 const gridColor = 'rgba(255,255,255,0.06)';
 
-// CountUp for Total Revenue
-(function() {
-  const el = document.getElementById('kpiRevenue');
-  const target = stats.total_revenue;
-  const duration = 1100;
+// Animated counter helper
+function countUp(el, target, prefix, suffix, duration) {
   const start = performance.now();
-  function step(now) {
+  (function step(now) {
     const p = Math.min((now - start) / duration, 1);
     const ease = 1 - Math.pow(1 - p, 3);
-    el.textContent = '$' + Math.round(target * ease).toLocaleString();
+    el.textContent = prefix + Math.round(target * ease).toLocaleString() + suffix;
     if (p < 1) requestAnimationFrame(step);
+  })(start);
+}
+
+countUp(document.getElementById('kpiRevenue'), stats.total_revenue, '$', '', 1100);
+countUp(document.getElementById('kpiMonth'), stats.this_month_revenue, '$', '', 900);
+
+// % change badge (This Month vs Last Month)
+(function() {
+  const el = document.getElementById('monthPct');
+  const cur = stats.this_month_revenue, prev = stats.last_month_revenue;
+  if (prev > 0) {
+    const pct = Math.round((cur - prev) / prev * 100);
+    el.className = pct > 0 ? 'pct-up' : pct < 0 ? 'pct-down' : 'pct-flat';
+    el.textContent = (pct > 0 ? '▲' : pct < 0 ? '▼' : '–') + Math.abs(pct) + '% vs last mo';
   }
-  requestAnimationFrame(step);
+})();
+
+// Streak badge
+(function() {
+  const week = stats.by_week;
+  if (week.length > 0) {
+    const thisWeek = week[week.length - 1].count;
+    if (thisWeek > 0) {
+      const el = document.getElementById('streakBadge');
+      el.textContent = '🔥 ' + thisWeek + ' this week';
+      el.style.display = 'inline-block';
+    }
+  }
+})();
+
+// Velocity stat
+document.getElementById('kpiVelocity').textContent =
+  stats.avg_weekly_sales.toFixed(1) + ' sales/wk';
+
+// Milestone progress bar
+(function() {
+  const milestones = [500,1000,1500,2000,2500,3000,5000,7500,10000];
+  const rev = stats.total_revenue;
+  let target = milestones.find(m => m > rev);
+  if (!target) target = Math.ceil(rev / 5000) * 5000 + 5000;
+  const prev = milestones[milestones.indexOf(target) - 1] || 0;
+  const pct = Math.min(100, ((rev - prev) / (target - prev)) * 100);
+  document.getElementById('milestoneLabel').textContent =
+    '$' + rev.toLocaleString() + ' / $' + target.toLocaleString();
+  document.getElementById('milestoneSub').textContent =
+    '$' + (target - rev).toLocaleString(undefined, {maximumFractionDigits:0}) + ' to go';
+  setTimeout(() => {
+    document.getElementById('milestoneFill').style.width = pct.toFixed(1) + '%';
+  }, 300);
+})();
+
+// Toast (most recent sale)
+(function() {
+  const latest = {{ (sales[0] | tojson) if sales else 'null' }};
+  if (!latest) return;
+  const toast = document.getElementById('saleToast');
+  toast.innerHTML =
+    '💰 <strong>$' + latest.amount.toFixed(2) + '</strong>' +
+    ' &bull; ' + latest.location +
+    ' &bull; <span style="color:#64748b">' + latest.date + '</span>';
+  setTimeout(() => toast.classList.add('show'), 1500);
+  setTimeout(() => toast.classList.remove('show'), 5500);
 })();
 
 // Platform bar

@@ -129,6 +129,16 @@ def get_stats():
         ORDER BY week
     """).fetchall()
 
+    last_month_str = (date.today().replace(day=1) - timedelta(days=1)).strftime("%Y-%m")
+    last_month_revenue = conn.execute(
+        "SELECT COALESCE(SUM(amount), 0) FROM sales WHERE strftime('%Y-%m', date) = ?",
+        (last_month_str,)
+    ).fetchone()[0]
+    last_month_sales = conn.execute(
+        "SELECT COUNT(*) FROM sales WHERE strftime('%Y-%m', date) = ?",
+        (last_month_str,)
+    ).fetchone()[0]
+
     conn.close()
 
     week_data = {}
@@ -152,6 +162,10 @@ def get_stats():
             })
             cur += timedelta(weeks=1)
 
+    weeks_elapsed = max(len(by_week), 1)
+    avg_weekly_revenue = round(total_revenue / weeks_elapsed, 2)
+    avg_weekly_sales   = round(total_sales   / weeks_elapsed, 1)
+
     return {
         "total_revenue": round(total_revenue, 2),
         "total_sales": total_sales,
@@ -162,4 +176,8 @@ def get_stats():
         "by_platform": by_platform,
         "by_location": by_location,
         "by_week": by_week,
+        "last_month_revenue": round(last_month_revenue, 2),
+        "last_month_sales": last_month_sales,
+        "avg_weekly_revenue": avg_weekly_revenue,
+        "avg_weekly_sales": avg_weekly_sales,
     }

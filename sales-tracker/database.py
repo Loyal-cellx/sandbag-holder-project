@@ -1,6 +1,7 @@
 import sqlite3
 from datetime import datetime, date, timedelta
 import datetime as dt
+import calendar
 import os
 
 DB_PATH = os.getenv("DB_PATH", os.path.join(os.path.dirname(__file__), "sales.db"))
@@ -61,7 +62,7 @@ def get_all_sales():
     conn = _connect()
     rows = conn.execute("SELECT * FROM sales ORDER BY date DESC, id DESC").fetchall()
     conn.close()
-    return [dict(r) for r in rows]
+    return [dict(r) | {"profit": round(r["amount"] * 49 / 69, 2)} for r in rows]
 
 
 def get_distinct_locations():
@@ -139,8 +140,6 @@ def get_stats():
         (last_month_str,)
     ).fetchone()[0]
 
-    conn.close()
-
     week_data = {}
     first_monday = None
     for r in week_rows:
@@ -166,6 +165,38 @@ def get_stats():
     avg_weekly_revenue = round(total_revenue / weeks_elapsed, 2)
     avg_weekly_sales   = round(total_sales   / weeks_elapsed, 1)
 
+    PROFIT_MARGIN = 49 / 69
+    total_profit = round(total_revenue * PROFIT_MARGIN, 2)
+    this_month_profit = round(this_month_revenue * PROFIT_MARGIN, 2)
+
+    today_obj = date.today()
+    days_elapsed = today_obj.day
+    days_in_month = calendar.monthrange(today_obj.year, today_obj.month)[1]
+    daily_avg = this_month_revenue / days_elapsed if days_elapsed > 0 else 0
+    projected_month_revenue = round(daily_avg * days_in_month, 2)
+
+    all_dates_rows = conn.execute(
+        "SELECT DISTINCT date FROM sales ORDER BY date ASC"
+    ).fetchall()
+    conn.close()
+    sale_dates = [datetime.strptime(r["date"], "%Y-%m-%d").date() for r in all_dates_rows]
+    if len(sale_dates) >= 2:
+        gaps = [(sale_dates[i+1] - sale_dates[i]).days for i in range(len(sale_dates)-1)]
+        avg_days_between_sales = round(sum(gaps) / len(gaps), 1)
+    else:
+        avg_days_between_sales = None
+
+    longest_streak = 0
+    if sale_dates:
+        cur_streak = 1
+        for i in range(1, len(sale_dates)):
+            if (sale_dates[i] - sale_dates[i-1]).days == 1:
+                cur_streak += 1
+                longest_streak = max(longest_streak, cur_streak)
+            else:
+                cur_streak = 1
+        longest_streak = max(longest_streak, 1)
+
     return {
         "total_revenue": round(total_revenue, 2),
         "total_sales": total_sales,
@@ -180,4 +211,9 @@ def get_stats():
         "last_month_sales": last_month_sales,
         "avg_weekly_revenue": avg_weekly_revenue,
         "avg_weekly_sales": avg_weekly_sales,
+        "total_profit": total_profit,
+        "this_month_profit": this_month_profit,
+        "projected_month_revenue": projected_month_revenue,
+        "avg_days_between_sales": avg_days_between_sales,
+        "longest_streak": longest_streak,
     }

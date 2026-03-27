@@ -137,6 +137,26 @@
     margin-left: 0.25rem;
   }
 
+  .td-profit { color: #4ade80; font-weight: 600; font-size: 0.8125rem; }
+
+  /* ── Stats strip ── */
+  .stats-strip {
+    display: flex;
+    gap: 0.75rem;
+    margin-bottom: 0.75rem;
+  }
+  .stat-item {
+    flex: 1;
+    background: #1e2130;
+    border: 1px solid #2d3148;
+    border-radius: 12px;
+    padding: 0.875rem 1rem;
+    text-align: center;
+  }
+  .stat-label { font-size:0.6875rem; color:#64748b; text-transform:uppercase; letter-spacing:0.06em; }
+  .stat-val { font-size:1.5rem; font-weight:800; color:#f1f5f9; margin:0.25rem 0; }
+  .stat-sub { font-size:0.7rem; color:#64748b; }
+
   /* ── Card hover lift & glow ── */
   .kpi-card, .chart-card, .table-wrap {
     transition: transform 0.22s ease, box-shadow 0.22s ease;
@@ -255,12 +275,13 @@
   <div class="kpi-card kpi-orange">
     <div class="kpi-label">Total Revenue</div>
     <div class="kpi-value kpi-value-hero" id="kpiRevenue">${{ "%.0f"|format(stats.total_revenue) }}</div>
-    <div class="kpi-sub">{{ stats.total_sales }} units sold &bull; avg ${{ "%.0f"|format(stats.avg_sale) }} &bull; <span id="kpiVelocity"></span></div>
+    <div class="kpi-sub"><span style="color:#4ade80;font-weight:600;" id="kpiProfit">${{ "%.0f"|format(stats.total_profit) }} profit</span> &bull; {{ stats.total_sales }} units &bull; avg ${{ "%.0f"|format(stats.avg_sale) }} &bull; <span id="kpiVelocity"></span></div>
   </div>
   <div class="kpi-card kpi-blue">
     <div class="kpi-label">This Month <span id="streakBadge" style="display:none" class="streak-badge"></span></div>
     <div class="kpi-value kpi-value-sm" id="kpiMonth">$…</div>
-    <div class="kpi-sub">{{ stats.this_month_sales }} sale{{ 's' if stats.this_month_sales != 1 else '' }} this month &nbsp;<span id="monthPct"></span></div>
+    <div class="kpi-sub">{{ stats.this_month_sales }} sale{{ 's' if stats.this_month_sales != 1 else '' }} &nbsp;<span id="monthPct"></span></div>
+    <div class="kpi-sub" style="margin-top:0.2rem;"><span style="color:#4ade80;font-weight:600;">${{ "%.0f"|format(stats.this_month_profit) }} profit</span> &bull; <span style="color:#94a3b8;">Est. ${{ "%.0f"|format(stats.projected_month_revenue) }} mo total</span></div>
   </div>
   <div class="kpi-card kpi-green">
     <div class="kpi-label">Top State</div>
@@ -296,6 +317,20 @@
     <div class="milestone-fill" id="milestoneFill"></div>
   </div>
   <div id="milestoneSub" style="color:#64748b; font-size:0.7rem;"></div>
+</div>
+
+<!-- Stats Strip -->
+<div class="stats-strip">
+  <div class="stat-item">
+    <div class="stat-label">Avg Sale Frequency</div>
+    <div class="stat-val" id="statFrequency">—</div>
+    <div class="stat-sub">days between sales</div>
+  </div>
+  <div class="stat-item">
+    <div class="stat-label">Longest Streak</div>
+    <div class="stat-val">{{ stats.longest_streak }}</div>
+    <div class="stat-sub">consecutive days</div>
+  </div>
 </div>
 
 <!-- Charts -->
@@ -334,6 +369,7 @@
       <tr>
         <th>Date</th>
         <th>Amount</th>
+        <th>Profit</th>
         <th>State</th>
         <th>Platform</th>
       </tr>
@@ -345,6 +381,7 @@
           {{ s.date }}{% if loop.first %}<span class="badge-new">NEW</span>{% endif %}
         </td>
         <td class="td-amount">${{ "%.2f"|format(s.amount) }}</td>
+        <td class="td-profit">${{ "%.2f"|format(s.profit) }}</td>
         <td class="td-location">{{ s.location }}</td>
         <td class="td-platform">
           <span class="badge {% if s.platform == 'Amazon' %}badge-amazon{% elif s.platform == 'Walmart' %}badge-walmart{% else %}badge-ebay{% endif %}">{{ s.platform }}</span>
@@ -353,11 +390,19 @@
       </tr>
       {% if s.notes %}
       <tr{% if loop.first %} class="row-highlight"{% endif %} data-notes-for="{{ s.id }}">
-        <td colspan="4" class="td-notes">↳ {{ s.notes }}</td>
+        <td colspan="5" class="td-notes">↳ {{ s.notes }}</td>
       </tr>
       {% endif %}
       {% endfor %}
     </tbody>
+    <tfoot>
+      <tr style="border-top: 1px solid #2d3148;">
+        <td colspan="1" style="color:#64748b; font-size:0.75rem; padding: 0.625rem 0.75rem;">TOTAL</td>
+        <td class="td-amount">${{ "%.2f"|format(sales | sum(attribute='amount')) }}</td>
+        <td class="td-profit">${{ "%.2f"|format(sales | sum(attribute='profit')) }}</td>
+        <td colspan="2"></td>
+      </tr>
+    </tfoot>
   </table>
   {% else %}
   <div style="color:#475569; font-size:0.9rem; padding:1.5rem; text-align:center">
@@ -413,6 +458,15 @@ function countUp(el, target, prefix, suffix, duration) {
 
 countUp(document.getElementById('kpiRevenue'), stats.total_revenue, '$', '', 1100);
 countUp(document.getElementById('kpiMonth'), stats.this_month_revenue, '$', '', 900);
+countUp(document.getElementById('kpiProfit'), stats.total_profit, '$', ' profit', 1100);
+
+// Avg sale frequency
+(function() {
+  const el = document.getElementById('statFrequency');
+  if (stats.avg_days_between_sales !== null && stats.avg_days_between_sales !== undefined) {
+    el.textContent = stats.avg_days_between_sales.toFixed(1);
+  }
+})();
 
 // % change badge (This Month vs Last Month)
 (function() {

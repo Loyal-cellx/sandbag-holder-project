@@ -217,3 +217,176 @@ def get_stats():
         "avg_days_between_sales": avg_days_between_sales,
         "longest_streak": longest_streak,
     }
+
+
+def get_milestones():
+    MILESTONES = [
+        {"slug": "first_sale",    "name": "First Sale",                  "type": "count",    "threshold": 1},
+        {"slug": "first_ebay",    "name": "First eBay Sale",             "type": "platform", "threshold": "eBay"},
+        {"slug": "first_walmart", "name": "First Walmart Sale",          "type": "platform", "threshold": "Walmart"},
+        {"slug": "first_oos",     "name": "First Out-of-State Sale",     "type": "oos",      "threshold": None},
+        {"slug": "states_5",      "name": "Sell in 5 Different States",  "type": "states",   "threshold": 5},
+        {"slug": "rev_500",       "name": "$500 Revenue",                "type": "revenue",  "threshold": 500},
+        {"slug": "rev_1000",      "name": "$1,000 Revenue",              "type": "revenue",  "threshold": 1000},
+        {"slug": "sales_25",      "name": "25 Sales",                    "type": "count",    "threshold": 25},
+        {"slug": "month_500",     "name": "$500 in a Single Month",      "type": "monthly",  "threshold": 500},
+        {"slug": "rev_1500",      "name": "$1,500 Revenue",              "type": "revenue",  "threshold": 1500},
+        {"slug": "rev_2000",      "name": "$2,000 Revenue",              "type": "revenue",  "threshold": 2000},
+        {"slug": "states_10",     "name": "Sell in 10 Different States", "type": "states",   "threshold": 10},
+        {"slug": "sales_50",      "name": "50 Sales",                    "type": "count",    "threshold": 50},
+        {"slug": "month_1000",    "name": "$1,000 in a Single Month",    "type": "monthly",  "threshold": 1000},
+        {"slug": "rev_2500",      "name": "$2,500 Revenue",              "type": "revenue",  "threshold": 2500},
+        {"slug": "sales_100",     "name": "100 Sales",                   "type": "count",    "threshold": 100},
+    ]
+
+    conn = _connect()
+    rows = conn.execute(
+        "SELECT id, date, amount, location, platform FROM sales ORDER BY date ASC, id ASC"
+    ).fetchall()
+    conn.close()
+
+    running_revenue = 0.0
+    running_count = 0
+    first_location = None
+    seen_locations = set()
+    seen_platforms = set()
+    running_monthly = {}
+    hit_dates = {}  # slug -> ISO date string
+    hit_set = set()
+
+    for row in rows:
+        running_revenue += row["amount"]
+        running_count += 1
+        if first_location is None:
+            first_location = row["location"]
+        seen_locations.add(row["location"])
+        seen_platforms.add(row["platform"])
+        month_key = row["date"][:7]
+        running_monthly[month_key] = running_monthly.get(month_key, 0) + row["amount"]
+
+        for m in MILESTONES:
+            slug = m["slug"]
+            if slug in hit_set:
+                continue
+            t = m["type"]
+            thresh = m["threshold"]
+            hit = False
+            if t == "count":
+                hit = running_count >= thresh
+            elif t == "revenue":
+                hit = running_revenue >= thresh
+            elif t == "platform":
+                hit = row["platform"] == thresh
+            elif t == "oos":
+                hit = first_location is not None and row["location"] != first_location
+            elif t == "states":
+                hit = len(seen_locations) >= thresh
+            elif t == "monthly":
+                hit = running_monthly.get(month_key, 0) >= thresh
+            if hit:
+                hit_dates[slug] = row["date"]
+                hit_set.add(slug)
+
+    # Current progress for unhit milestones
+    max_monthly = max(running_monthly.values(), default=0.0)
+
+    def current_val(m):
+        t = m["type"]
+        if t == "count":
+            return running_count
+        if t == "revenue":
+            return running_revenue
+        if t == "states":
+            return len(seen_locations)
+        if t == "monthly":
+            return max_monthly
+        return 0  # platform, oos — binary
+
+    def gap_display(m, current):
+        t = m["type"]
+        thresh = m["threshold"]
+        if t == "revenue":
+            return f"${thresh - current:,.0f} to go"
+        if t == "count":
+            return f"{thresh - current} more sales"
+        if t == "states":
+            return f"{thresh - current} more states"
+        if t == "monthly":
+            return f"${thresh - current:,.0f} more in one month"
+        return "Not yet"
+
+    result = []
+    for m in MILESTONES:
+        slug = m["slug"]
+        hit = slug in hit_dates
+        cur = current_val(m) if not hit else m["threshold"]
+        thresh = m["threshold"]
+
+        if hit:
+            pct = 100.0
+            hit_date_str = hit_dates[slug]
+            hit_date_display = datetime.strptime(hit_date_str, "%Y-%m-%d").strftime("%b %d, %Y")
+            gap = None
+        else:
+            thresh_num = thresh if isinstance(thresh, (int, float)) else 1
+            cur_num = cur if isinstance(cur, (int, float)) else 0
+            if thresh_num > 0 and isinstance(thresh, (int, float)):
+                pct = min(99.9, cur_num / thresh_num * 100)
+            else:
+                pct = 0.0
+            hit_date_display = None
+            hit_date_str = None
+            gap = gap_display(m, cur)
+
+        result.append({
+            "slug": slug,
+            "name": m["name"],
+            "type": m["type"],
+            "threshold": thresh,
+            "hit": hit,
+            "hit_date": hit_date_str,
+            "hit_date_display": hit_date_display,
+            "progress_pct": round(pct, 1),
+            "current": cur,
+            "gap_display": gap,
+            "days_since_prev": None,
+            "is_newest": False,
+        })
+
+    # days_since_prev and is_newest on hit milestones
+    hit_results = sorted(
+        [r for r in result if r["hit"]],
+        key=lambda r: r["hit_date"]
+    )
+    for i, r in enumerate(hit_results):
+        if i == 0:
+            r["days_since_prev"] = None
+        else:
+            prev_date = datetime.strptime(hit_results[i - 1]["hit_date"], "%Y-%m-%d").date()
+            this_date = datetime.strptime(r["hit_date"], "%Y-%m-%d").date()
+            r["days_since_prev"] = (this_date - prev_date).days
+    if hit_results:
+        hit_results[-1]["is_newest"] = True
+
+    total_hit = len(hit_results)
+    total_possible = len(MILESTONES)
+
+    # milestone_velocity
+    milestone_velocity = None
+    if hit_results:
+        first_hit_date = datetime.strptime(hit_results[0]["hit_date"], "%Y-%m-%d").date()
+        months_elapsed = (date.today() - first_hit_date).days / 30.44
+        if months_elapsed > 0:
+            milestone_velocity = round(total_hit / months_elapsed, 2)
+
+    # next_milestone: unhit with highest progress_pct
+    unhit = [r for r in result if not r["hit"]]
+    next_milestone = max(unhit, key=lambda r: r["progress_pct"]) if unhit else None
+
+    return {
+        "milestones": result,
+        "total_hit": total_hit,
+        "total_possible": total_possible,
+        "milestone_velocity": milestone_velocity,
+        "next_milestone": next_milestone,
+    }

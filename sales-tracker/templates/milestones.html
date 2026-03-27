@@ -1,0 +1,290 @@
+{% extends "base.html" %}
+
+{% block title %}Milestones — Sandbag Sales{% endblock %}
+
+{% block extra_style %}
+  /* ── Section title ── */
+  .section-title {
+    font-size: 0.6875rem;
+    font-weight: 700;
+    color: #94a3b8;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    margin-bottom: 0.875rem;
+  }
+
+  /* ── Stats strip ── */
+  .stats-strip {
+    display: flex;
+    gap: 0.75rem;
+    margin-bottom: 1.25rem;
+  }
+  .stat-item {
+    flex: 1;
+    background: #1e2130;
+    border: 1px solid #2d3148;
+    border-radius: 12px;
+    padding: 0.875rem 1rem;
+    text-align: center;
+  }
+  .stat-label { font-size: 0.6875rem; color: #64748b; text-transform: uppercase; letter-spacing: 0.06em; }
+  .stat-val   { font-size: 1.5rem; font-weight: 800; color: #f1f5f9; margin: 0.25rem 0; }
+  .stat-sub   { font-size: 0.7rem; color: #64748b; }
+
+  /* ── Hero card ── */
+  .hero-card {
+    background: #1e2130;
+    border: 1px solid #2d3148;
+    border-top: 4px solid #a855f7;
+    border-radius: 12px;
+    padding: 1.25rem 1.25rem 1rem;
+    margin-bottom: 1.25rem;
+  }
+  .hero-name {
+    font-size: 1.25rem;
+    font-weight: 800;
+    color: #f1f5f9;
+    margin-bottom: 0.25rem;
+  }
+  .hero-gap {
+    font-size: 0.875rem;
+    color: #a855f7;
+    font-weight: 600;
+    margin-bottom: 0.75rem;
+  }
+  .hero-label {
+    display: flex;
+    justify-content: space-between;
+    font-size: 0.75rem;
+    color: #64748b;
+    margin-bottom: 0.4rem;
+  }
+  .hero-track {
+    background: #0f1117;
+    border-radius: 8px;
+    height: 12px;
+    overflow: hidden;
+  }
+  .hero-fill {
+    height: 100%;
+    border-radius: 8px;
+    background: linear-gradient(90deg, #7c3aed, #a855f7, #d946ef);
+    transition: width 1.2s cubic-bezier(0.22, 1, 0.36, 1);
+    width: 0;
+  }
+  .hero-complete {
+    background: #1e2130;
+    border: 1px solid #2d3148;
+    border-top: 4px solid #22c55e;
+    border-radius: 12px;
+    padding: 1.5rem;
+    margin-bottom: 1.25rem;
+    text-align: center;
+    color: #4ade80;
+    font-size: 1.125rem;
+    font-weight: 700;
+  }
+
+  /* ── Milestone rows ── */
+  .ms-row-hit {
+    background: #1e2130;
+    border: 1px solid #2d3148;
+    border-left: 4px solid #22c55e;
+    border-radius: 10px;
+    padding: 0.875rem 1rem;
+    margin-bottom: 0.5rem;
+    display: flex;
+    align-items: flex-start;
+    gap: 0.75rem;
+  }
+  .ms-row-upcoming {
+    background: #1e2130;
+    border: 1px solid #2d3148;
+    border-left: 4px solid #2d3148;
+    border-radius: 10px;
+    padding: 0.875rem 1rem;
+    margin-bottom: 0.5rem;
+  }
+  .check-icon {
+    color: #22c55e;
+    font-size: 1rem;
+    flex-shrink: 0;
+    margin-top: 0.125rem;
+  }
+  .lock-icon {
+    color: #475569;
+    font-size: 0.875rem;
+    margin-right: 0.5rem;
+  }
+  .ms-name {
+    font-weight: 600;
+    color: #f1f5f9;
+    font-size: 0.9rem;
+  }
+  .ms-meta {
+    font-size: 0.75rem;
+    color: #64748b;
+    margin-top: 0.2rem;
+  }
+  .ms-meta-days {
+    font-size: 0.7rem;
+    color: #475569;
+    margin-top: 0.125rem;
+  }
+
+  /* ── Progress bar (upcoming) ── */
+  .ms-prog-track {
+    background: #0f1117;
+    border-radius: 4px;
+    height: 5px;
+    overflow: hidden;
+    margin: 0.5rem 0 0.35rem;
+  }
+  .ms-prog-fill {
+    height: 100%;
+    border-radius: 4px;
+    background: linear-gradient(90deg, #f97316, #facc15);
+    transition: width 0.9s cubic-bezier(0.22, 1, 0.36, 1);
+    width: 0;
+  }
+  .ms-prog-label {
+    display: flex;
+    justify-content: space-between;
+    font-size: 0.7rem;
+    color: #475569;
+  }
+
+  /* ── NEW badge ── */
+  @keyframes badge-pulse {
+    0%, 100% { opacity: 1; }
+    50%       { opacity: 0.55; }
+  }
+  .badge-new {
+    background: #f97316;
+    color: #fff;
+    font-size: 0.5625rem;
+    font-weight: 700;
+    padding: 0.0625rem 0.375rem;
+    border-radius: 10px;
+    vertical-align: middle;
+    margin-left: 0.35rem;
+    animation: badge-pulse 2.4s ease-in-out infinite;
+  }
+{% endblock %}
+
+{% block content %}
+
+<div style="text-align:center; padding-bottom:1.75rem">
+  <h1 style="font-size:1.875rem; font-weight:800; color:#a855f7; margin:0.5rem 0">Milestones</h1>
+  <p style="color:#64748b; font-size:0.875rem">{{ data.total_hit }} of {{ data.total_possible }} unlocked</p>
+</div>
+
+<!-- Hero card -->
+{% if data.next_milestone %}
+  {% set nm = data.next_milestone %}
+  <div class="hero-card">
+    <div style="font-size:0.6875rem; font-weight:700; color:#94a3b8; text-transform:uppercase; letter-spacing:0.06em; margin-bottom:0.5rem">Next Milestone</div>
+    <div class="hero-name">{{ nm.name }}</div>
+    <div class="hero-gap">{{ nm.gap_display }}</div>
+    <div class="hero-label">
+      <span>
+        {% if nm.type == "revenue" or nm.type == "monthly" %}
+          ${{ "{:,.0f}".format(nm.current) }} / ${{ "{:,.0f}".format(nm.threshold) }}
+        {% elif nm.type in ("count", "states") %}
+          {{ nm.current }} / {{ nm.threshold }}
+        {% else %}
+          0 / 1
+        {% endif %}
+      </span>
+      <span>{{ nm.progress_pct }}%</span>
+    </div>
+    <div class="hero-track">
+      <div class="hero-fill" id="heroFill" data-pct="{{ nm.progress_pct }}"></div>
+    </div>
+  </div>
+{% else %}
+  <div class="hero-complete">🎉 All milestones complete! Amazing work.</div>
+{% endif %}
+
+<!-- Stats strip -->
+<div class="stats-strip">
+  <div class="stat-item">
+    <div class="stat-label">Milestones Hit</div>
+    <div class="stat-val">{{ data.total_hit }} / {{ data.total_possible }}</div>
+    <div class="stat-sub">of {{ data.total_possible }} total</div>
+  </div>
+  <div class="stat-item">
+    <div class="stat-label">Completion</div>
+    <div class="stat-val">{{ (data.total_hit / data.total_possible * 100) | round(0) | int }}%</div>
+    <div class="stat-sub">unlocked</div>
+  </div>
+  <div class="stat-item">
+    <div class="stat-label">Velocity</div>
+    <div class="stat-val">{% if data.milestone_velocity %}{{ data.milestone_velocity | round(1) }}{% else %}—{% endif %}</div>
+    <div class="stat-sub">per month</div>
+  </div>
+</div>
+
+<!-- Completed milestones -->
+{% set completed = data.milestones | selectattr("hit") | list | sort(attribute="hit_date") %}
+{% if completed %}
+<p class="section-title">Completed — {{ completed | length }}</p>
+{% for m in completed %}
+<div class="ms-row-hit">
+  <div class="check-icon">✓</div>
+  <div style="flex:1; min-width:0;">
+    <div class="ms-name">
+      {{ m.name }}
+      {% if m.is_newest %}<span class="badge-new">NEW</span>{% endif %}
+    </div>
+    <div class="ms-meta">{{ m.hit_date_display }}</div>
+    {% if m.days_since_prev is not none %}
+    <div class="ms-meta-days">{{ m.days_since_prev }} day{{ 's' if m.days_since_prev != 1 else '' }} after previous milestone</div>
+    {% endif %}
+  </div>
+</div>
+{% endfor %}
+{% endif %}
+
+<!-- Upcoming milestones -->
+{% set upcoming = data.milestones | rejectattr("hit") | list %}
+{% if upcoming %}
+<p class="section-title" style="margin-top:1.25rem;">Upcoming — {{ upcoming | length }}</p>
+{% for m in upcoming %}
+<div class="ms-row-upcoming">
+  <div>
+    <span class="lock-icon">🔒</span>
+    <span class="ms-name">{{ m.name }}</span>
+  </div>
+  <div class="ms-prog-track">
+    <div class="ms-prog-fill" data-pct="{{ m.progress_pct }}"></div>
+  </div>
+  <div class="ms-prog-label">
+    <span>{{ m.gap_display }}</span>
+    <span>
+      {% if m.type == "revenue" or m.type == "monthly" %}
+        ${{ "{:,.0f}".format(m.current) }} / ${{ "{:,.0f}".format(m.threshold) }}
+      {% elif m.type in ("count", "states") %}
+        {{ m.current }} / {{ m.threshold }}
+      {% else %}
+        Not started
+      {% endif %}
+    </span>
+  </div>
+</div>
+{% endfor %}
+{% endif %}
+
+<script>
+setTimeout(() => {
+  const h = document.getElementById('heroFill');
+  if (h) h.style.width = h.dataset.pct + '%';
+}, 300);
+setTimeout(() => {
+  document.querySelectorAll('.ms-prog-fill[data-pct]').forEach(el => {
+    el.style.width = el.dataset.pct + '%';
+  });
+}, 200);
+</script>
+
+{% endblock %}

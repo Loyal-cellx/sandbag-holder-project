@@ -69,6 +69,7 @@
     <span class="brand">Sandbag Sales</span>
     <a href="{{ url_for('index') }}" {% if request.endpoint == 'index' %}class="active"{% endif %}>Dashboard</a>
     <a href="{{ url_for('log_sale') }}" {% if request.endpoint == 'log_sale' %}class="active"{% endif %}>Log Sale</a>
+    <a href="{{ url_for('milestones') }}" {% if request.endpoint == 'milestones' %}class="active"{% endif %}>Milestones</a>
   </nav>
 
   <div class="container">

@@ -1,5 +1,5 @@
 from flask import Flask, render_template, request, redirect, url_for, jsonify, flash
-from database import db_init, add_sale, get_all_sales, get_stats, get_distinct_locations, delete_sale
+from database import db_init, add_sale, get_all_sales, get_stats, get_distinct_locations, delete_sale, get_milestones
 from datetime import date, datetime
 import os
 from dotenv import load_dotenv
@@ -57,6 +57,12 @@ def log_sale():
 def delete_sale_route(sale_id):
     delete_sale(sale_id)
     return jsonify({"ok": True})
+
+
+@app.route("/milestones")
+def milestones():
+    data = get_milestones()
+    return render_template("milestones.html", data=data)
 
 
 @app.route("/api/sales")

@@ -449,7 +449,7 @@ document.getElementById('kpiVelocity').textContent =
   let target = milestones.find(m => m > rev);
   if (!target) target = Math.ceil(rev / 5000) * 5000 + 5000;
   const prev = milestones[milestones.indexOf(target) - 1] || 0;
-  const pct = Math.min(100, ((rev - prev) / (target - prev)) * 100);
+  const pct = Math.min(100, (rev / target) * 100);
   document.getElementById('milestoneLabel').textContent =
     '$' + rev.toLocaleString() + ' / $' + target.toLocaleString();
   document.getElementById('milestoneSub').textContent =

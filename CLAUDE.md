@@ -35,8 +35,8 @@ The Flask app runs as a single Docker container managed by `docker-compose.yml`,
 The Pi is reachable via Tailscale as `dataworks`. SSH user is `loyal`, project lives at `~/sandbag/sales-tracker/` (docker-compose.yml is in that subdirectory).
 
 ```bash
-# Standard deploy: push to GitHub, then on the Pi:
-ssh loyal@dataworks "cd ~/sandbag && git pull && docker compose -f sales-tracker/docker-compose.yml up --build -d"
+# Standard deploy (from project root):
+./deploy.sh "your commit message"   # git add/commit/push + SSH pull + container rebuild
 
 # First-time setup on the Pi:
 cp .env.example .env && nano .env
@@ -44,11 +44,13 @@ docker compose up -d
 docker compose logs -f
 ```
 
+`deploy.sh` (project root) handles the full deploy in one command. It skips the commit step if there's nothing staged.
+
 ### Architecture
 
 | File | Role |
 |---|---|
-| `app.py` | Flask routes: `/` dashboard, `/log` sale form, `/api/sales` + `/api/stats` (JSON, for headless access) |
+| `app.py` | Flask routes: `/` dashboard, `/log` sale form, `/sales/<id>/delete` (POST), `/api/sales` + `/api/stats` (JSON) |
 | `database.py` | All SQLite access. `db_init()` must run before first request. |
 | `templates/base.html` | Nav, global CSS, Chart.js 4.4.0 + ChartDataLabels CDN imports |
 | `templates/index.html` | Dashboard: KPI cards, 4 charts (see below), transactions table |
@@ -71,6 +73,7 @@ docker compose logs -f
 | `get_all_sales()` | `list[dict]` ordered by date DESC, id DESC |
 | `get_stats()` | Stats dict (see below) |
 | `get_distinct_locations()` | `list[str]` top-10 locations by use count, most-used first |
+| `delete_sale(sale_id)` | Deletes a sale row by id |
 
 The `log_sale` GET route passes `today` (ISO date string) and `locations` (from `get_distinct_locations()`) to `log_sale.html`. Location values are `.title()`-cased on POST before being stored — chips and stored values will always be title-cased.
 
@@ -78,7 +81,7 @@ The `log_sale` GET route passes `today` (ISO date string) and `locations` (from 
 
 ```
 sales: id, date (TEXT ISO-8601), amount (REAL), location (TEXT),
-       platform (TEXT: "Amazon"|"eBay"), notes (TEXT), created_at
+       platform (TEXT: "Amazon"|"eBay"|"Walmart"), notes (TEXT), created_at
 ```
 
 `database.py` normalizes platform strings via `_normalize_platform()` before insert.
@@ -95,7 +98,11 @@ sales: id, date (TEXT ISO-8601), amount (REAL), location (TEXT),
   "by_month": [{"month": "YYYY-MM", "revenue": float, "count": int}, ...],
   "by_platform": [{"platform": str, "count": int, "revenue": float}, ...],  # sorted by revenue DESC
   "by_location": [{"location": str, "revenue": float, "count": int}, ...],  # top 10 by revenue
-  "by_week": [{"week": "D Mon", "revenue": float, "count": int}, ...]        # every Mon from first sale to today, zero-filled for weeks with no sales
+  "by_week": [{"week": "D Mon", "revenue": float, "count": int}, ...],       # every Mon from first sale to today, zero-filled for weeks with no sales
+  "last_month_revenue": float,
+  "last_month_sales": int,
+  "avg_weekly_revenue": float,
+  "avg_weekly_sales": float,
 }
 ```
 
@@ -111,7 +118,7 @@ DB_PATH=              # optional: override SQLite file path (Docker sets this to
 
 ### UI design notes
 
-Dashboard matches `examplesales_summary.html` (project root): dark theme (`#0f1117` bg, `#1e2130` cards), orange/blue/green/purple KPI card top-borders, orange bar chart, alternating row highlight on transactions table, "NEW" badge on most recent row. Amazon badge = green, eBay badge = blue.
+Dark theme (`#0f1117` bg, `#1e2130` cards), orange/blue/green/purple KPI card top-borders, orange bar chart, alternating row highlight on transactions table, "NEW" badge on most recent row. Amazon badge = green, eBay badge = blue, Walmart badge = yellow.
 
 ## Asset Folder Conventions
 

@@ -35,6 +35,8 @@ def _normalize_platform(platform):
         return "Amazon"
     if p in ("ebay", "e-bay"):
         return "eBay"
+    if p == "walmart":
+        return "Walmart"
     return platform.strip()
 
 
@@ -44,6 +46,13 @@ def add_sale(date_str, amount, location, platform, notes=""):
         "INSERT INTO sales (date, amount, location, platform, notes, created_at) VALUES (?, ?, ?, ?, ?, ?)",
         (date_str, amount, location, _normalize_platform(platform), notes, datetime.utcnow().isoformat()),
     )
+    conn.commit()
+    conn.close()
+
+
+def delete_sale(sale_id):
+    conn = _connect()
+    conn.execute("DELETE FROM sales WHERE id = ?", (sale_id,))
     conn.commit()
     conn.close()
 

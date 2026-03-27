@@ -1,5 +1,5 @@
 from flask import Flask, render_template, request, redirect, url_for, jsonify, flash
-from database import db_init, add_sale, get_all_sales, get_stats, get_distinct_locations
+from database import db_init, add_sale, get_all_sales, get_stats, get_distinct_locations, delete_sale
 from datetime import date, datetime
 import os
 from dotenv import load_dotenv
@@ -9,7 +9,7 @@ load_dotenv()
 app = Flask(__name__)
 app.secret_key = os.getenv("SECRET_KEY", "change-me-in-env")
 
-VALID_PLATFORMS = {"Amazon", "eBay"}
+VALID_PLATFORMS = {"Amazon", "eBay", "Walmart"}
 
 
 @app.route("/")
@@ -42,7 +42,7 @@ def log_sale():
             return redirect(url_for("log_sale"))
 
         if platform not in VALID_PLATFORMS:
-            flash("Platform must be Amazon or eBay.")
+            flash("Platform must be Amazon, eBay, or Walmart.")
             return redirect(url_for("log_sale"))
 
         add_sale(sale_date, amount, location, platform, notes)
@@ -51,6 +51,12 @@ def log_sale():
     today = date.today().isoformat()
     locations = get_distinct_locations()
     return render_template("log_sale.html", today=today, locations=locations)
+
+
+@app.route("/sales/<int:sale_id>/delete", methods=["POST"])
+def delete_sale_route(sale_id):
+    delete_sale(sale_id)
+    return jsonify({"ok": True})
 
 
 @app.route("/api/sales")

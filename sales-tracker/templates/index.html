@@ -126,6 +126,19 @@
     transition: background 0.15s;
   }
   .btn-delete:hover { background: rgba(239,68,68,0.25); }
+  .btn-edit {
+    background: rgba(148,163,184,0.12);
+    border: 1px solid rgba(148,163,184,0.25);
+    color: #94a3b8;
+    border-radius: 4px;
+    padding: 0.15rem 0.45rem;
+    font-size: 0.7rem;
+    cursor: pointer;
+    float: right;
+    margin-right: 0.3rem;
+    transition: background 0.15s;
+  }
+  .btn-edit:hover { background: rgba(148,163,184,0.25); }
   .badge-new {
     background: #f97316;
     color: #fff;
@@ -241,25 +254,6 @@
     transition: width 1.2s cubic-bezier(0.22, 1, 0.36, 1);
     width: 0;
   }
-
-  /* ── toast ── */
-  .sale-toast {
-    position: fixed;
-    top: 1rem; right: 1rem;
-    background: #1e2130;
-    border: 1px solid #2d3148;
-    border-left: 3px solid #f97316;
-    border-radius: 10px;
-    padding: 0.75rem 1rem;
-    max-width: 280px;
-    color: #f1f5f9;
-    font-size: 0.8125rem;
-    z-index: 200;
-    transform: translateX(calc(100% + 1.5rem));
-    transition: transform 0.4s cubic-bezier(0.22, 1, 0.36, 1);
-    box-shadow: 0 8px 24px rgba(0,0,0,0.4);
-  }
-  .sale-toast.show { transform: translateX(0); }
 {% endblock %}
 
 {% block content %}
@@ -385,6 +379,7 @@
         <td class="td-location">{{ s.location }}</td>
         <td class="td-platform">
           <span class="badge {% if s.platform == 'Amazon' %}badge-amazon{% elif s.platform == 'Walmart' %}badge-walmart{% else %}badge-ebay{% endif %}">{{ s.platform }}</span>
+          <button class="btn-edit" data-id="{{ s.id }}">✎</button>
           <button class="btn-delete" data-id="{{ s.id }}">✕</button>
         </td>
       </tr>
@@ -470,8 +465,6 @@
 
 <div class="footer">Sandbag Holder Sales Automation &bull; {{ year }}</div>
 
-<div class="sale-toast" id="saleToast"></div>
-
 <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2/dist/chartjs-plugin-datalabels.min.js"></script>
 <script>
 const stats = {{ stats | tojson }};
@@ -556,19 +549,6 @@ document.getElementById('kpiVelocity').textContent =
   setTimeout(() => {
     document.getElementById('milestoneFill').style.width = pct.toFixed(1) + '%';
   }, 300);
-})();
-
-// Toast (most recent sale)
-(function() {
-  const latest = {{ (sales[0] | tojson) if sales else 'null' }};
-  if (!latest) return;
-  const toast = document.getElementById('saleToast');
-  toast.innerHTML =
-    '💰 <strong>$' + latest.amount.toFixed(2) + '</strong>' +
-    ' &bull; ' + latest.location +
-    ' &bull; <span style="color:#64748b">' + latest.date + '</span>';
-  setTimeout(() => toast.classList.add('show'), 1500);
-  setTimeout(() => toast.classList.remove('show'), 5500);
 })();
 
 // Platform bar
@@ -763,6 +743,14 @@ if (btnViewAll) {
   btnViewAll.addEventListener('click', () => { txPanel.style.display = 'block'; });
 }
 document.getElementById('txPanelClose').addEventListener('click', () => { txPanel.style.display = 'none'; });
+
+// Edit button opens transactions panel
+document.body.addEventListener('click', e => {
+  const btn = e.target.closest('.btn-edit');
+  if (!btn) return;
+  e.stopPropagation();
+  txPanel.style.display = 'block';
+});
 
 // Inline edit: amount (panel)
 txPanel.addEventListener('click', e => {

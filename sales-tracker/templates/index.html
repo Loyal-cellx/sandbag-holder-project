@@ -379,8 +379,6 @@
         <td class="td-location">{{ s.location }}</td>
         <td class="td-platform">
           <span class="badge {% if s.platform == 'Amazon' %}badge-amazon{% elif s.platform == 'Walmart' %}badge-walmart{% else %}badge-ebay{% endif %}">{{ s.platform }}</span>
-          <button class="btn-edit" data-id="{{ s.id }}">✎</button>
-          <button class="btn-delete" data-id="{{ s.id }}">✕</button>
         </td>
       </tr>
       {% if s.notes %}
@@ -438,14 +436,17 @@
           <td style="padding:0.5rem; border-bottom:1px solid #1a1d2e; color:#fbbf24; font-weight:600; font-size:0.8125rem; cursor:pointer;" class="panel-amount" data-id="{{ s.id }}">${{ "%.2f"|format(s.amount) }}</td>
           <td style="padding:0.5rem; border-bottom:1px solid #1a1d2e; color:#4ade80; font-weight:600; font-size:0.8125rem;" class="panel-profit">${{ "%.2f"|format(s.profit) }}</td>
           <td style="padding:0.5rem; border-bottom:1px solid #1a1d2e; color:#cbd5e1; font-size:0.8125rem;">{{ s.location }}</td>
-          <td style="padding:0.5rem; border-bottom:1px solid #1a1d2e; font-size:0.8125rem;">
+          <td style="padding:0.5rem; border-bottom:1px solid #1a1d2e; font-size:0.8125rem; white-space:nowrap;">
             <span class="badge {% if s.platform == 'Amazon' %}badge-amazon{% elif s.platform == 'Walmart' %}badge-walmart{% else %}badge-ebay{% endif %}">{{ s.platform }}</span>
+            <button class="btn-edit" data-id="{{ s.id }}" style="float:right; margin-left:0.25rem;">✎</button>
             <button class="btn-delete" data-id="{{ s.id }}" style="float:right;">✕</button>
           </td>
         </tr>
+        {% if s.notes %}
         <tr data-notes-for="{{ s.id }}">
-          <td colspan="5" style="padding:0.15rem 0.5rem 0.5rem; border-bottom:1px solid #1a1d2e; color:#94a3b8; font-size:0.75rem; font-style:italic; cursor:pointer;" class="panel-note" data-id="{{ s.id }}">{% if s.notes %}↳ {{ s.notes }}{% else %}<span style="color:#475569;">+ Add note</span>{% endif %}</td>
+          <td colspan="5" style="padding:0.15rem 0.5rem 0.5rem; border-bottom:1px solid #1a1d2e; color:#94a3b8; font-size:0.75rem; font-style:italic;">↳ {{ s.notes }}</td>
         </tr>
+        {% endif %}
         {% endfor %}
       </tbody>
     </table>
@@ -744,12 +745,63 @@ if (btnViewAll) {
 }
 document.getElementById('txPanelClose').addEventListener('click', () => { txPanel.style.display = 'none'; });
 
-// Edit button opens transactions panel
+// Edit button triggers inline note editing in panel
 document.body.addEventListener('click', e => {
   const btn = e.target.closest('.btn-edit');
   if (!btn) return;
   e.stopPropagation();
-  txPanel.style.display = 'block';
+  const id = btn.dataset.id;
+  const dataRow = txPanel.querySelector('tr[data-id="' + id + '"]');
+  if (!dataRow) return;
+  const curNotes = dataRow.dataset.notes || '';
+  // Find or create the notes row
+  let notesRow = txPanel.querySelector('tr[data-notes-for="' + id + '"]');
+  if (!notesRow) {
+    notesRow = document.createElement('tr');
+    notesRow.setAttribute('data-notes-for', id);
+    notesRow.innerHTML = '<td colspan="5" style="padding:0.15rem 0.5rem 0.5rem; border-bottom:1px solid #1a1d2e; color:#94a3b8; font-size:0.75rem; font-style:italic;"></td>';
+    dataRow.after(notesRow);
+  }
+  const cell = notesRow.querySelector('td');
+  if (cell.querySelector('input')) return;
+  const orig = cell.innerHTML;
+  cell.innerHTML = '<input type="text" value="' + curNotes.replace(/"/g, '&quot;') + '" placeholder="Add a note…" style="width:70%; background:#0f1117; border:1px solid #a855f7; color:#f1f5f9; border-radius:4px; padding:0.15rem 0.3rem; font-size:0.75rem;">' +
+    ' <button style="background:#22c55e; color:#fff; border:none; border-radius:4px; padding:0.15rem 0.4rem; font-size:0.7rem; cursor:pointer;" class="ie-save">Save</button>' +
+    ' <button style="background:#2d3148; color:#94a3b8; border:none; border-radius:4px; padding:0.15rem 0.4rem; font-size:0.7rem; cursor:pointer;" class="ie-cancel">Cancel</button>';
+  const inp = cell.querySelector('input');
+  inp.focus();
+  cell.querySelector('.ie-cancel').addEventListener('click', ev => {
+    ev.stopPropagation();
+    if (orig) { cell.innerHTML = orig; } else { notesRow.remove(); }
+  });
+  cell.querySelector('.ie-save').addEventListener('click', ev => {
+    ev.stopPropagation();
+    const val = inp.value.trim();
+    fetch('/sales/' + id + '/edit', { method: 'POST', body: JSON.stringify({ notes: val }), headers: { 'Content-Type': 'application/json' } })
+      .then(r => r.json()).then(d => {
+        if (d.ok) {
+          dataRow.dataset.notes = val;
+          if (val) {
+            cell.innerHTML = '↳ ' + val;
+          } else {
+            notesRow.remove();
+          }
+          // Update dashboard notes row
+          const dashNotesRow = document.querySelector('.table-wrap tr[data-notes-for="' + id + '"]');
+          if (dashNotesRow) {
+            if (val) { dashNotesRow.querySelector('td').textContent = '↳ ' + val; } else { dashNotesRow.remove(); }
+          } else if (val) {
+            const dashDataRow = document.querySelector('.table-wrap tr[data-id="' + id + '"]');
+            if (dashDataRow) {
+              const nr = document.createElement('tr');
+              nr.setAttribute('data-notes-for', id);
+              nr.innerHTML = '<td colspan="5" class="td-notes">↳ ' + val + '</td>';
+              dashDataRow.after(nr);
+            }
+          }
+        }
+      });
+  });
 });
 
 // Inline edit: amount (panel)
@@ -792,41 +844,5 @@ txPanel.addEventListener('click', e => {
   });
 });
 
-// Inline edit: notes (panel)
-txPanel.addEventListener('click', e => {
-  const cell = e.target.closest('.panel-note');
-  if (!cell || cell.querySelector('input')) return;
-  const id = cell.dataset.id;
-  const row = cell.closest('tr');
-  const curNotes = row.previousElementSibling ? row.previousElementSibling.dataset.notes || '' : '';
-  const orig = cell.innerHTML;
-  cell.innerHTML = '<input type="text" value="' + curNotes.replace(/"/g, '&quot;') + '" placeholder="Add a note…" style="width:70%; background:#0f1117; border:1px solid #a855f7; color:#f1f5f9; border-radius:4px; padding:0.15rem 0.3rem; font-size:0.75rem;">' +
-    ' <button style="background:#22c55e; color:#fff; border:none; border-radius:4px; padding:0.15rem 0.4rem; font-size:0.7rem; cursor:pointer;" class="ie-save">Save</button>' +
-    ' <button style="background:#2d3148; color:#94a3b8; border:none; border-radius:4px; padding:0.15rem 0.4rem; font-size:0.7rem; cursor:pointer;" class="ie-cancel">Cancel</button>';
-  const inp = cell.querySelector('input');
-  inp.focus();
-  cell.querySelector('.ie-cancel').addEventListener('click', ev => { ev.stopPropagation(); cell.innerHTML = orig; });
-  cell.querySelector('.ie-save').addEventListener('click', ev => {
-    ev.stopPropagation();
-    const val = inp.value.trim();
-    fetch('/sales/' + id + '/edit', { method: 'POST', body: JSON.stringify({ notes: val }), headers: { 'Content-Type': 'application/json' } })
-      .then(r => r.json()).then(d => {
-        if (d.ok) {
-          const dataRow = row.previousElementSibling;
-          if (dataRow) dataRow.dataset.notes = val;
-          cell.innerHTML = val ? '↳ ' + val : '<span style="color:#475569;">+ Add note</span>';
-          // Update dashboard notes row
-          const dashNotesRow = document.querySelector('.table-wrap tr[data-notes-for="' + id + '"]');
-          if (dashNotesRow) {
-            if (val) {
-              dashNotesRow.querySelector('td').textContent = '↳ ' + val;
-            } else {
-              dashNotesRow.remove();
-            }
-          }
-        }
-      });
-  });
-});
 </script>
 {% endblock %}

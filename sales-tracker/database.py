@@ -58,6 +58,16 @@ def delete_sale(sale_id):
     conn.close()
 
 
+def update_sale(sale_id, amount=None, notes=None):
+    conn = _connect()
+    if amount is not None:
+        conn.execute("UPDATE sales SET amount = ? WHERE id = ?", (amount, sale_id))
+    if notes is not None:
+        conn.execute("UPDATE sales SET notes = ? WHERE id = ?", (notes, sale_id))
+    conn.commit()
+    conn.close()
+
+
 def get_all_sales():
     conn = _connect()
     rows = conn.execute("SELECT * FROM sales ORDER BY date DESC, id DESC").fetchall()

@@ -214,11 +214,6 @@
     <div class="stat-sub">of {{ data.total_possible }} total</div>
   </div>
   <div class="stat-item">
-    <div class="stat-label">Completion</div>
-    <div class="stat-val">{{ (data.total_hit / data.total_possible * 100) | round(0) | int }}%</div>
-    <div class="stat-sub">unlocked</div>
-  </div>
-  <div class="stat-item">
     <div class="stat-label">Velocity</div>
     <div class="stat-val">{% if data.milestone_velocity %}{{ data.milestone_velocity | round(1) }}{% else %}—{% endif %}</div>
     <div class="stat-sub">per month</div>

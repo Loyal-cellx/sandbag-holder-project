@@ -275,7 +275,7 @@
   <div class="kpi-card kpi-orange">
     <div class="kpi-label">Total Revenue</div>
     <div class="kpi-value kpi-value-hero" id="kpiRevenue">${{ "%.0f"|format(stats.total_revenue) }}</div>
-    <div class="kpi-sub"><span style="color:#4ade80;font-weight:600;" id="kpiProfit">${{ "%.0f"|format(stats.total_profit) }} profit</span> &bull; {{ stats.total_sales }} units &bull; avg ${{ "%.0f"|format(stats.avg_sale) }} &bull; <span id="kpiVelocity"></span></div>
+    <div class="kpi-sub"><span style="color:#4ade80;font-weight:600;" id="kpiProfit">${{ "%.0f"|format(stats.total_profit) }} profit</span> &bull; {{ stats.total_sales }} units &bull; <span id="kpiVelocity"></span></div>
   </div>
   <div class="kpi-card kpi-blue">
     <div class="kpi-label">This Month <span id="streakBadge" style="display:none" class="streak-badge"></span></div>
@@ -375,7 +375,7 @@
       </tr>
     </thead>
     <tbody>
-      {% for s in sales %}
+      {% for s in sales[:10] %}
       <tr{% if loop.first %} class="row-highlight"{% endif %} data-id="{{ s.id }}">
         <td class="td-date">
           {{ s.date }}{% if loop.first %}<span class="badge-new">NEW</span>{% endif %}
@@ -409,7 +409,52 @@
     No sales logged yet. <a href="{{ url_for('log_sale') }}" style="color:#a78bfa;">Log your first sale.</a>
   </div>
   {% endif %}
+  {% if sales | length > 10 %}
+  <div style="text-align:center; padding:0.75rem 0 1rem;">
+    <button id="btnViewAll" style="background:rgba(249,115,22,0.12); border:1px solid rgba(249,115,22,0.3); color:#fb923c; border-radius:8px; padding:0.5rem 1.5rem; font-size:0.8125rem; font-weight:600; cursor:pointer; transition:background 0.15s;">
+      View All Transactions ({{ sales | length }})
+    </button>
+  </div>
+  {% endif %}
   <div style="padding:0.5rem"></div>
+</div>
+
+<!-- Full-screen transactions panel -->
+<div id="txPanel" style="display:none; position:fixed; inset:0; background:#0f1117; z-index:150; overflow-y:auto; -webkit-overflow-scrolling:touch;">
+  <div style="max-width:640px; margin:0 auto; padding:1rem;">
+    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:1rem;">
+      <h2 style="font-size:1.25rem; font-weight:800; color:#f1f5f9; margin:0;">All Transactions</h2>
+      <button id="txPanelClose" style="background:rgba(255,255,255,0.08); border:1px solid #2d3148; color:#94a3b8; border-radius:8px; padding:0.4rem 1rem; font-size:0.8125rem; cursor:pointer;">Close</button>
+    </div>
+    <table id="txPanelTable" style="width:100%; border-collapse:collapse;">
+      <thead>
+        <tr>
+          <th style="text-align:left; color:#64748b; font-size:0.6875rem; font-weight:700; text-transform:uppercase; letter-spacing:0.06em; padding:0.5rem 0.5rem; border-bottom:1px solid #2d3148;">Date</th>
+          <th style="text-align:left; color:#64748b; font-size:0.6875rem; font-weight:700; text-transform:uppercase; letter-spacing:0.06em; padding:0.5rem 0.5rem; border-bottom:1px solid #2d3148;">Amount</th>
+          <th style="text-align:left; color:#64748b; font-size:0.6875rem; font-weight:700; text-transform:uppercase; letter-spacing:0.06em; padding:0.5rem 0.5rem; border-bottom:1px solid #2d3148;">Profit</th>
+          <th style="text-align:left; color:#64748b; font-size:0.6875rem; font-weight:700; text-transform:uppercase; letter-spacing:0.06em; padding:0.5rem 0.5rem; border-bottom:1px solid #2d3148;">State</th>
+          <th style="text-align:left; color:#64748b; font-size:0.6875rem; font-weight:700; text-transform:uppercase; letter-spacing:0.06em; padding:0.5rem 0.5rem; border-bottom:1px solid #2d3148;">Platform</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for s in sales %}
+        <tr data-id="{{ s.id }}" data-amount="{{ s.amount }}" data-notes="{{ s.notes or '' }}">
+          <td style="padding:0.5rem; border-bottom:1px solid #1a1d2e; color:#64748b; font-size:0.8125rem;">{{ s.date }}</td>
+          <td style="padding:0.5rem; border-bottom:1px solid #1a1d2e; color:#fbbf24; font-weight:600; font-size:0.8125rem; cursor:pointer;" class="panel-amount" data-id="{{ s.id }}">${{ "%.2f"|format(s.amount) }}</td>
+          <td style="padding:0.5rem; border-bottom:1px solid #1a1d2e; color:#4ade80; font-weight:600; font-size:0.8125rem;" class="panel-profit">${{ "%.2f"|format(s.profit) }}</td>
+          <td style="padding:0.5rem; border-bottom:1px solid #1a1d2e; color:#cbd5e1; font-size:0.8125rem;">{{ s.location }}</td>
+          <td style="padding:0.5rem; border-bottom:1px solid #1a1d2e; font-size:0.8125rem;">
+            <span class="badge {% if s.platform == 'Amazon' %}badge-amazon{% elif s.platform == 'Walmart' %}badge-walmart{% else %}badge-ebay{% endif %}">{{ s.platform }}</span>
+            <button class="btn-delete" data-id="{{ s.id }}" style="float:right;">✕</button>
+          </td>
+        </tr>
+        <tr data-notes-for="{{ s.id }}">
+          <td colspan="5" style="padding:0.15rem 0.5rem 0.5rem; border-bottom:1px solid #1a1d2e; color:#94a3b8; font-size:0.75rem; font-style:italic; cursor:pointer;" class="panel-note" data-id="{{ s.id }}">{% if s.notes %}↳ {{ s.notes }}{% else %}<span style="color:#475569;">+ Add note</span>{% endif %}</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
 </div>
 
 <!-- Delete confirmation modal -->
@@ -666,21 +711,21 @@ new Chart(document.getElementById('chartMonth'), {
     },
     scales: {
       x: { grid: { color: gridColor }, ticks: { color: '#64748b' } },
-      y: { grid: { color: gridColor }, ticks: { color: '#64748b', callback: v => '$' + v } }
+      y: { grace: '15%', grid: { color: gridColor }, ticks: { color: '#64748b', callback: v => '$' + v } }
     }
   }
 });
 
-// Delete transaction
+// Delete transaction (event delegation — works in dashboard + panel)
 let pendingSaleId = null;
 const modal = document.getElementById('deleteModal');
 
-document.querySelectorAll('.btn-delete').forEach(btn => {
-  btn.addEventListener('click', e => {
-    e.stopPropagation();
-    pendingSaleId = btn.dataset.id;
-    modal.style.display = 'flex';
-  });
+document.body.addEventListener('click', e => {
+  const btn = e.target.closest('.btn-delete');
+  if (!btn) return;
+  e.stopPropagation();
+  pendingSaleId = btn.dataset.id;
+  modal.style.display = 'flex';
 });
 
 document.getElementById('deleteCancel').addEventListener('click', () => {
@@ -694,10 +739,8 @@ document.getElementById('deleteConfirm').addEventListener('click', () => {
     .then(r => r.json())
     .then(data => {
       if (data.ok) {
-        const row = document.querySelector('tr[data-id="' + pendingSaleId + '"]');
-        const notesRow = document.querySelector('tr[data-notes-for="' + pendingSaleId + '"]');
-        if (notesRow) notesRow.remove();
-        if (row) row.remove();
+        document.querySelectorAll('tr[data-id="' + pendingSaleId + '"]').forEach(r => r.remove());
+        document.querySelectorAll('tr[data-notes-for="' + pendingSaleId + '"]').forEach(r => r.remove());
       }
     })
     .finally(() => {
@@ -711,6 +754,91 @@ modal.addEventListener('click', e => {
     modal.style.display = 'none';
     pendingSaleId = null;
   }
+});
+
+// View All panel
+const txPanel = document.getElementById('txPanel');
+const btnViewAll = document.getElementById('btnViewAll');
+if (btnViewAll) {
+  btnViewAll.addEventListener('click', () => { txPanel.style.display = 'block'; });
+}
+document.getElementById('txPanelClose').addEventListener('click', () => { txPanel.style.display = 'none'; });
+
+// Inline edit: amount (panel)
+txPanel.addEventListener('click', e => {
+  const cell = e.target.closest('.panel-amount');
+  if (!cell || cell.querySelector('input')) return;
+  const id = cell.dataset.id;
+  const row = cell.closest('tr');
+  const cur = parseFloat(row.dataset.amount);
+  const orig = cell.innerHTML;
+  cell.innerHTML = '<input type="number" step="0.01" min="0.01" value="' + cur.toFixed(2) + '" style="width:5rem; background:#0f1117; border:1px solid #f97316; color:#fbbf24; border-radius:4px; padding:0.15rem 0.3rem; font-size:0.8125rem;">' +
+    ' <button style="background:#22c55e; color:#fff; border:none; border-radius:4px; padding:0.15rem 0.4rem; font-size:0.7rem; cursor:pointer;" class="ie-save">Save</button>' +
+    ' <button style="background:#2d3148; color:#94a3b8; border:none; border-radius:4px; padding:0.15rem 0.4rem; font-size:0.7rem; cursor:pointer;" class="ie-cancel">Cancel</button>';
+  const inp = cell.querySelector('input');
+  inp.focus();
+  inp.select();
+  cell.querySelector('.ie-cancel').addEventListener('click', ev => { ev.stopPropagation(); cell.innerHTML = orig; });
+  cell.querySelector('.ie-save').addEventListener('click', ev => {
+    ev.stopPropagation();
+    const val = parseFloat(inp.value);
+    if (!val || val <= 0) return;
+    fetch('/sales/' + id + '/edit', { method: 'POST', body: JSON.stringify({ amount: val }), headers: { 'Content-Type': 'application/json' } })
+      .then(r => r.json()).then(d => {
+        if (d.ok) {
+          const profit = (val * 49 / 69);
+          row.dataset.amount = val;
+          cell.textContent = '$' + val.toFixed(2);
+          const profitCell = row.querySelector('.panel-profit');
+          if (profitCell) profitCell.textContent = '$' + profit.toFixed(2);
+          // Update dashboard table too
+          const dashRow = document.querySelector('.table-wrap tr[data-id="' + id + '"]');
+          if (dashRow) {
+            const dashAmt = dashRow.querySelector('.td-amount');
+            const dashProfit = dashRow.querySelector('.td-profit');
+            if (dashAmt) dashAmt.textContent = '$' + val.toFixed(2);
+            if (dashProfit) dashProfit.textContent = '$' + profit.toFixed(2);
+          }
+        }
+      });
+  });
+});
+
+// Inline edit: notes (panel)
+txPanel.addEventListener('click', e => {
+  const cell = e.target.closest('.panel-note');
+  if (!cell || cell.querySelector('input')) return;
+  const id = cell.dataset.id;
+  const row = cell.closest('tr');
+  const curNotes = row.previousElementSibling ? row.previousElementSibling.dataset.notes || '' : '';
+  const orig = cell.innerHTML;
+  cell.innerHTML = '<input type="text" value="' + curNotes.replace(/"/g, '&quot;') + '" placeholder="Add a note…" style="width:70%; background:#0f1117; border:1px solid #a855f7; color:#f1f5f9; border-radius:4px; padding:0.15rem 0.3rem; font-size:0.75rem;">' +
+    ' <button style="background:#22c55e; color:#fff; border:none; border-radius:4px; padding:0.15rem 0.4rem; font-size:0.7rem; cursor:pointer;" class="ie-save">Save</button>' +
+    ' <button style="background:#2d3148; color:#94a3b8; border:none; border-radius:4px; padding:0.15rem 0.4rem; font-size:0.7rem; cursor:pointer;" class="ie-cancel">Cancel</button>';
+  const inp = cell.querySelector('input');
+  inp.focus();
+  cell.querySelector('.ie-cancel').addEventListener('click', ev => { ev.stopPropagation(); cell.innerHTML = orig; });
+  cell.querySelector('.ie-save').addEventListener('click', ev => {
+    ev.stopPropagation();
+    const val = inp.value.trim();
+    fetch('/sales/' + id + '/edit', { method: 'POST', body: JSON.stringify({ notes: val }), headers: { 'Content-Type': 'application/json' } })
+      .then(r => r.json()).then(d => {
+        if (d.ok) {
+          const dataRow = row.previousElementSibling;
+          if (dataRow) dataRow.dataset.notes = val;
+          cell.innerHTML = val ? '↳ ' + val : '<span style="color:#475569;">+ Add note</span>';
+          // Update dashboard notes row
+          const dashNotesRow = document.querySelector('.table-wrap tr[data-notes-for="' + id + '"]');
+          if (dashNotesRow) {
+            if (val) {
+              dashNotesRow.querySelector('td').textContent = '↳ ' + val;
+            } else {
+              dashNotesRow.remove();
+            }
+          }
+        }
+      });
+  });
 });
 </script>
 {% endblock %}

@@ -412,7 +412,12 @@
 {% if prediction.avg_freq %}
 <div class="pred-card">
   <div class="pred-left">
-    <div style="color:#94a3b8; font-size:0.6875rem; font-weight:700; text-transform:uppercase; letter-spacing:0.06em; margin-bottom:0.5rem;">⚡ Next Sale Prediction</div>
+    <div style="display:flex; align-items:center; gap:0.5rem; margin-bottom:0.5rem; flex-wrap:wrap;">
+      <span style="color:#94a3b8; font-size:0.6875rem; font-weight:700; text-transform:uppercase; letter-spacing:0.06em;">⚡ Next Sale Prediction</span>
+      {% if prediction.season_label %}
+      <span style="background:rgba(59,130,246,0.12); border:1px solid rgba(59,130,246,0.25); color:#60a5fa; font-size:0.6rem; font-weight:700; padding:0.1rem 0.45rem; border-radius:20px; text-transform:uppercase; letter-spacing:0.04em;">{{ prediction.season_label }}</span>
+      {% endif %}
+    </div>
     <div>
       <span class="pred-score" id="predScore" style="color:{{ prediction.color }}">{{ prediction.score }}%</span>
       <span class="pred-label pred-label-{{ prediction.label | lower }}" id="predLabel">{{ prediction.label }}</span>
@@ -422,8 +427,8 @@
     </div>
     <div class="pred-sub">
       {% if prediction.eta_days and prediction.eta_days > 0 %}~{{ prediction.eta_days }}d until expected &bull; {% endif %}
-      {% if prediction.days_since is not none %}{{ prediction.days_since }}d since last sale &bull; {% endif %}
-      avg {{ prediction.avg_freq }}d
+      {% if prediction.days_since is not none %}{{ prediction.days_since }}d since last &bull; {% endif %}
+      trend {{ prediction.wma_freq }}d{% if prediction.wma_freq != prediction.avg_freq %} (avg {{ prediction.avg_freq }}d){% endif %}
     </div>
   </div>
   <div class="pred-right">

@@ -194,6 +194,7 @@ def get_stats():
         gaps = [(sale_dates[i+1] - sale_dates[i]).days for i in range(len(sale_dates)-1)]
         avg_days_between_sales = round(sum(gaps) / len(gaps), 1)
     else:
+        gaps = []
         avg_days_between_sales = None
 
     last_sale_date = sale_dates[-1].isoformat() if sale_dates else None
@@ -231,6 +232,7 @@ def get_stats():
         "longest_streak": longest_streak,
         "last_sale_date": last_sale_date,
         "days_since_last_sale": days_since_last_sale,
+        "sale_gaps": gaps,
     }
 
 

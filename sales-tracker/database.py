@@ -196,6 +196,9 @@ def get_stats():
     else:
         avg_days_between_sales = None
 
+    last_sale_date = sale_dates[-1].isoformat() if sale_dates else None
+    days_since_last_sale = (date.today() - sale_dates[-1]).days if sale_dates else None
+
     longest_streak = 0
     if sale_dates:
         cur_streak = 1
@@ -226,6 +229,8 @@ def get_stats():
         "projected_month_revenue": projected_month_revenue,
         "avg_days_between_sales": avg_days_between_sales,
         "longest_streak": longest_streak,
+        "last_sale_date": last_sale_date,
+        "days_since_last_sale": days_since_last_sale,
     }
 
 

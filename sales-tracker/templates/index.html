@@ -254,6 +254,92 @@
     width: 0;
   }
 
+  /* ── Prediction card ── */
+  .pred-card {
+    background: #1e2130;
+    border: 1px solid #2d3148;
+    border-radius: 12px;
+    padding: 1rem;
+    margin-bottom: 0.75rem;
+    display: flex;
+    gap: 1rem;
+  }
+  .pred-left { flex: 1; min-width: 0; }
+  .pred-right {
+    flex: 1;
+    min-width: 0;
+    border-left: 1px solid #2d3148;
+    padding-left: 1rem;
+  }
+  .pred-score {
+    font-size: 2.5rem;
+    font-weight: 800;
+    line-height: 1;
+  }
+  .pred-label {
+    display: inline-block;
+    font-size: 0.65rem;
+    font-weight: 700;
+    padding: 0.1rem 0.5rem;
+    border-radius: 20px;
+    margin-left: 0.4rem;
+    vertical-align: middle;
+    position: relative;
+    top: -0.15rem;
+  }
+  .pred-label-high {
+    background: rgba(74,222,128,0.15);
+    border: 1px solid rgba(74,222,128,0.3);
+    color: #4ade80;
+    animation: badge-pulse 2.4s ease-in-out infinite;
+  }
+  .pred-label-medium {
+    background: rgba(249,115,22,0.15);
+    border: 1px solid rgba(249,115,22,0.3);
+    color: #fb923c;
+  }
+  .pred-label-low {
+    background: rgba(100,116,139,0.15);
+    border: 1px solid rgba(100,116,139,0.3);
+    color: #64748b;
+  }
+  .pred-track {
+    background: #0f1117;
+    border-radius: 6px;
+    height: 7px;
+    overflow: hidden;
+    margin: 0.6rem 0 0.4rem;
+  }
+  .pred-fill {
+    height: 100%;
+    border-radius: 6px;
+    transition: width 1.2s cubic-bezier(0.22, 1, 0.36, 1);
+    width: 0;
+  }
+  .pred-sub { color: #64748b; font-size: 0.7rem; }
+  .pred-alerts-title {
+    color: #94a3b8;
+    font-size: 0.6875rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    margin-bottom: 0.5rem;
+  }
+  .pred-alert-item {
+    font-size: 0.75rem;
+    color: #cbd5e1;
+    padding: 0.2rem 0;
+    display: flex;
+    align-items: center;
+    gap: 0.35rem;
+  }
+  .pred-no-alerts { color: #475569; font-size: 0.75rem; font-style: italic; }
+  @media (max-width: 480px) {
+    .pred-card { flex-direction: column; }
+    .pred-right { border-left: none; padding-left: 0; border-top: 1px solid #2d3148; padding-top: 0.75rem; }
+    .pred-score { font-size: 2rem; }
+  }
+
   /* ── Mobile responsive ── */
   @media (max-width: 480px) {
     th { padding: 0.4rem 0.5rem; }
@@ -321,6 +407,40 @@
   </div>
   <div id="milestoneSub" style="color:#64748b; font-size:0.7rem;"></div>
 </div>
+
+<!-- Sale Prediction Card -->
+{% if prediction.avg_freq %}
+<div class="pred-card">
+  <div class="pred-left">
+    <div style="color:#94a3b8; font-size:0.6875rem; font-weight:700; text-transform:uppercase; letter-spacing:0.06em; margin-bottom:0.5rem;">⚡ Next Sale Prediction</div>
+    <div>
+      <span class="pred-score" id="predScore" style="color:{{ prediction.color }}">{{ prediction.score }}%</span>
+      <span class="pred-label pred-label-{{ prediction.label | lower }}" id="predLabel">{{ prediction.label }}</span>
+    </div>
+    <div class="pred-track">
+      <div class="pred-fill" id="predFill" style="background:{% if prediction.label == 'HIGH' %}linear-gradient(90deg,#22c55e,#4ade80){% elif prediction.label == 'MEDIUM' %}linear-gradient(90deg,#f97316,#facc15){% else %}#475569{% endif %};"></div>
+    </div>
+    <div class="pred-sub">
+      {% if prediction.eta_days and prediction.eta_days > 0 %}~{{ prediction.eta_days }}d until expected &bull; {% endif %}
+      {% if prediction.days_since is not none %}{{ prediction.days_since }}d since last sale &bull; {% endif %}
+      avg {{ prediction.avg_freq }}d
+    </div>
+  </div>
+  <div class="pred-right">
+    <div class="pred-alerts-title">Active Weather Alerts</div>
+    {% if prediction.alerts %}
+      {% for alert in prediction.alerts[:5] %}
+      <div class="pred-alert-item">
+        <span>{{ alert.icon }}</span>
+        <span>{{ alert.event }}{% if alert.state %} &mdash; {{ alert.state }}{% endif %}</span>
+      </div>
+      {% endfor %}
+    {% else %}
+      <div class="pred-no-alerts">No active severe weather alerts</div>
+    {% endif %}
+  </div>
+</div>
+{% endif %}
 
 <!-- Stats Strip -->
 <div class="stats-strip">
@@ -563,6 +683,14 @@ document.getElementById('kpiVelocity').textContent =
   setTimeout(() => {
     document.getElementById('milestoneFill').style.width = pct.toFixed(1) + '%';
   }, 300);
+})();
+
+// Animate prediction fill bar
+(function() {
+  const fill = document.getElementById('predFill');
+  if (fill) {
+    setTimeout(() => { fill.style.width = '{{ prediction.score }}%'; }, 200);
+  }
 })();
 
 // Platform bar

@@ -90,20 +90,36 @@
     text-transform: uppercase;
     letter-spacing: 0.06em;
     padding: 0.5rem 1.25rem;
-    border-bottom: 1px solid #2d3148;
+    border-bottom: none;
+  }
+  /* Gradient underline below the header row */
+  thead tr {
+    border-bottom: 2px solid transparent;
+    border-image: linear-gradient(90deg, #f97316, #facc15, rgba(249,115,22,0)) 1;
   }
   td {
     padding: 0.625rem 1.25rem;
     border-bottom: 1px solid #1a1d2e;
     vertical-align: middle;
   }
-  tr:last-child td { border-bottom: none; }
-  tr.row-highlight { background-color: #252840; }
+  tbody tr:last-child td { border-bottom: none; }
+  /* Zebra striping — subtle */
+  tbody tr:nth-child(even):not(.row-highlight):not(.month-header):not([data-notes-for]) {
+    background-color: rgba(255,255,255,0.012);
+  }
+  /* NEW row — faint orange gradient tint */
+  tr.row-highlight {
+    background-image: linear-gradient(90deg, rgba(249,115,22,0.11), transparent 65%);
+  }
+  /* Platform-colored left accent bar — 3px inset shadow */
+  tr[data-platform="Amazon"]  td:first-child { box-shadow: inset 3px 0 0 #22c55e; }
+  tr[data-platform="eBay"]    td:first-child { box-shadow: inset 3px 0 0 #3b82f6; }
+  tr[data-platform="Walmart"] td:first-child { box-shadow: inset 3px 0 0 #facc15; }
   .td-date     { color: #64748b;  font-size: 0.8125rem; }
-  .td-amount   { color: #fbbf24;  font-weight: 600; font-size: 0.8125rem; }
+  .td-amount   { color: #fbbf24;  font-weight: 600; font-size: 0.8125rem; font-variant-numeric: tabular-nums; }
   .td-location { color: #cbd5e1;  font-size: 0.8125rem; }
   .td-platform { font-size: 0.8125rem; }
-  .td-notes    { color: #94a3b8;  font-size: 0.75rem; font-style: italic; padding-top: 0; }
+  .td-notes    { color: #94a3b8;  font-size: 0.75rem; font-style: italic; padding: 0 1.25rem 0.5rem 2.25rem; border-left: 2px solid rgba(249,115,22,0.18); border-bottom: 1px solid #1a1d2e; }
   .badge {
     display: inline-block;
     padding: 0.125rem 0.625rem;
@@ -149,7 +165,99 @@
     margin-left: 0.25rem;
   }
 
-  .td-profit { color: #4ade80; font-weight: 600; font-size: 0.8125rem; }
+  .td-profit { color: #4ade80; font-weight: 600; font-size: 0.8125rem; font-variant-numeric: tabular-nums; }
+
+  /* ── Month section header (full-screen panel) ── */
+  tr.month-header td {
+    background: #1a1d2e;
+    color: #94a3b8;
+    font-size: 0.6875rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    padding: 0.5rem 0.75rem;
+    border-bottom: 1px solid #2d3148;
+    border-top: 1px solid #2d3148;
+    position: sticky;
+    top: 0;
+    z-index: 5;
+  }
+  tr.month-header .mh-wrap {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.5rem;
+  }
+  tr.month-header .mh-label { color: #f1f5f9; font-size: 0.75rem; }
+  tr.month-header .mh-stats { color: #64748b; font-size: 0.7rem; font-weight: 600; font-variant-numeric: tabular-nums; }
+  tr.month-header .mh-stats b { color: #fbbf24; font-weight: 700; }
+  tr.month-header canvas.mini-spark {
+    width: 72px !important;
+    height: 18px !important;
+    flex-shrink: 0;
+  }
+
+  /* ── Search bar inside full-screen panel ── */
+  .tx-search-wrap {
+    position: sticky;
+    top: 0;
+    background: #0f1117;
+    padding: 0.5rem 0 0.75rem;
+    z-index: 10;
+    margin: -0.25rem 0 0.5rem;
+  }
+  .tx-search {
+    width: 100%;
+    background: #1e2130;
+    border: 1px solid #2d3148;
+    color: #f1f5f9;
+    border-radius: 8px;
+    padding: 0.55rem 0.75rem 0.55rem 2rem;
+    font-size: 0.875rem;
+    outline: none;
+    transition: border-color 0.15s, box-shadow 0.15s;
+  }
+  .tx-search:focus {
+    border-color: rgba(249,115,22,0.5);
+    box-shadow: 0 0 0 3px rgba(249,115,22,0.12);
+  }
+  .tx-search::placeholder { color: #475569; }
+  .tx-search-wrap::before {
+    content: '⌕';
+    position: absolute;
+    left: 0.7rem;
+    top: 50%;
+    transform: translateY(-40%);
+    color: #64748b;
+    font-size: 1rem;
+    pointer-events: none;
+  }
+  .tx-empty {
+    display: none;
+    text-align: center;
+    color: #475569;
+    font-size: 0.8125rem;
+    padding: 2rem 1rem;
+    font-style: italic;
+  }
+
+  /* ── Full-screen panel footer totals ── */
+  .tx-footer-totals {
+    display: flex;
+    justify-content: space-between;
+    gap: 0.75rem;
+    padding: 0.875rem 1rem;
+    margin-top: 0.75rem;
+    background: #1e2130;
+    border: 1px solid #2d3148;
+    border-radius: 10px;
+    font-size: 0.75rem;
+    font-variant-numeric: tabular-nums;
+  }
+  .tx-footer-totals .tft-label { color: #64748b; text-transform: uppercase; letter-spacing: 0.06em; font-size: 0.65rem; }
+  .tx-footer-totals .tft-val   { color: #f1f5f9; font-weight: 700; font-size: 0.95rem; }
+  .tx-footer-totals .tft-val-amt    { color: #fbbf24; }
+  .tx-footer-totals .tft-val-profit { color: #4ade80; }
 
   /* ── Stats strip ── */
   .stats-strip {
@@ -202,8 +310,12 @@
   .badge-new { animation: badge-pulse 2.4s ease-in-out infinite; }
 
   /* ── Table row hover ── */
-  tbody tr { transition: background-color 0.12s ease; }
-  tbody tr:hover { background-color: rgba(255,255,255,0.025); }
+  tbody tr { transition: background-color 0.15s ease; }
+  tbody tr:not(.month-header):not([data-notes-for]):hover { background-color: rgba(249,115,22,0.04); }
+  tbody tr[data-platform]:hover td:first-child { box-shadow: inset 3px 0 0 currentColor; }
+  tbody tr[data-platform="Amazon"]:hover  td:first-child { box-shadow: inset 3px 0 0 #4ade80; }
+  tbody tr[data-platform="eBay"]:hover    td:first-child { box-shadow: inset 3px 0 0 #60a5fa; }
+  tbody tr[data-platform="Walmart"]:hover td:first-child { box-shadow: inset 3px 0 0 #facc15, 0 0 0 0 rgba(250,204,21,0.3); }
 
   /* ── Footer ── */
   .footer {
@@ -346,8 +458,11 @@
     td { padding: 0.45rem 0.5rem; }
     .td-date, .td-amount, .td-profit, .td-location, .td-platform { font-size: 0.75rem; }
     .td-date { white-space: nowrap; }
+    .td-notes { padding: 0 0.5rem 0.4rem 1.25rem; }
     .table-header { padding: 1rem 1rem 0; }
     .badge { padding: 0.1rem 0.4rem; font-size: 0.625rem; }
+    tr.month-header td { padding: 0.45rem 0.5rem; }
+    tr.month-header canvas.mini-spark { width: 54px !important; height: 16px !important; }
   }
 {% endblock %}
 
@@ -504,9 +619,9 @@
     </thead>
     <tbody>
       {% for s in sales[:10] %}
-      <tr{% if loop.first %} class="row-highlight"{% endif %} data-id="{{ s.id }}">
+      <tr{% if loop.first %} class="row-highlight"{% endif %} data-id="{{ s.id }}" data-platform="{{ s.platform }}" data-amount="{{ s.amount }}">
         <td class="td-date">
-          {{ s.date }}{% if loop.first %}<span class="badge-new">NEW</span>{% endif %}
+          <span class="rel-date" data-date="{{ s.date }}">{{ s.date }}</span>{% if loop.first %}<span class="badge-new">NEW</span>{% endif %}
         </td>
         <td class="td-amount">${{ "%.2f"|format(s.amount) }}</td>
         <td class="td-profit">${{ "%.2f"|format(s.profit) }}</td>
@@ -517,7 +632,7 @@
       </tr>
       {% if s.notes %}
       <tr{% if loop.first %} class="row-highlight"{% endif %} data-notes-for="{{ s.id }}">
-        <td colspan="5" class="td-notes">↳ {{ s.notes }}</td>
+        <td colspan="5" class="td-notes">{{ s.notes }}</td>
       </tr>
       {% endif %}
       {% endfor %}
@@ -549,28 +664,46 @@
 <!-- Full-screen transactions panel -->
 <div id="txPanel" style="display:none; position:fixed; inset:0; background:#0f1117; z-index:150; overflow-y:auto; -webkit-overflow-scrolling:touch;">
   <div style="max-width:640px; margin:0 auto; padding:1rem;">
-    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:1rem;">
-      <h2 style="font-size:1.25rem; font-weight:800; color:#f1f5f9; margin:0;">All Transactions</h2>
+    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:0.75rem;">
+      <h2 style="font-size:1.25rem; font-weight:800; margin:0; background:linear-gradient(135deg,#f97316 30%,#facc15); -webkit-background-clip:text; -webkit-text-fill-color:transparent; background-clip:text;">All Transactions</h2>
       <button id="txPanelClose" style="background:rgba(255,255,255,0.08); border:1px solid #2d3148; color:#94a3b8; border-radius:8px; padding:0.4rem 1rem; font-size:0.8125rem; cursor:pointer;">Close</button>
     </div>
-    <table id="txPanelTable" style="width:100%; border-collapse:collapse;">
+    <div class="tx-search-wrap" style="position:relative;">
+      <input id="txSearch" class="tx-search" type="search" placeholder="Search by state, platform, date, or note…" autocomplete="off">
+    </div>
+    <div class="table-wrap" style="margin-bottom:0;">
+    <table id="txPanelTable">
       <thead>
         <tr>
-          <th style="text-align:left; color:#64748b; font-size:0.6875rem; font-weight:700; text-transform:uppercase; letter-spacing:0.06em; padding:0.5rem 0.5rem; border-bottom:1px solid #2d3148;">Date</th>
-          <th style="text-align:left; color:#64748b; font-size:0.6875rem; font-weight:700; text-transform:uppercase; letter-spacing:0.06em; padding:0.5rem 0.5rem; border-bottom:1px solid #2d3148;">Amount</th>
-          <th style="text-align:left; color:#64748b; font-size:0.6875rem; font-weight:700; text-transform:uppercase; letter-spacing:0.06em; padding:0.5rem 0.5rem; border-bottom:1px solid #2d3148;">Profit</th>
-          <th style="text-align:left; color:#64748b; font-size:0.6875rem; font-weight:700; text-transform:uppercase; letter-spacing:0.06em; padding:0.5rem 0.5rem; border-bottom:1px solid #2d3148;">State</th>
-          <th style="text-align:left; color:#64748b; font-size:0.6875rem; font-weight:700; text-transform:uppercase; letter-spacing:0.06em; padding:0.5rem 0.5rem; border-bottom:1px solid #2d3148;">Platform</th>
+          <th style="padding-left:0.75rem;">Date</th>
+          <th>Amount</th>
+          <th>Profit</th>
+          <th>State</th>
+          <th>Platform</th>
         </tr>
       </thead>
       <tbody>
+        {% set ns = namespace(cur_month='') %}
         {% for s in sales %}
-        <tr data-id="{{ s.id }}" data-amount="{{ s.amount }}" data-notes="{{ s.notes or '' }}">
-          <td style="padding:0.5rem; border-bottom:1px solid #1a1d2e; color:#64748b; font-size:0.8125rem;">{{ s.date }}</td>
-          <td style="padding:0.5rem; border-bottom:1px solid #1a1d2e; color:#fbbf24; font-weight:600; font-size:0.8125rem; cursor:pointer;" class="panel-amount" data-id="{{ s.id }}">${{ "%.2f"|format(s.amount) }}</td>
-          <td style="padding:0.5rem; border-bottom:1px solid #1a1d2e; color:#4ade80; font-weight:600; font-size:0.8125rem;" class="panel-profit">${{ "%.2f"|format(s.profit) }}</td>
-          <td style="padding:0.5rem; border-bottom:1px solid #1a1d2e; color:#cbd5e1; font-size:0.8125rem;">{{ s.location }}</td>
-          <td style="padding:0.5rem; border-bottom:1px solid #1a1d2e; font-size:0.8125rem;">
+        {% set sm = s.date[:7] %}
+        {% if sm != ns.cur_month %}
+        {% set ns.cur_month = sm %}
+        <tr class="month-header" data-month="{{ sm }}">
+          <td colspan="5">
+            <div class="mh-wrap">
+              <span class="mh-label">{{ sm }}</span>
+              <canvas class="mini-spark" data-month="{{ sm }}"></canvas>
+              <span class="mh-stats"><b class="mh-total">$0</b> · <span class="mh-count">0</span> sale<span class="mh-plural">s</span></span>
+            </div>
+          </td>
+        </tr>
+        {% endif %}
+        <tr data-id="{{ s.id }}" data-platform="{{ s.platform }}" data-amount="{{ s.amount }}" data-date="{{ s.date }}" data-notes="{{ s.notes or '' }}" data-location="{{ s.location }}" data-profit="{{ s.profit }}">
+          <td class="td-date"><span class="rel-date" data-date="{{ s.date }}">{{ s.date }}</span></td>
+          <td class="td-amount panel-amount" data-id="{{ s.id }}" style="cursor:pointer;">${{ "%.2f"|format(s.amount) }}</td>
+          <td class="td-profit panel-profit">${{ "%.2f"|format(s.profit) }}</td>
+          <td class="td-location">{{ s.location }}</td>
+          <td class="td-platform">
             <div style="display:flex; align-items:center; justify-content:space-between; gap:0.25rem;">
               <span class="badge {% if s.platform == 'Amazon' %}badge-amazon{% elif s.platform == 'Walmart' %}badge-walmart{% else %}badge-ebay{% endif %}">{{ s.platform }}</span>
               <div style="display:flex; gap:0.25rem; flex-shrink:0;">
@@ -582,12 +715,28 @@
         </tr>
         {% if s.notes %}
         <tr data-notes-for="{{ s.id }}">
-          <td colspan="5" style="padding:0.15rem 0.5rem 0.5rem; border-bottom:1px solid #1a1d2e; color:#94a3b8; font-size:0.75rem; font-style:italic;">↳ {{ s.notes }}</td>
+          <td colspan="5" class="td-notes">{{ s.notes }}</td>
         </tr>
         {% endif %}
         {% endfor %}
       </tbody>
     </table>
+    <div id="txEmpty" class="tx-empty">No transactions match your search.</div>
+    </div>
+    <div class="tx-footer-totals">
+      <div>
+        <div class="tft-label">Revenue</div>
+        <div class="tft-val tft-val-amt" id="txTotalAmount">${{ "%.2f"|format(sales | sum(attribute='amount')) }}</div>
+      </div>
+      <div>
+        <div class="tft-label">Profit</div>
+        <div class="tft-val tft-val-profit" id="txTotalProfit">${{ "%.2f"|format(sales | sum(attribute='profit')) }}</div>
+      </div>
+      <div>
+        <div class="tft-label">Sales</div>
+        <div class="tft-val" id="txTotalCount">{{ sales | length }}</div>
+      </div>
+    </div>
   </div>
 </div>
 
@@ -868,6 +1017,10 @@ document.getElementById('deleteConfirm').addEventListener('click', () => {
       if (data.ok) {
         document.querySelectorAll('tr[data-id="' + pendingSaleId + '"]').forEach(r => r.remove());
         document.querySelectorAll('tr[data-notes-for="' + pendingSaleId + '"]').forEach(r => r.remove());
+        if (txPanelEnriched) {
+          recalcTxTotals();
+          enrichTxPanel();
+        }
       }
     })
     .finally(() => {
@@ -886,10 +1039,166 @@ modal.addEventListener('click', e => {
 // View All panel
 const txPanel = document.getElementById('txPanel');
 const btnViewAll = document.getElementById('btnViewAll');
+let txPanelEnriched = false;
 if (btnViewAll) {
-  btnViewAll.addEventListener('click', () => { txPanel.style.display = 'block'; });
+  btnViewAll.addEventListener('click', () => {
+    txPanel.style.display = 'block';
+    if (!txPanelEnriched) { enrichTxPanel(); txPanelEnriched = true; }
+  });
 }
 document.getElementById('txPanelClose').addEventListener('click', () => { txPanel.style.display = 'none'; });
+
+// ── Relative dates ("Today", "Yesterday", "2d ago") for recent rows ──
+(function() {
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  document.querySelectorAll('.rel-date').forEach(el => {
+    const iso = el.dataset.date;
+    if (!iso) return;
+    const parts = iso.split('-');
+    const d = new Date(+parts[0], +parts[1] - 1, +parts[2]);
+    d.setHours(0, 0, 0, 0);
+    const diff = Math.round((today - d) / 86400000);
+    let label = iso;
+    if (diff === 0) label = 'Today';
+    else if (diff === 1) label = 'Yesterday';
+    else if (diff > 1 && diff < 7) label = diff + 'd ago';
+    el.textContent = label;
+    el.title = iso;
+  });
+})();
+
+// ── Month-header enrichment: fill label, subtotal, count, sparkline ──
+function enrichTxPanel() {
+  const MONTH_NAMES = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+  const headers = txPanel.querySelectorAll('tr.month-header');
+  headers.forEach(header => {
+    const month = header.dataset.month;
+    const [y, m] = month.split('-');
+    const monthLabel = MONTH_NAMES[+m - 1] + ' ' + y;
+    header.querySelector('.mh-label').textContent = monthLabel;
+
+    // Collect rows for this month (all siblings until next month-header)
+    const rows = [];
+    let n = header.nextElementSibling;
+    while (n && !n.classList.contains('month-header')) {
+      if (n.dataset.id) rows.push(n);
+      n = n.nextElementSibling;
+    }
+    let total = 0;
+    const dailyTotals = {};  // day -> revenue
+    rows.forEach(r => {
+      const amt = parseFloat(r.dataset.amount) || 0;
+      total += amt;
+      const day = (r.dataset.date || '').slice(8);
+      dailyTotals[day] = (dailyTotals[day] || 0) + amt;
+    });
+    header.querySelector('.mh-total').textContent = '$' + total.toFixed(0);
+    header.querySelector('.mh-count').textContent = rows.length;
+    header.querySelector('.mh-plural').textContent = rows.length === 1 ? '' : 's';
+
+    const canvas = header.querySelector('canvas.mini-spark');
+    const sortedDays = Object.keys(dailyTotals).sort();
+    const series = sortedDays.map(d => dailyTotals[d]);
+    requestAnimationFrame(() => drawSparkline(canvas, series));
+  });
+}
+
+function drawSparkline(canvas, points) {
+  if (!canvas) return;
+  const w = canvas.clientWidth, h = canvas.clientHeight;
+  if (!w || !h) return;
+  const dpr = window.devicePixelRatio || 1;
+  canvas.width = w * dpr;
+  canvas.height = h * dpr;
+  const ctx = canvas.getContext('2d');
+  ctx.scale(dpr, dpr);
+  if (points.length === 0) return;
+  if (points.length === 1) {
+    ctx.fillStyle = '#f97316';
+    ctx.beginPath();
+    ctx.arc(w / 2, h / 2, 2, 0, Math.PI * 2);
+    ctx.fill();
+    return;
+  }
+  const max = Math.max(...points);
+  const min = Math.min(...points);
+  const range = max - min || 1;
+  const xy = points.map((v, i) => [
+    (i / (points.length - 1)) * (w - 2) + 1,
+    h - ((v - min) / range) * (h - 3) - 1.5,
+  ]);
+  // Fill underneath
+  ctx.beginPath();
+  xy.forEach(([x, y], i) => i === 0 ? ctx.moveTo(x, y) : ctx.lineTo(x, y));
+  ctx.lineTo(xy[xy.length - 1][0], h);
+  ctx.lineTo(xy[0][0], h);
+  ctx.closePath();
+  const g = ctx.createLinearGradient(0, 0, 0, h);
+  g.addColorStop(0, 'rgba(249,115,22,0.35)');
+  g.addColorStop(1, 'rgba(249,115,22,0)');
+  ctx.fillStyle = g;
+  ctx.fill();
+  // Stroke on top
+  ctx.beginPath();
+  xy.forEach(([x, y], i) => i === 0 ? ctx.moveTo(x, y) : ctx.lineTo(x, y));
+  ctx.strokeStyle = '#f97316';
+  ctx.lineWidth = 1.5;
+  ctx.lineJoin = 'round';
+  ctx.lineCap = 'round';
+  ctx.stroke();
+}
+
+// ── Search filter in panel ──
+(function() {
+  const input = document.getElementById('txSearch');
+  if (!input) return;
+  const empty = document.getElementById('txEmpty');
+  input.addEventListener('input', () => {
+    const q = input.value.trim().toLowerCase();
+    const rows = txPanel.querySelectorAll('tbody tr[data-id]');
+    let visibleCount = 0;
+    rows.forEach(r => {
+      const hay = [
+        r.dataset.date, r.dataset.location, r.dataset.platform,
+        r.dataset.notes, r.dataset.amount,
+      ].join(' ').toLowerCase();
+      const match = !q || hay.includes(q);
+      r.style.display = match ? '' : 'none';
+      // Notes row paired with this data row
+      const notesRow = txPanel.querySelector('tr[data-notes-for="' + r.dataset.id + '"]');
+      if (notesRow) notesRow.style.display = match ? '' : 'none';
+      if (match) visibleCount++;
+    });
+    // Hide month-headers with no visible rows
+    txPanel.querySelectorAll('tr.month-header').forEach(h => {
+      let n = h.nextElementSibling;
+      let anyVisible = false;
+      while (n && !n.classList.contains('month-header')) {
+        if (n.dataset.id && n.style.display !== 'none') { anyVisible = true; break; }
+        n = n.nextElementSibling;
+      }
+      h.style.display = anyVisible ? '' : 'none';
+    });
+    empty.style.display = visibleCount === 0 && q ? 'block' : 'none';
+  });
+})();
+
+// ── Keep panel footer totals in sync after a delete ──
+function recalcTxTotals() {
+  const rows = txPanel.querySelectorAll('tbody tr[data-id]');
+  let amt = 0, prof = 0;
+  rows.forEach(r => {
+    amt  += parseFloat(r.dataset.amount)  || 0;
+    prof += parseFloat(r.dataset.profit) || 0;
+  });
+  const amtEl = document.getElementById('txTotalAmount');
+  const profEl = document.getElementById('txTotalProfit');
+  const cntEl = document.getElementById('txTotalCount');
+  if (amtEl) amtEl.textContent = '$' + amt.toFixed(2);
+  if (profEl) profEl.textContent = '$' + prof.toFixed(2);
+  if (cntEl) cntEl.textContent = rows.length;
+}
 
 // Edit button triggers inline note editing in panel
 document.body.addEventListener('click', e => {
@@ -905,7 +1214,7 @@ document.body.addEventListener('click', e => {
   if (!notesRow) {
     notesRow = document.createElement('tr');
     notesRow.setAttribute('data-notes-for', id);
-    notesRow.innerHTML = '<td colspan="5" style="padding:0.15rem 0.5rem 0.5rem; border-bottom:1px solid #1a1d2e; color:#94a3b8; font-size:0.75rem; font-style:italic;"></td>';
+    notesRow.innerHTML = '<td colspan="5" class="td-notes"></td>';
     dataRow.after(notesRow);
   }
   const cell = notesRow.querySelector('td');
@@ -928,20 +1237,21 @@ document.body.addEventListener('click', e => {
         if (d.ok) {
           dataRow.dataset.notes = val;
           if (val) {
-            cell.innerHTML = '↳ ' + val;
+            cell.textContent = val;
           } else {
             notesRow.remove();
           }
           // Update dashboard notes row
           const dashNotesRow = document.querySelector('.table-wrap tr[data-notes-for="' + id + '"]');
           if (dashNotesRow) {
-            if (val) { dashNotesRow.querySelector('td').textContent = '↳ ' + val; } else { dashNotesRow.remove(); }
+            if (val) { dashNotesRow.querySelector('td').textContent = val; } else { dashNotesRow.remove(); }
           } else if (val) {
             const dashDataRow = document.querySelector('.table-wrap tr[data-id="' + id + '"]');
             if (dashDataRow) {
               const nr = document.createElement('tr');
               nr.setAttribute('data-notes-for', id);
-              nr.innerHTML = '<td colspan="5" class="td-notes">↳ ' + val + '</td>';
+              nr.innerHTML = '<td colspan="5" class="td-notes"></td>';
+              nr.querySelector('td').textContent = val;
               dashDataRow.after(nr);
             }
           }
@@ -974,6 +1284,7 @@ txPanel.addEventListener('click', e => {
         if (d.ok) {
           const profit = (val * 49 / 69);
           row.dataset.amount = val;
+          row.dataset.profit = profit.toFixed(2);
           cell.textContent = '$' + val.toFixed(2);
           const profitCell = row.querySelector('.panel-profit');
           if (profitCell) profitCell.textContent = '$' + profit.toFixed(2);
@@ -984,6 +1295,11 @@ txPanel.addEventListener('click', e => {
             const dashProfit = dashRow.querySelector('.td-profit');
             if (dashAmt) dashAmt.textContent = '$' + val.toFixed(2);
             if (dashProfit) dashProfit.textContent = '$' + profit.toFixed(2);
+            dashRow.dataset.amount = val;
+          }
+          if (txPanelEnriched) {
+            recalcTxTotals();
+            enrichTxPanel();
           }
         }
       });

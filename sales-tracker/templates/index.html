@@ -754,7 +754,7 @@
     </tbody>
     <tfoot>
       <tr style="border-top: 1px solid #2d3148;">
-        <td colspan="1" style="color:#64748b; font-size:0.75rem; padding: 0.625rem 0.75rem;">TOTAL</td>
+        <td colspan="1" style="color:#64748b; font-size:0.75rem; padding: 0.625rem 0.75rem;">ALL TIME</td>
         <td class="td-amount">${{ "%.2f"|format(sales | sum(attribute='amount')) }}</td>
         <td class="td-profit">${{ "%.2f"|format(sales | sum(attribute='profit')) }}</td>
         <td colspan="2"></td>
@@ -1148,6 +1148,17 @@ modal.addEventListener('click', e => {
   if (e.target === modal) {
     modal.style.display = 'none';
     pendingSaleId = null;
+  }
+});
+
+// Escape closes the topmost open layer first (modal sits above panel, z-index 300 vs 150).
+document.addEventListener('keydown', e => {
+  if (e.key !== 'Escape') return;
+  if (modal.style.display === 'flex') {
+    modal.style.display = 'none';
+    pendingSaleId = null;
+  } else if (txPanel.style.display === 'block') {
+    txPanel.style.display = 'none';
   }
 });
 

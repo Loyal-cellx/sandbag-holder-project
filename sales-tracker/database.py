@@ -88,6 +88,16 @@ def get_distinct_locations():
     return [r["location"] for r in rows]
 
 
+def get_all_locations():
+    """Every distinct location, no cap. Used for prediction state coverage."""
+    conn = _connect()
+    rows = conn.execute(
+        "SELECT DISTINCT location FROM sales ORDER BY location"
+    ).fetchall()
+    conn.close()
+    return [r["location"] for r in rows]
+
+
 def get_stats():
     conn = _connect()
 

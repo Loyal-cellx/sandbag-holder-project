@@ -1,5 +1,5 @@
 from flask import Flask, render_template, request, redirect, url_for, jsonify, flash
-from database import db_init, add_sale, get_all_sales, get_stats, get_distinct_locations, delete_sale, update_sale, get_milestones
+from database import db_init, add_sale, get_all_sales, get_stats, get_distinct_locations, get_all_locations, delete_sale, update_sale, get_milestones
 from prediction import get_prediction
 from datetime import date, datetime
 import os
@@ -10,6 +10,10 @@ load_dotenv()
 app = Flask(__name__)
 app.secret_key = os.getenv("SECRET_KEY", "change-me-in-env")
 
+# Idempotent table creation — runs at import time so wsgi servers (gunicorn/etc.)
+# also have a ready table on first request, not just `python app.py`.
+db_init()
+
 VALID_PLATFORMS = {"Amazon", "eBay", "Walmart"}
 
 
@@ -17,8 +21,7 @@ VALID_PLATFORMS = {"Amazon", "eBay", "Walmart"}
 def index():
     sales = get_all_sales()
     stats = get_stats()
-    locations = get_distinct_locations()
-    prediction = get_prediction(stats, locations)
+    prediction = get_prediction(stats, get_all_locations())
     return render_template("index.html", sales=sales, stats=stats, prediction=prediction, year=datetime.now().year)
 
 
@@ -92,6 +95,5 @@ def api_stats():
 
 
 if __name__ == "__main__":
-    db_init()
     port = int(os.getenv("PORT", 5050))
     app.run(host="0.0.0.0", port=port, debug=False)

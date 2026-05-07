@@ -392,7 +392,8 @@ def _score_combo(alerts, fires, burn_scars):
         ev = (a.get("event") or "").lower()
         if "flood" not in ev:
             continue
-        st_code = STATE_CODES.get(a.get("state") or "")
+        # _fetch_nws_alerts already extracts a 2-letter code from areaDesc.
+        st_code = (a.get("state") or "").upper()
         if st_code and st_code in fire_states:
             pts += 5
             triggered.append(st_code)

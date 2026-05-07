@@ -452,6 +452,71 @@
     .pred-score { font-size: 2rem; }
   }
 
+  /* ── Multi-hazard risk card ── */
+  .hazard-card {
+    background: #1e2130;
+    border: 1px solid #2d3148;
+    border-radius: 8px;
+    padding: 1rem 1.25rem;
+    margin: 0 0 1.5rem;
+  }
+  .hazard-title {
+    color: #94a3b8;
+    font-size: 0.6875rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    margin-bottom: 0.75rem;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    flex-wrap: wrap;
+  }
+  .hazard-section {
+    border-top: 1px solid #2a2f44;
+    padding: 0.6rem 0 0.4rem;
+  }
+  .hazard-section:first-of-type { border-top: none; padding-top: 0; }
+  .hazard-section-title {
+    color: #cbd5e1;
+    font-size: 0.75rem;
+    font-weight: 700;
+    margin-bottom: 0.35rem;
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+  }
+  .hazard-section-title .count {
+    color: #64748b;
+    font-weight: 500;
+    font-size: 0.7rem;
+  }
+  .hazard-row {
+    font-size: 0.75rem;
+    color: #cbd5e1;
+    padding: 0.18rem 0 0.18rem 1.1rem;
+    line-height: 1.45;
+  }
+  .hazard-row .meta { color: #64748b; }
+  .hazard-pill {
+    display: inline-block;
+    background: rgba(249,115,22,0.15);
+    border: 1px solid rgba(249,115,22,0.35);
+    color: #f97316;
+    font-size: 0.6rem;
+    font-weight: 700;
+    padding: 0.08rem 0.45rem;
+    border-radius: 20px;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    margin-left: 0.4rem;
+  }
+  .hazard-pill-blue {
+    background: rgba(59,130,246,0.12);
+    border-color: rgba(59,130,246,0.3);
+    color: #60a5fa;
+  }
+
   /* ── Mobile responsive ── */
   @media (max-width: 480px) {
     th { padding: 0.4rem 0.5rem; }
@@ -559,6 +624,56 @@
       <div class="pred-no-alerts">No active severe weather alerts</div>
     {% endif %}
   </div>
+</div>
+{% endif %}
+
+<!-- Multi-Hazard Risk Card -->
+{% if prediction and (prediction.fires or prediction.burn_scars or prediction.storms) %}
+<div class="hazard-card">
+  <div class="hazard-title">
+    <span>⚠ Multi-Hazard Risk</span>
+    {% if prediction.combo_pts > 0 %}<span class="hazard-pill">+{{ prediction.combo_pts }} combo risk</span>{% endif %}
+    {% if prediction.nhc_pts > 0 %}<span class="hazard-pill">+{{ prediction.nhc_pts }} cyclone risk</span>{% endif %}
+  </div>
+
+  {% if prediction.storms %}
+  <div class="hazard-section">
+    <div class="hazard-section-title">🌀 Tropical Cyclones <span class="count">({{ prediction.storms|length }})</span></div>
+    {% for s in prediction.storms %}
+    <div class="hazard-row">
+      <strong>{{ s.class_label }} {{ s.name }}</strong>
+      {% if s.wind_kt %}<span class="meta">&bull; {{ s.wind_kt }} kt</span>{% endif %}
+      <span class="meta">&bull; affects {{ s.affected_states|join(', ') }}</span>
+    </div>
+    {% endfor %}
+  </div>
+  {% endif %}
+
+  {% if prediction.fires %}
+  <div class="hazard-section">
+    <div class="hazard-section-title">🔥 Active Wildfires <span class="count">({{ prediction.fires|length }})</span></div>
+    {% for f in prediction.fires %}
+    <div class="hazard-row">
+      <strong>{{ f.state }}</strong> &mdash; {{ f.name }}
+      <span class="meta">&bull; {{ "{:,}".format(f.acres) }} ac &bull; {{ f.contained }}% contained</span>
+      {% if f.state in prediction.combo_states %}<span class="hazard-pill">flood × fire</span>{% endif %}
+    </div>
+    {% endfor %}
+  </div>
+  {% endif %}
+
+  {% if prediction.burn_scars %}
+  <div class="hazard-section">
+    <div class="hazard-section-title">🏜 Burn Scars <span class="count">(this season)</span></div>
+    {% for b in prediction.burn_scars %}
+    <div class="hazard-row">
+      <strong>{{ b.state }}</strong> &mdash; {{ b.name }}
+      <span class="meta">&bull; {{ "{:,}".format(b.acres) }} ac{% if b.year %} &bull; {{ b.year }}{% endif %}</span>
+      {% if b.state in prediction.combo_states %}<span class="hazard-pill">flood watch active</span>{% endif %}
+    </div>
+    {% endfor %}
+  </div>
+  {% endif %}
 </div>
 {% endif %}
 

@@ -14,8 +14,6 @@
     font-family: var(--font-display); font-weight: 800;
     font-size: clamp(3.6rem, 13vw, 7rem); line-height: 0.86; letter-spacing: -0.03em;
     margin: 0.4rem 0 0.1rem -0.05em;
-    background: linear-gradient(118deg, var(--kraft) 8%, var(--hazard) 52%, var(--hazard-2));
-    -webkit-background-clip: text; background-clip: text; -webkit-text-fill-color: transparent;
     width: 112%;
   }
   .hero-sub { color: var(--muted); font-size: 0.92rem; margin-top: .35rem; }
@@ -141,7 +139,7 @@
 <section class="hero">
   <div class="hero-figure reveal" style="animation-delay:60ms">
     <div class="eyebrow">Total hauled &bull; all time</div>
-    <div class="hero-num" id="kpiRevenue">${{ "%.0f"|format(stats.total_revenue) }}</div>
+    <div class="hero-num flowtext" id="kpiRevenue">${{ "%.0f"|format(stats.total_revenue) }}</div>
     <div class="hero-sub">
       <b id="kpiProfit">${{ "%.0f"|format(stats.total_profit) }} profit</b>
       <span class="dot">/</span>{{ stats.total_sales }} units moved
@@ -334,8 +332,14 @@
 <div id="txPanel" style="display:none; position:fixed; inset:0; background:var(--bg); z-index:150; overflow-y:auto; -webkit-overflow-scrolling:touch;">
   <div style="max-width:680px; margin:0 auto; padding:1rem;">
     <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:.75rem;">
-      <h2 style="font-family:var(--font-display); font-size:1.4rem; font-weight:800; margin:0; background:linear-gradient(118deg,var(--kraft) 8%,var(--hazard) 52%,var(--hazard-2)); -webkit-background-clip:text; background-clip:text; -webkit-text-fill-color:transparent;">All Transactions</h2>
-      <button id="txPanelClose" style="background:rgba(255,255,255,0.08); border:1px solid var(--border); color:var(--muted); border-radius:8px; padding:.4rem 1rem; font-size:.8125rem; cursor:pointer;">Close</button>
+      <h2 class="flowtext" style="font-family:var(--font-display); font-size:1.4rem; font-weight:800; margin:0;">All Transactions</h2>
+      <div style="display:flex; gap:.5rem; align-items:center; flex-shrink:0;">
+        <button id="txExport" style="display:inline-flex; align-items:center; gap:.4rem; background:rgba(214,183,140,0.08); border:1px solid rgba(214,183,140,0.35); color:var(--kraft); border-radius:8px; padding:.4rem .85rem; font-size:.8125rem; font-weight:600; cursor:pointer; transition:background .15s, border-color .15s, color .15s;">
+          <svg id="txExportIcon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3v12"/><path d="m7 10 5 5 5-5"/><path d="M5 21h14"/></svg>
+          <span id="txExportLabel">Export CSV</span>
+        </button>
+        <button id="txPanelClose" style="background:rgba(255,255,255,0.08); border:1px solid var(--border); color:var(--muted); border-radius:8px; padding:.4rem 1rem; font-size:.8125rem; cursor:pointer;">Close</button>
+      </div>
     </div>
     <div class="tx-search-wrap" style="position:relative;">
       <input id="txSearch" class="tx-search" type="search" placeholder="Search by state, platform, date, or note…" autocomplete="off">
@@ -651,6 +655,61 @@ if (btnViewAll) {
   });
 }
 document.getElementById('txPanelClose').addEventListener('click', () => { txPanel.style.display = 'none'; });
+
+// ── Export all transactions → CSV ──
+(function() {
+  const btn = document.getElementById('txExport');
+  if (!btn) return;
+  const label = document.getElementById('txExportLabel');
+
+  // Wrap a field per RFC 4180: quote if it contains comma, quote, or newline; double inner quotes.
+  const esc = v => {
+    const s = (v == null ? '' : String(v));
+    return /[",\n\r]/.test(s) ? '"' + s.replace(/"/g, '""') + '"' : s;
+  };
+
+  btn.addEventListener('click', () => {
+    // Always export ALL rows, ignoring the active search filter.
+    const rows = txPanel.querySelectorAll('tbody tr[data-id]');
+    const header = ['Date', 'Amount', 'Profit', 'State', 'Platform', 'Notes'];
+    const lines = [header.join(',')];
+    rows.forEach(r => {
+      const d = r.dataset;
+      lines.push([
+        esc(d.date),
+        esc(parseFloat(d.amount).toFixed(2)),
+        esc(parseFloat(d.profit).toFixed(2)),
+        esc(d.location),
+        esc(d.platform),
+        esc(d.notes)
+      ].join(','));
+    });
+    // Prepend BOM so Excel reads UTF-8 (state/note accents) correctly.
+    const blob = new Blob(['﻿' + lines.join('\r\n')], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    const today = new Date().toISOString().slice(0, 10);
+    a.href = url;
+    a.download = 'sandbag-sales-' + today + '.csv';
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    URL.revokeObjectURL(url);
+
+    // Brief confirmation, then revert.
+    const prev = label.textContent;
+    label.textContent = 'Exported ✓';
+    btn.style.color = 'var(--good)';
+    btn.style.borderColor = 'rgba(74,222,128,0.45)';
+    btn.style.background = 'rgba(74,222,128,0.10)';
+    setTimeout(() => {
+      label.textContent = prev;
+      btn.style.color = '';
+      btn.style.borderColor = '';
+      btn.style.background = '';
+    }, 1600);
+  });
+})();
 
 // ── Relative dates ──
 (function() {

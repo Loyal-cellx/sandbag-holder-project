@@ -169,6 +169,15 @@
     .vessel-mark { position: absolute; left: 0; right: 0; border-top: 1px dashed rgba(232,238,244,0.25); display: flex; justify-content: flex-end; }
     .vessel-mark span { font-size: .58rem; letter-spacing: .08em; text-transform: uppercase; color: var(--faint); padding: 0 .4rem; background: var(--bg-2); transform: translateY(-50%); }
 
+    /* ── Hero gradient text (kraft→hazard→hazard-2), continuously flowing ── */
+    .flowtext {
+      background: linear-gradient(118deg, var(--kraft) 4%, var(--hazard) 40%, var(--hazard-2) 64%, var(--hazard) 88%, var(--kraft));
+      background-size: 280% auto;
+      -webkit-background-clip: text; background-clip: text; -webkit-text-fill-color: transparent;
+      animation: grad-flow 9s ease-in-out infinite alternate;
+    }
+    @keyframes grad-flow { from { background-position: 0% center; } to { background-position: 100% center; } }
+
     /* ── Page-load staggered reveal ── */
     @keyframes rise { from { opacity: 0; transform: translateY(14px); } to { opacity: 1; transform: none; } }
     .reveal { opacity: 0; animation: rise .6s cubic-bezier(.22,1,.36,1) forwards; }
@@ -176,6 +185,7 @@
     /* ── Respect reduced motion ── */
     @media (prefers-reduced-motion: reduce) {
       .reveal { animation: none; opacity: 1; transform: none; }
+      .flowtext { animation: none; background-position: 0% center; }
       .vessel .water { transition: none; }
       .vessel .water::before, .vessel .water::after { animation: none; }
       * { scroll-behavior: auto; }

@@ -3,75 +3,211 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <meta name="theme-color" content="#0f1117" />
-  <link rel="icon" type="image/svg+xml" href="data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><defs><linearGradient id='g' x1='0' y1='0' x2='1' y2='1'><stop offset='30%25' stop-color='%23f97316'/><stop offset='100%25' stop-color='%23facc15'/></linearGradient></defs><rect width='32' height='32' rx='6' fill='%231e2130'/><text x='16' y='23' text-anchor='middle' font-family='system-ui,sans-serif' font-weight='800' font-size='22' fill='url(%23g)'>S</text></svg>" />
+  <meta name="theme-color" content="#0a0f15" />
+  <link rel="icon" type="image/svg+xml" href="data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><defs><linearGradient id='g' x1='0' y1='0' x2='1' y2='1'><stop offset='8%25' stop-color='%23d8b483'/><stop offset='55%25' stop-color='%23f97316'/><stop offset='100%25' stop-color='%23facc15'/></linearGradient></defs><rect width='32' height='32' rx='6' fill='%23121c28'/><text x='16' y='23' text-anchor='middle' font-family='system-ui,sans-serif' font-weight='800' font-size='22' fill='url(%23g)'>S</text></svg>" />
   <title>{% block title %}Sandbag Sales{% endblock %}</title>
-  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+
+  <!-- Self-hosted fonts + Chart.js (renders offline on the Pi) -->
+  <link rel="stylesheet" href="{{ url_for('static', filename='fonts/fonts.css') }}" />
+  <script src="{{ url_for('static', filename='js/chart.umd.js') }}"></script>
+
   <style>
+    :root {
+      /* ── Surfaces ── */
+      --bg:        #0a0f15;
+      --bg-2:      #0e151e;
+      --card:      #121c28;
+      --card-2:    #16212f;
+      --border:    #223141;
+      --border-2:  #2c3e52;
+
+      /* ── Type colors ── */
+      --text:   #e8eef4;
+      --muted:  #8a9bad;
+      --faint:  #56697c;
+
+      /* ── Brand / story palette ── */
+      --hazard:    #f97316;   /* orange — alerts & energy */
+      --hazard-2:  #facc15;   /* yellow */
+      --water:     #2dd4bf;   /* floodwater teal */
+      --water-2:   #38bdf8;   /* sky/cyan */
+      --water-deep:#0e7490;
+      --kraft:     #d8b483;   /* sandbag tan */
+      --good:      #34d399;
+      --bad:       #fb7185;
+
+      /* ── Type ── */
+      --font-display: 'Bricolage Grotesque', system-ui, sans-serif;
+      --font-body:    'Instrument Sans', system-ui, sans-serif;
+
+      --maxw: 1080px;
+    }
+
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
     body {
-      font-family: system-ui, -apple-system, sans-serif;
-      background: #0f1117;
-      color: #e2e8f0;
+      font-family: var(--font-body);
+      background: var(--bg);
+      color: var(--text);
       min-height: 100vh;
+      -webkit-font-smoothing: antialiased;
+      overflow-x: hidden;
     }
 
+    /* ── Topographic / floodplain contour backdrop (all pages) ── */
+    .topo { position: fixed; inset: 0; z-index: 0; pointer-events: none; opacity: 0.5; }
+    .topo svg { width: 100%; height: 100%; }
+
+    /* ── Top bar ── */
     nav {
-      background: #1a1d27;
-      border-bottom: 1px solid #2d3148;
-      padding: 0 1.25rem;
-      display: flex;
-      align-items: center;
-      gap: 1.5rem;
-      height: 52px;
+      position: relative; z-index: 2;
+      display: flex; align-items: baseline; justify-content: space-between;
+      gap: 1rem;
+      max-width: var(--maxw); margin: 0 auto;
+      padding: 1.25rem 1.1rem 1.1rem;
     }
     nav .brand {
-      font-weight: 700;
-      font-size: 1rem;
-      color: #a78bfa;
-      letter-spacing: 0.02em;
-      margin-right: auto;
+      font-family: var(--font-display); font-weight: 800;
+      font-size: 1.05rem; letter-spacing: 0.14em; text-transform: uppercase;
+      color: var(--text); text-decoration: none;
     }
-    nav a {
-      color: #94a3b8;
-      text-decoration: none;
-      font-size: 0.9rem;
-      font-weight: 500;
-      padding: 0.25rem 0;
-      border-bottom: 2px solid transparent;
-      transition: color 0.15s, border-color 0.15s;
+    nav .brand .slash { color: var(--hazard); }
+    nav .links { display: flex; gap: 1.25rem; }
+    nav a.link {
+      font-size: 0.78rem; font-weight: 600; letter-spacing: 0.05em; text-transform: uppercase;
+      color: var(--faint); text-decoration: none;
+      border-bottom: 2px solid transparent; padding-bottom: 0.15rem;
+      transition: color .15s, border-color .15s;
     }
-    nav a:hover, nav a.active {
-      color: #e2e8f0;
-      border-bottom-color: #a78bfa;
-    }
+    nav a.link:hover, nav a.link.active { color: var(--text); border-color: var(--water); }
 
     .container {
-      max-width: 960px;
-      margin: 0 auto;
-      padding: 1.5rem 1.25rem;
+      position: relative; z-index: 1;
+      max-width: var(--maxw); margin: 0 auto;
+      padding: 0.25rem 1.1rem 4rem;
     }
 
     .flash {
-      background: #3b1f1f;
-      border: 1px solid #7f1d1d;
-      color: #fca5a5;
-      border-radius: 6px;
-      padding: 0.75rem 1rem;
-      margin-bottom: 1.25rem;
-      font-size: 0.9rem;
+      background: rgba(251,113,133,0.10);
+      border: 1px solid rgba(251,113,133,0.4);
+      color: #fda4af;
+      border-radius: 10px; padding: 0.75rem 1rem; margin-bottom: 1.1rem; font-size: 0.9rem;
+    }
+
+    /* ════════ Shared building blocks (used across pages) ════════ */
+    .eyebrow {
+      font-size: 0.66rem; font-weight: 700; letter-spacing: 0.18em; text-transform: uppercase;
+      color: var(--faint); display: flex; align-items: center; gap: .5rem;
+    }
+    .eyebrow::before { content: ""; width: 18px; height: 2px; background: var(--hazard); display: inline-block; }
+
+    .section-h {
+      font-family: var(--font-display); font-weight: 700;
+      font-size: .78rem; letter-spacing: .14em; text-transform: uppercase; color: var(--muted);
+      margin-bottom: .85rem; display: flex; align-items: center; gap: .5rem;
+    }
+
+    .divider {
+      height: 2px; margin: 1.6rem 0;
+      background: linear-gradient(90deg, var(--hazard), var(--water) 60%, transparent);
+      transform: skewX(-24deg); transform-origin: left; opacity: .55;
+    }
+
+    .card { background: var(--card); border: 1px solid var(--border); border-radius: 14px; }
+
+    .chip {
+      font-size: 0.7rem; font-weight: 600; padding: .28rem .6rem; border-radius: 999px;
+      border: 1px solid var(--border-2); color: var(--muted);
+      display: inline-flex; align-items: center; gap: .35rem;
+    }
+    .chip b { color: var(--text); }
+
+    /* ── KPI tiles ── */
+    .kpi { background: var(--card); border: 1px solid var(--border); border-radius: 14px; padding: 1rem 1.1rem; position: relative; overflow: hidden; }
+    .kpi::after { content: ""; position: absolute; left: 0; top: 0; bottom: 0; width: 3px; }
+    .kpi.k-water::after { background: var(--water); }
+    .kpi.k-kraft::after { background: var(--kraft); }
+    .kpi.k-haz::after   { background: var(--hazard); }
+    .kpi .lbl { font-size: .64rem; font-weight: 700; letter-spacing: .12em; text-transform: uppercase; color: var(--faint); }
+    .kpi .val { font-family: var(--font-display); font-weight: 800; font-size: 1.7rem; color: var(--text); margin: .25rem 0 .15rem; line-height: 1; }
+    .kpi .sub { font-size: .74rem; color: var(--muted); }
+
+    /* ── Platform badges + % pills ── */
+    .badge { font-size: .64rem; font-weight: 700; padding: .12rem .55rem; border-radius: 999px; display: inline-block; }
+    .b-amazon  { background: rgba(52,211,153,0.14); color: var(--good); }
+    .b-ebay    { background: rgba(56,189,248,0.14); color: var(--water-2); }
+    .b-walmart { background: rgba(250,204,21,0.14); color: var(--hazard-2); }
+    .b-new { background: var(--hazard); color: #1a1008; font-size: .55rem; font-weight: 800; padding: .06rem .4rem; border-radius: 999px; margin-left: .4rem; letter-spacing: .04em; vertical-align: middle; }
+    .pct-up   { color: var(--good); font-weight: 700; }
+    .pct-down { color: var(--bad);  font-weight: 700; }
+    .pct-flat { color: var(--faint); }
+
+    /* ── Floodwater vessel (signature element: dashboard + milestones) ── */
+    .vessel {
+      position: relative; border-radius: 14px;
+      background:
+        repeating-linear-gradient(0deg, rgba(255,255,255,0.025) 0 1px, transparent 1px 28px),
+        var(--bg-2);
+      border: 1px solid var(--border-2); overflow: hidden;
+    }
+    .vessel .water {
+      position: absolute; left: 0; right: 0; bottom: 0; height: 0;
+      background: linear-gradient(180deg, var(--water) 0%, var(--water-deep) 100%);
+      transition: height 1.8s cubic-bezier(.22,1,.36,1);
+      box-shadow: 0 -10px 30px rgba(45,212,191,0.35);
+    }
+    .vessel .water::before, .vessel .water::after { content: ""; position: absolute; bottom: 100%; left: -50%; width: 200%; height: 22px; }
+    .vessel .water::before {
+      background: radial-gradient(14px 12px at 14px 22px, var(--water) 49%, transparent 51%) repeat-x;
+      background-size: 28px 22px; animation: wave 5s linear infinite; opacity: .9;
+    }
+    .vessel .water::after {
+      background: radial-gradient(16px 12px at 16px 22px, var(--water-deep) 49%, transparent 51%) repeat-x;
+      background-size: 32px 22px; animation: wave 7s linear infinite reverse; opacity: .7;
+    }
+    @keyframes wave { from { transform: translateX(0); } to { transform: translateX(32px); } }
+    .vessel-mark { position: absolute; left: 0; right: 0; border-top: 1px dashed rgba(232,238,244,0.25); display: flex; justify-content: flex-end; }
+    .vessel-mark span { font-size: .58rem; letter-spacing: .08em; text-transform: uppercase; color: var(--faint); padding: 0 .4rem; background: var(--bg-2); transform: translateY(-50%); }
+
+    /* ── Page-load staggered reveal ── */
+    @keyframes rise { from { opacity: 0; transform: translateY(14px); } to { opacity: 1; transform: none; } }
+    .reveal { opacity: 0; animation: rise .6s cubic-bezier(.22,1,.36,1) forwards; }
+
+    /* ── Respect reduced motion ── */
+    @media (prefers-reduced-motion: reduce) {
+      .reveal { animation: none; opacity: 1; transform: none; }
+      .vessel .water { transition: none; }
+      .vessel .water::before, .vessel .water::after { animation: none; }
+      * { scroll-behavior: auto; }
     }
 
     {% block extra_style %}{% endblock %}
   </style>
 </head>
 <body>
+  <!-- Topographic floodplain contour backdrop -->
+  <div class="topo" aria-hidden="true">
+    <svg viewBox="0 0 1200 800" preserveAspectRatio="xMidYMid slice" fill="none">
+      <g stroke="rgba(45,212,191,0.07)" stroke-width="1">
+        <path d="M-50 120 C 200 60, 380 200, 620 140 S 1000 60, 1260 160" />
+        <path d="M-50 220 C 220 160, 400 300, 640 240 S 1010 160, 1260 260" />
+        <path d="M-50 330 C 240 270, 420 410, 660 350 S 1020 270, 1260 370" />
+      </g>
+      <g stroke="rgba(249,115,22,0.06)" stroke-width="1">
+        <path d="M-50 470 C 240 410, 430 560, 670 500 S 1030 420, 1260 520" />
+        <path d="M-50 580 C 250 520, 440 670, 680 610 S 1040 530, 1260 630" />
+        <path d="M-50 690 C 260 630, 450 780, 690 720 S 1050 640, 1260 740" />
+      </g>
+    </svg>
+  </div>
+
   <nav>
-    <span class="brand">Sandbag Sales</span>
-    <a href="{{ url_for('index') }}" {% if request.endpoint == 'index' %}class="active"{% endif %}>Dashboard</a>
-    <a href="{{ url_for('log_sale') }}" {% if request.endpoint == 'log_sale' %}class="active"{% endif %}>Log Sale</a>
-    <a href="{{ url_for('milestones') }}" {% if request.endpoint == 'milestones' %}class="active"{% endif %}>Milestones</a>
+    <a class="brand" href="{{ url_for('index') }}">Sandbag <span class="slash">//</span> Sales</a>
+    <div class="links">
+      <a class="link {% if request.endpoint == 'index' %}active{% endif %}" href="{{ url_for('index') }}" {% if request.endpoint == 'index' %}aria-current="page"{% endif %}>Dashboard</a>
+      <a class="link {% if request.endpoint == 'log_sale' %}active{% endif %}" href="{{ url_for('log_sale') }}" {% if request.endpoint == 'log_sale' %}aria-current="page"{% endif %}>Log Sale</a>
+      <a class="link {% if request.endpoint == 'milestones' %}active{% endif %}" href="{{ url_for('milestones') }}" {% if request.endpoint == 'milestones' %}aria-current="page"{% endif %}>Milestones</a>
+    </div>
   </nav>
 
   <div class="container">

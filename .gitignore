@@ -10,3 +10,12 @@ sales-tracker/__pycache__/
 sales-tracker/*.pyc
 sales-tracker/.env
 sales-tracker/sales.db
+
+# Obsidian vault
+.obsidian/
+*.base
+*.canvas
+*.md
+!CLAUDE.md
+!README.md
+!sales-tracker/**/*.md

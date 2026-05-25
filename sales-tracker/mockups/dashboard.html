@@ -1,0 +1,655 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<meta name="theme-color" content="#0b1016" />
+<title>Dashboard Mockup — Sandbag Sales</title>
+
+<!-- PoC ONLY: fonts via CDN. For the live Pi (often offline) these must be self-hosted. -->
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,700;12..96,800&family=Instrument+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2/dist/chartjs-plugin-datalabels.min.js"></script>
+
+<style>
+  :root {
+    /* ── Surfaces ── */
+    --bg:        #0a0f15;
+    --bg-2:      #0e151e;
+    --card:      #121c28;
+    --card-2:    #16212f;
+    --border:    #223141;
+    --border-2:  #2c3e52;
+
+    /* ── Type colors ── */
+    --text:   #e8eef4;
+    --muted:  #8a9bad;
+    --faint:  #56697c;
+
+    /* ── Brand / story palette ── */
+    --hazard:    #f97316;   /* orange — alerts & energy */
+    --hazard-2:  #facc15;   /* yellow */
+    --water:     #2dd4bf;   /* floodwater teal */
+    --water-2:   #38bdf8;   /* sky/cyan */
+    --water-deep:#0e7490;
+    --kraft:     #d8b483;   /* sandbag tan */
+    --good:      #34d399;
+    --bad:       #fb7185;
+
+    /* ── Type ── */
+    --font-display: 'Bricolage Grotesque', system-ui, sans-serif;
+    --font-body:    'Instrument Sans', system-ui, sans-serif;
+
+    --maxw: 1080px;
+  }
+
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: var(--font-body);
+    background: var(--bg);
+    color: var(--text);
+    min-height: 100vh;
+    -webkit-font-smoothing: antialiased;
+    overflow-x: hidden;
+  }
+
+  /* ── Topographic / floodplain contour backdrop ── */
+  .topo {
+    position: fixed;
+    inset: 0;
+    z-index: 0;
+    pointer-events: none;
+    opacity: 0.5;
+  }
+  .topo svg { width: 100%; height: 100%; }
+
+  .wrap {
+    position: relative;
+    z-index: 1;
+    max-width: var(--maxw);
+    margin: 0 auto;
+    padding: 0 1.1rem 4rem;
+  }
+
+  /* ════════ Top bar ════════ */
+  .topbar {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: 1rem;
+    padding: 1.25rem 0 1.5rem;
+  }
+  .brand {
+    font-family: var(--font-display);
+    font-weight: 800;
+    font-size: 1.05rem;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--text);
+  }
+  .brand .slash { color: var(--hazard); }
+  .topbar nav { display: flex; gap: 1.25rem; }
+  .topbar nav a {
+    font-size: 0.78rem;
+    font-weight: 600;
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+    color: var(--faint);
+    text-decoration: none;
+    border-bottom: 2px solid transparent;
+    padding-bottom: 0.15rem;
+    transition: color .15s, border-color .15s;
+  }
+  .topbar nav a.active, .topbar nav a:hover { color: var(--text); border-color: var(--water); }
+
+  /* ════════ HERO — asymmetric ════════ */
+  .hero {
+    display: grid;
+    grid-template-columns: 1.45fr 1fr;
+    gap: 1.25rem;
+    align-items: stretch;
+    margin-bottom: 1.1rem;
+  }
+  .hero-figure {
+    position: relative;
+    overflow: hidden;
+    background:
+      radial-gradient(120% 140% at 0% 0%, rgba(45,212,191,0.10), transparent 55%),
+      var(--card);
+    border: 1px solid var(--border);
+    border-radius: 18px;
+    padding: 1.5rem 1.5rem 1.25rem;
+  }
+  .eyebrow {
+    font-size: 0.66rem;
+    font-weight: 700;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    color: var(--faint);
+    display: flex; align-items: center; gap: .5rem;
+  }
+  .eyebrow::before {
+    content: ""; width: 18px; height: 2px; background: var(--hazard); display: inline-block;
+  }
+  .hero-num {
+    font-family: var(--font-display);
+    font-weight: 800;
+    font-size: clamp(3.6rem, 13vw, 7rem);
+    line-height: 0.86;
+    letter-spacing: -0.03em;
+    margin: 0.4rem 0 0.1rem -0.05em;
+    background: linear-gradient(118deg, var(--kraft) 8%, var(--hazard) 52%, var(--hazard-2));
+    -webkit-background-clip: text; background-clip: text;
+    -webkit-text-fill-color: transparent;
+    /* number bleeds toward the right edge */
+    width: 112%;
+  }
+  .hero-sub { color: var(--muted); font-size: 0.92rem; margin-top: .35rem; }
+  .hero-sub b { color: var(--good); font-weight: 600; }
+  .hero-sub .dot { color: var(--border-2); margin: 0 .45rem; }
+  .hero-chips { display:flex; gap:.4rem; margin-top: 1rem; flex-wrap: wrap; }
+  .chip {
+    font-size: 0.7rem; font-weight: 600;
+    padding: .28rem .6rem; border-radius: 999px;
+    border: 1px solid var(--border-2); color: var(--muted);
+    display: inline-flex; align-items: center; gap: .35rem;
+  }
+  .chip b { color: var(--text); }
+
+  /* ── Floodwater vessel (the signature element) ── */
+  .vessel-card {
+    position: relative;
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 18px;
+    padding: 1.25rem 1.25rem 1.1rem;
+    display: flex; flex-direction: column;
+  }
+  .vessel-head { display:flex; align-items:baseline; justify-content:space-between; gap:.5rem; }
+  .vessel-goal { font-family: var(--font-display); font-weight:700; color: var(--text); font-size:.95rem; }
+  .vessel {
+    position: relative;
+    flex: 1;
+    min-height: 168px;
+    margin-top: .9rem;
+    border-radius: 14px;
+    background:
+      repeating-linear-gradient(0deg, rgba(255,255,255,0.025) 0 1px, transparent 1px 28px),
+      var(--bg-2);
+    border: 1px solid var(--border-2);
+    overflow: hidden;
+  }
+  .water {
+    position: absolute; left: 0; right: 0; bottom: 0;
+    height: 0;
+    background: linear-gradient(180deg, var(--water) 0%, var(--water-deep) 100%);
+    transition: height 1.8s cubic-bezier(.22,1,.36,1);
+    box-shadow: 0 -10px 30px rgba(45,212,191,0.35);
+  }
+  .water::before, .water::after {
+    content: ""; position: absolute; bottom: 100%; left: -50%;
+    width: 200%; height: 22px;
+  }
+  /* two stacked wave crests scrolling at different speeds */
+  .water::before {
+    background:
+      radial-gradient(14px 12px at 14px 22px, var(--water) 49%, transparent 51%) repeat-x;
+    background-size: 28px 22px;
+    animation: wave 5s linear infinite;
+    opacity: .9;
+  }
+  .water::after {
+    background:
+      radial-gradient(16px 12px at 16px 22px, var(--water-deep) 49%, transparent 51%) repeat-x;
+    background-size: 32px 22px;
+    animation: wave 7s linear infinite reverse;
+    opacity: .7;
+  }
+  @keyframes wave { from { transform: translateX(0); } to { transform: translateX(32px); } }
+  .vessel-mark {
+    position: absolute; left: 0; right: 0;
+    border-top: 1px dashed rgba(232,238,244,0.25);
+    display: flex; justify-content: flex-end;
+  }
+  .vessel-mark span {
+    font-size: .58rem; letter-spacing: .08em; text-transform: uppercase;
+    color: var(--faint); padding: 0 .4rem; background: var(--bg-2); transform: translateY(-50%);
+  }
+  .vessel-pct {
+    font-family: var(--font-display); font-weight: 800;
+    font-size: 1.6rem; color: var(--water);
+  }
+  .vessel-foot { display:flex; justify-content:space-between; font-size:.72rem; color:var(--faint); margin-top:.7rem; }
+
+  /* ════════ HAZARD — hero feature ════════ */
+  .hazard-feature {
+    position: relative;
+    overflow: hidden;
+    border-radius: 18px;
+    border: 1px solid rgba(249,115,22,0.32);
+    background:
+      radial-gradient(90% 120% at 100% 0%, rgba(249,115,22,0.14), transparent 60%),
+      linear-gradient(180deg, var(--card-2), var(--card));
+    padding: 1.25rem 1.4rem 1.35rem;
+    margin-bottom: 1.1rem;
+  }
+  .hazard-feature .eyebrow::before { background: var(--hazard); }
+  .hf-top { display:flex; align-items:center; justify-content:space-between; gap:1rem; flex-wrap:wrap; }
+  .hf-score {
+    font-family: var(--font-display); font-weight:800;
+    font-size: clamp(2.4rem, 8vw, 3.4rem); line-height:1; color: var(--hazard);
+  }
+  .hf-badge {
+    font-size:.66rem; font-weight:700; letter-spacing:.06em; text-transform:uppercase;
+    padding:.22rem .6rem; border-radius:999px;
+    background: rgba(249,115,22,0.16); border:1px solid rgba(249,115,22,0.4); color: var(--hazard-2);
+  }
+  .hf-grid { display:grid; grid-template-columns: repeat(auto-fit, minmax(190px,1fr)); gap:.9rem; margin-top:1.1rem; }
+  .hf-col-title { font-size:.72rem; font-weight:700; color:var(--text); display:flex; align-items:center; gap:.4rem; margin-bottom:.45rem; }
+  .hf-col-title .n { color: var(--faint); font-weight:500; }
+  .hf-row { font-size:.78rem; color:var(--muted); padding:.22rem 0; line-height:1.4; }
+  .hf-row strong { color: var(--text); font-weight:600; }
+  .hf-pill {
+    display:inline-block; font-size:.58rem; font-weight:700; letter-spacing:.04em; text-transform:uppercase;
+    padding:.06rem .42rem; border-radius:999px; margin-left:.35rem;
+    background: rgba(56,189,248,0.12); border:1px solid rgba(56,189,248,0.32); color: var(--water-2);
+  }
+  .hf-track { height:6px; border-radius:999px; background: var(--bg-2); overflow:hidden; margin:.7rem 0 .3rem; }
+  .hf-fill { height:100%; width:0; border-radius:999px; background: linear-gradient(90deg, var(--hazard), var(--hazard-2)); transition: width 1.4s cubic-bezier(.22,1,.36,1); }
+  .hf-sub { font-size:.72rem; color: var(--faint); }
+
+  /* ════════ Secondary KPI cluster ════════ */
+  .kpi-row { display:grid; grid-template-columns: repeat(3, 1fr); gap:.9rem; margin-bottom:1.4rem; }
+  .kpi {
+    background: var(--card); border:1px solid var(--border); border-radius:14px;
+    padding:1rem 1.1rem; position:relative; overflow:hidden;
+  }
+  .kpi::after { content:""; position:absolute; left:0; top:0; bottom:0; width:3px; }
+  .kpi.k-water::after  { background: var(--water); }
+  .kpi.k-kraft::after  { background: var(--kraft); }
+  .kpi.k-haz::after    { background: var(--hazard); }
+  .kpi .lbl { font-size:.64rem; font-weight:700; letter-spacing:.12em; text-transform:uppercase; color:var(--faint); }
+  .kpi .val { font-family: var(--font-display); font-weight:800; font-size:1.7rem; color:var(--text); margin:.25rem 0 .15rem; }
+  .kpi .sub { font-size:.74rem; color:var(--muted); }
+  .pct-up { color: var(--good); font-weight:700; }
+
+  /* ════════ Diagonal section divider ════════ */
+  .divider {
+    height: 2px; margin: 1.6rem 0;
+    background: linear-gradient(90deg, var(--hazard), var(--water) 60%, transparent);
+    transform: skewX(-24deg);
+    transform-origin: left;
+    opacity: .55;
+  }
+  .section-h {
+    font-family: var(--font-display); font-weight:700;
+    font-size:.78rem; letter-spacing:.14em; text-transform:uppercase; color:var(--muted);
+    margin-bottom: .85rem; display:flex; align-items:center; gap:.5rem;
+  }
+
+  /* ════════ Charts ════════ */
+  .chart-grid { display:grid; grid-template-columns: 1fr 1fr; gap:.9rem; }
+  .chart-card { background: var(--card); border:1px solid var(--border); border-radius:14px; padding:1rem 1rem .75rem; }
+  .chart-card.span2 { grid-column: 1 / -1; }
+  .chart-card h3 { font-size:.66rem; font-weight:700; letter-spacing:.12em; text-transform:uppercase; color:var(--muted); margin-bottom:.6rem; }
+
+  /* ════════ Transactions ════════ */
+  .tx { background: var(--card); border:1px solid var(--border); border-radius:14px; overflow:hidden; margin-top:.9rem; }
+  table { width:100%; border-collapse:collapse; }
+  th { text-align:left; font-size:.62rem; font-weight:700; letter-spacing:.1em; text-transform:uppercase; color:var(--faint); padding:.75rem 1.1rem; }
+  thead tr { border-bottom:2px solid transparent; border-image: linear-gradient(90deg, var(--hazard), var(--water), transparent) 1; }
+  td { padding:.65rem 1.1rem; border-bottom:1px solid var(--bg-2); font-size:.82rem; vertical-align:middle; }
+  tbody tr:last-child td { border-bottom:none; }
+  tr[data-platform="Amazon"]  td:first-child { box-shadow: inset 3px 0 0 var(--good); }
+  tr[data-platform="eBay"]    td:first-child { box-shadow: inset 3px 0 0 var(--water-2); }
+  tr[data-platform="Walmart"] td:first-child { box-shadow: inset 3px 0 0 var(--hazard-2); }
+  .td-date { color: var(--faint); }
+  .td-amt  { color: var(--hazard-2); font-weight:600; font-variant-numeric: tabular-nums; }
+  .td-prof { color: var(--good); font-weight:600; font-variant-numeric: tabular-nums; }
+  .td-loc  { color: var(--text); }
+  .badge { font-size:.64rem; font-weight:700; padding:.12rem .55rem; border-radius:999px; }
+  .b-amazon  { background: rgba(52,211,153,0.14); color: var(--good); }
+  .b-ebay    { background: rgba(56,189,248,0.14); color: var(--water-2); }
+  .b-walmart { background: rgba(250,204,21,0.14); color: var(--hazard-2); }
+  .b-new { background: var(--hazard); color:#1a1008; font-size:.55rem; font-weight:800; padding:.06rem .4rem; border-radius:999px; margin-left:.4rem; letter-spacing:.04em; }
+
+  .footer { text-align:center; color: var(--faint); font-size:.72rem; padding:2rem 0 .5rem; letter-spacing:.04em; }
+  .footer .slash { color: var(--hazard); }
+
+  /* ── Page-load staggered reveal ── */
+  @keyframes rise { from { opacity:0; transform: translateY(14px); } to { opacity:1; transform:none; } }
+  .reveal { opacity:0; animation: rise .6s cubic-bezier(.22,1,.36,1) forwards; }
+
+  /* ════════ Responsive — phone first (Tailscale on phone is the primary use) ════════ */
+  @media (max-width: 720px) {
+    .hero { grid-template-columns: 1fr; }
+    .hero-num { width: 100%; }
+    .kpi-row { grid-template-columns: 1fr; }
+    .chart-grid { grid-template-columns: 1fr; }
+    .topbar nav { gap: .9rem; }
+  }
+
+  /* ════════ Respect reduced motion ════════ */
+  @media (prefers-reduced-motion: reduce) {
+    .reveal { animation: none; opacity:1; transform:none; }
+    .water { transition: none; }
+    .water::before, .water::after { animation: none; }
+    .hf-fill, .water { transition: none; }
+    * { scroll-behavior: auto; }
+  }
+</style>
+</head>
+<body>
+
+<!-- Topographic floodplain contour backdrop -->
+<div class="topo" aria-hidden="true">
+  <svg viewBox="0 0 1200 800" preserveAspectRatio="xMidYMid slice" fill="none">
+    <g stroke="rgba(45,212,191,0.07)" stroke-width="1">
+      <path d="M-50 120 C 200 60, 380 200, 620 140 S 1000 60, 1260 160" />
+      <path d="M-50 220 C 220 160, 400 300, 640 240 S 1010 160, 1260 260" />
+      <path d="M-50 330 C 240 270, 420 410, 660 350 S 1020 270, 1260 370" />
+    </g>
+    <g stroke="rgba(249,115,22,0.06)" stroke-width="1">
+      <path d="M-50 470 C 240 410, 430 560, 670 500 S 1030 420, 1260 520" />
+      <path d="M-50 580 C 250 520, 440 670, 680 610 S 1040 530, 1260 630" />
+      <path d="M-50 690 C 260 630, 450 780, 690 720 S 1050 640, 1260 740" />
+    </g>
+  </svg>
+</div>
+
+<div class="wrap">
+
+  <!-- Top bar -->
+  <header class="topbar reveal" style="animation-delay:0ms">
+    <div class="brand">Sandbag <span class="slash">//</span> Sales</div>
+    <nav>
+      <a href="#" class="active">Dashboard</a>
+      <a href="#">Log Sale</a>
+      <a href="#">Milestones</a>
+    </nav>
+  </header>
+
+  <!-- HERO: oversized revenue (asymmetric) + floodwater vessel -->
+  <section class="hero">
+    <div class="hero-figure reveal" style="animation-delay:80ms">
+      <div class="eyebrow">Total hauled &bull; all time</div>
+      <div class="hero-num" id="heroNum">$4,485</div>
+      <div class="hero-sub">
+        <b>$3,185 profit</b><span class="dot">/</span>65 units moved<span class="dot">/</span>1.4 sales&#8202;/&#8202;wk
+      </div>
+      <div class="hero-chips">
+        <span class="chip">🔥 <b>3</b> this week</span>
+        <span class="chip">Longest streak <b>5d</b></span>
+        <span class="chip">Avg gap <b>4.6d</b></span>
+      </div>
+    </div>
+
+    <div class="vessel-card reveal" style="animation-delay:160ms">
+      <div class="vessel-head">
+        <div class="vessel-goal">Next levee: $5,000</div>
+        <div class="vessel-pct" id="vesselPct">0%</div>
+      </div>
+      <div class="vessel">
+        <div class="vessel-mark" style="top:10.3%"><span>$5,000 crest</span></div>
+        <div class="water" id="water" data-pct="89.7"></div>
+      </div>
+      <div class="vessel-foot">
+        <span>$4,485 banked</span>
+        <span>$515 to crest</span>
+      </div>
+    </div>
+  </section>
+
+  <!-- HAZARD: promoted to hero feature -->
+  <section class="hazard-feature reveal" style="animation-delay:240ms">
+    <div class="hf-top">
+      <div>
+        <div class="eyebrow">Next-sale forecast &bull; weather-aware</div>
+        <div style="display:flex; align-items:center; gap:.7rem; margin-top:.4rem;">
+          <span class="hf-score">72%</span>
+          <span class="hf-badge">Elevated &bull; storm season</span>
+        </div>
+        <div class="hf-track"><div class="hf-fill" id="hfFill" data-pct="72"></div></div>
+        <div class="hf-sub">~3d until expected &bull; 2d since last &bull; trend 4.6d (avg 5.1d)</div>
+      </div>
+    </div>
+
+    <div class="hf-grid">
+      <div>
+        <div class="hf-col-title">🌀 Tropical cyclones <span class="n">(1)</span></div>
+        <div class="hf-row"><strong>TS Marlowe</strong> &bull; 55 kt &bull; affects TX, LA</div>
+      </div>
+      <div>
+        <div class="hf-col-title">🔥 Active wildfires <span class="n">(2)</span></div>
+        <div class="hf-row"><strong>CA</strong> — Ridgeline &bull; 12,400 ac &bull; 30% contained</div>
+        <div class="hf-row"><strong>TX</strong> — Brushy Creek &bull; 4,100 ac &bull; 60% contained<span class="hf-pill">flood × fire</span></div>
+      </div>
+      <div>
+        <div class="hf-col-title">⛈ Active alerts <span class="n">(3)</span></div>
+        <div class="hf-row">🌊 Flood Watch — LA</div>
+        <div class="hf-row">💨 High Wind — TX</div>
+        <div class="hf-row">🌧 Flash Flood — FL</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Secondary KPI cluster -->
+  <section class="kpi-row">
+    <div class="kpi k-water reveal" style="animation-delay:300ms">
+      <div class="lbl">This month</div>
+      <div class="val" id="kpiMonth">$690</div>
+      <div class="sub">10 sales &nbsp;<span class="pct-up">▲ 18% vs last mo</span></div>
+    </div>
+    <div class="kpi k-kraft reveal" style="animation-delay:360ms">
+      <div class="lbl">Top state</div>
+      <div class="val">Texas</div>
+      <div class="sub">$1,311 &bull; 19 sales</div>
+    </div>
+    <div class="kpi k-haz reveal" style="animation-delay:420ms">
+      <div class="lbl">Top platform</div>
+      <div class="val">Amazon</div>
+      <div class="sub">$2,622 revenue</div>
+    </div>
+  </section>
+
+  <div class="divider"></div>
+
+  <!-- Charts -->
+  <div class="section-h">Breakdown</div>
+  <div class="chart-grid">
+    <div class="chart-card reveal" style="animation-delay:120ms">
+      <h3>Platform split</h3>
+      <div style="position:relative;height:150px"><canvas id="cPlatform"></canvas></div>
+    </div>
+    <div class="chart-card reveal" style="animation-delay:180ms">
+      <h3>Revenue by state</h3>
+      <div style="position:relative;height:150px"><canvas id="cState"></canvas></div>
+    </div>
+    <div class="chart-card span2 reveal" style="animation-delay:240ms">
+      <h3>By month</h3>
+      <canvas id="cMonth" height="100"></canvas>
+    </div>
+    <div class="chart-card span2 reveal" style="animation-delay:300ms">
+      <h3>Weekly revenue</h3>
+      <canvas id="cWeekly" height="100"></canvas>
+    </div>
+  </div>
+
+  <div class="divider"></div>
+
+  <!-- Recent transactions -->
+  <div class="section-h">Recent transactions</div>
+  <div class="tx reveal" style="animation-delay:120ms">
+    <table>
+      <thead>
+        <tr><th>Date</th><th>Amount</th><th>Profit</th><th>State</th><th>Platform</th></tr>
+      </thead>
+      <tbody id="txBody"></tbody>
+    </table>
+  </div>
+
+  <div class="footer">Sandbag Holder Sales <span class="slash">//</span> floodworks ops &bull; 2026</div>
+</div>
+
+<script>
+// ───────────────────────── sample data (PoC only) ─────────────────────────
+const stats = {
+  total_revenue: 4485,
+  by_platform: [
+    { platform: 'Amazon',  count: 38 },
+    { platform: 'eBay',    count: 21 },
+    { platform: 'Walmart', count: 6 },
+  ],
+  by_location: [
+    { location: 'Texas',      revenue: 1311 },
+    { location: 'Florida',    revenue: 966 },
+    { location: 'Louisiana',  revenue: 759 },
+    { location: 'California', revenue: 552 },
+    { location: 'Georgia',    revenue: 414 },
+    { location: 'Arizona',    revenue: 276 },
+    { location: 'Oklahoma',   revenue: 207 },
+  ],
+  by_month: [
+    { month: '2025-12', revenue: 552 },
+    { month: '2026-01', revenue: 690 },
+    { month: '2026-02', revenue: 759 },
+    { month: '2026-03', revenue: 828 },
+    { month: '2026-04', revenue: 966 },
+    { month: '2026-05', revenue: 690 },
+  ],
+  by_week: [
+    { week: '7 Apr',  revenue: 207 }, { week: '14 Apr', revenue: 276 },
+    { week: '21 Apr', revenue: 138 }, { week: '28 Apr', revenue: 345 },
+    { week: '5 May',  revenue: 207 }, { week: '12 May', revenue: 276 },
+    { week: '19 May', revenue: 207 },
+  ],
+};
+const txns = [
+  { date: 'Today',     amount: 69, profit: 49, state: 'Texas',     platform: 'Amazon',  isNew: true },
+  { date: 'Yesterday', amount: 69, profit: 49, state: 'Florida',   platform: 'eBay' },
+  { date: '2d ago',    amount: 69, profit: 49, state: 'Louisiana', platform: 'Amazon' },
+  { date: '4d ago',    amount: 69, profit: 49, state: 'Texas',     platform: 'Walmart' },
+  { date: '6d ago',    amount: 69, profit: 49, state: 'California', platform: 'eBay' },
+  { date: 'May 16',    amount: 69, profit: 49, state: 'Georgia',   platform: 'Amazon' },
+];
+
+const REDUCED = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+// ── count-up hero + month ──
+function countUp(el, target, dur) {
+  if (REDUCED) { el.textContent = '$' + Math.round(target).toLocaleString(); return; }
+  const t0 = performance.now();
+  (function step(now){
+    const p = Math.min((now - t0) / dur, 1);
+    const e = 1 - Math.pow(1 - p, 3);
+    el.textContent = '$' + Math.round(target * e).toLocaleString();
+    if (p < 1) requestAnimationFrame(step);
+  })(t0);
+}
+countUp(document.getElementById('heroNum'), 4485, 1200);
+countUp(document.getElementById('kpiMonth'), 690, 900);
+
+// ── floodwater fill + percent ──
+(function(){
+  const water = document.getElementById('water');
+  const pct = parseFloat(water.dataset.pct);
+  const pctEl = document.getElementById('vesselPct');
+  setTimeout(() => { water.style.height = pct + '%'; }, 250);
+  if (REDUCED) { pctEl.textContent = pct.toFixed(0) + '%'; }
+  else {
+    const t0 = performance.now();
+    (function step(now){
+      const p = Math.min((now - t0) / 1600, 1);
+      pctEl.textContent = Math.round(pct * (1 - Math.pow(1 - p, 3))) + '%';
+      if (p < 1) requestAnimationFrame(step);
+    })(t0);
+  }
+})();
+
+// ── hazard forecast fill ──
+setTimeout(() => {
+  const f = document.getElementById('hfFill');
+  f.style.width = f.dataset.pct + '%';
+}, 300);
+
+// ── transactions ──
+document.getElementById('txBody').innerHTML = txns.map(t => {
+  const cls = t.platform === 'Amazon' ? 'b-amazon' : t.platform === 'Walmart' ? 'b-walmart' : 'b-ebay';
+  return `<tr data-platform="${t.platform}">
+    <td class="td-date">${t.date}${t.isNew ? '<span class="b-new">NEW</span>' : ''}</td>
+    <td class="td-amt">$${t.amount.toFixed(2)}</td>
+    <td class="td-prof">$${t.profit.toFixed(2)}</td>
+    <td class="td-loc">${t.state}</td>
+    <td><span class="badge ${cls}">${t.platform}</span></td>
+  </tr>`;
+}).join('');
+
+// ───────────────────────── charts ─────────────────────────
+const css = getComputedStyle(document.documentElement);
+const C = n => css.getPropertyValue(n).trim();
+Chart.defaults.color = C('--muted');
+Chart.defaults.font = { family: "'Instrument Sans', system-ui, sans-serif", size: 12 };
+const grid = 'rgba(255,255,255,0.05)';
+const tip = {
+  backgroundColor: 'rgba(14,21,30,0.97)', titleColor: C('--hazard'),
+  bodyColor: C('--text'), borderColor: C('--border'), borderWidth: 1, padding: 10, displayColors: false,
+};
+const platColor = { Amazon: C('--good'), eBay: C('--water-2'), Walmart: C('--hazard-2') };
+
+new Chart(document.getElementById('cPlatform'), {
+  type: 'bar',
+  data: { labels: stats.by_platform.map(p=>p.platform), datasets:[{
+    data: stats.by_platform.map(p=>p.count),
+    backgroundColor: stats.by_platform.map(p=>platColor[p.platform] || C('--water')),
+    borderRadius: 5, barThickness: 22,
+  }]},
+  options: { indexAxis:'y', responsive:true, maintainAspectRatio:false,
+    plugins:{ legend:{display:false}, tooltip:{...tip, callbacks:{label:c=>'  '+c.parsed.x+' sales'}}},
+    scales:{ x:{grid:{color:grid}, ticks:{color:C('--faint')}}, y:{grid:{display:false}, ticks:{color:C('--text')}}}}
+});
+
+new Chart(document.getElementById('cState'), {
+  type: 'bar',
+  data: { labels: stats.by_location.map(s=>s.location), datasets:[{
+    data: stats.by_location.map(s=>s.revenue),
+    backgroundColor: ['#2dd4bf','#38bdf8','#0e7490','#22d3ee','#5eead4','#7dd3fc','#0891b2'],
+    borderRadius: 5,
+  }]},
+  options: { indexAxis:'y', responsive:true, maintainAspectRatio:false,
+    plugins:{ legend:{display:false}, tooltip:{...tip, callbacks:{label:c=>'  $'+c.parsed.x}}},
+    scales:{ x:{grid:{color:grid}, ticks:{color:C('--faint'), callback:v=>'$'+v}}, y:{grid:{display:false}, ticks:{color:C('--text')}}}}
+});
+
+new Chart(document.getElementById('cMonth'), {
+  type: 'bar', plugins: [ChartDataLabels],
+  data: { labels: stats.by_month.map(m=>['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'][+m.month.split('-')[1]-1]),
+    datasets:[{ data: stats.by_month.map(m=>m.revenue),
+      backgroundColor: ctx => {
+        const {ctx:c, chartArea} = ctx.chart; if(!chartArea) return C('--hazard');
+        const g = c.createLinearGradient(0, chartArea.bottom, 0, chartArea.top);
+        g.addColorStop(0, 'rgba(249,115,22,0.35)'); g.addColorStop(1, C('--hazard')); return g;
+      }, borderRadius: 5 }]},
+  options: { responsive:true, animation: REDUCED ? false : { delay: c => c.dataIndex*70 },
+    plugins:{ legend:{display:false}, tooltip:{...tip, callbacks:{label:c=>'  $'+c.parsed.y}},
+      datalabels:{ anchor:'end', align:'end', color:C('--muted'), font:{size:10,weight:'600'}, formatter:v=>'$'+v}},
+    scales:{ x:{grid:{display:false}, ticks:{color:C('--faint')}}, y:{grace:'18%', grid:{color:grid}, ticks:{color:C('--faint'), callback:v=>'$'+v}}}}
+});
+
+new Chart(document.getElementById('cWeekly'), {
+  type:'line',
+  data:{ labels: stats.by_week.map(w=>w.week), datasets:[{
+    data: stats.by_week.map(w=>w.revenue), borderColor: C('--water'),
+    backgroundColor: 'rgba(45,212,191,0.14)', fill:true, tension:.35,
+    pointRadius:3, pointBackgroundColor: C('--water'),
+  }]},
+  options:{ responsive:true,
+    plugins:{ legend:{display:false}, tooltip:{...tip, callbacks:{label:c=>'  $'+c.parsed.y}}},
+    scales:{ x:{grid:{color:grid}, ticks:{color:C('--faint')}}, y:{beginAtZero:true, grid:{color:grid}, ticks:{color:C('--faint'), callback:v=>'$'+v}}}}
+});
+</script>
+</body>
+</html>

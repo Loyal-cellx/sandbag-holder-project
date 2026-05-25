@@ -4,122 +4,59 @@
 
 {% block extra_style %}
   .form-card {
-    background: #1a1d27;
-    border: 1px solid #2d3148;
-    border-radius: 10px;
-    padding: 1.75rem;
-    max-width: 480px;
-    margin: 0 auto;
-    transition: transform 0.22s ease, box-shadow 0.22s ease;
-  }
-  .form-card:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 8px 32px rgba(124,58,237,0.18), 0 0 0 1px rgba(124,58,237,0.12);
+    position: relative; overflow: hidden;
+    background: radial-gradient(120% 130% at 0% 0%, rgba(45,212,191,0.08), transparent 55%), var(--card);
+    border: 1px solid var(--border); border-radius: 18px;
+    padding: 1.75rem; max-width: 480px; margin: 0 auto;
   }
   .form-title {
-    font-size: 1.1rem;
-    font-weight: 600;
-    margin-bottom: 1.5rem;
-    background: linear-gradient(135deg, #f97316 30%, #facc15);
-    -webkit-background-clip: text;
-    -webkit-text-fill-color: transparent;
-    background-clip: text;
+    font-family: var(--font-display); font-size: 1.5rem; font-weight: 800;
+    letter-spacing: -0.01em; margin-bottom: 1.5rem;
+    background: linear-gradient(118deg, var(--kraft) 8%, var(--hazard) 52%, var(--hazard-2));
+    -webkit-background-clip: text; background-clip: text; -webkit-text-fill-color: transparent;
   }
-  .field {
-    margin-bottom: 1.1rem;
-    transition: background-color 0.12s ease;
-    border-radius: 6px;
-    padding: 0.25rem 0.5rem;
-    margin-left: -0.5rem;
-    margin-right: -0.5rem;
-  }
-  .field:hover {
-    background-color: rgba(255,255,255,0.025);
-  }
-  label {
-    display: block;
-    font-size: 0.8rem;
-    color: #94a3b8;
-    text-transform: uppercase;
-    letter-spacing: 0.05em;
-    margin-bottom: 0.35rem;
-  }
+  .field { margin-bottom: 1.1rem; border-radius: 8px; padding: .25rem .5rem; margin-left: -.5rem; margin-right: -.5rem; transition: background-color .12s ease; }
+  .field:hover { background-color: rgba(255,255,255,0.02); }
+  label { display: block; font-size: .66rem; font-weight: 700; color: var(--faint); text-transform: uppercase; letter-spacing: .12em; margin-bottom: .4rem; }
   input, select, textarea {
-    width: 100%;
-    background: #0f1117;
-    border: 1px solid #2d3148;
-    border-radius: 6px;
-    color: #e2e8f0;
-    font-size: 0.95rem;
-    padding: 0.6rem 0.8rem;
-    outline: none;
-    transition: border-color 0.15s;
-    font-family: inherit;
+    width: 100%; background: var(--bg-2); border: 1px solid var(--border); border-radius: 8px;
+    color: var(--text); font-size: .95rem; padding: .6rem .8rem; outline: none; font-family: inherit;
+    transition: border-color .15s, box-shadow .15s;
   }
-  input:focus, select:focus, textarea:focus {
-    border-color: #7c3aed;
-    box-shadow: 0 0 0 3px rgba(124,58,237,0.18);
-  }
+  input:focus, select:focus, textarea:focus { border-color: var(--water); box-shadow: 0 0 0 3px rgba(45,212,191,0.16); }
   textarea { resize: vertical; min-height: 80px; }
-  select option { background: #1a1d27; }
-  @keyframes btn-pulse {
-    0%, 100% { box-shadow: 0 0 0 0 rgba(124,58,237,0.0); }
-    50%       { box-shadow: 0 0 0 6px rgba(124,58,237,0.22); }
-  }
-  @keyframes field-in {
-    from { opacity: 0; transform: translateY(8px); }
-    to   { opacity: 1; transform: translateY(0); }
-  }
-  .field, .submit-btn {
-    opacity: 0;
-    animation: field-in 0.35s ease forwards;
-  }
-  .submit-btn {
-    width: 100%;
-    background: #7c3aed;
-    color: #fff;
-    border: none;
-    border-radius: 6px;
-    padding: 0.7rem;
-    font-size: 1rem;
-    font-weight: 600;
-    cursor: pointer;
-    margin-top: 0.5rem;
-    transition: background 0.15s;
-    animation: field-in 0.35s ease forwards, btn-pulse 2.4s ease-in-out infinite;
-  }
-  .submit-btn:hover { background: #6d28d9; }
-  .required { color: #f87171; margin-left: 2px; }
-  .presets {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 0.4rem;
-    margin-top: 0.4rem;
-  }
+  select option { background: var(--card); }
+  .required { color: var(--bad); margin-left: 2px; }
+
+  .presets { display: flex; flex-wrap: wrap; gap: .4rem; margin-top: .5rem; }
   .preset-chip {
-    background: #0f1117;
-    border: 1px solid #2d3148;
-    border-radius: 20px;
-    color: #94a3b8;
-    font-size: 0.75rem;
-    padding: 0.25rem 0.65rem;
-    cursor: pointer;
-    transition: border-color 0.15s, color 0.15s, background 0.15s;
-    white-space: nowrap;
+    background: var(--bg-2); border: 1px solid var(--border); border-radius: 999px;
+    color: var(--muted); font-size: .75rem; padding: .25rem .65rem; cursor: pointer; white-space: nowrap;
+    transition: border-color .15s, color .15s, background .15s;
   }
-  .preset-chip:hover {
-    border-color: #7c3aed;
-    color: #e2e8f0;
-    background: rgba(124,58,237,0.1);
+  .preset-chip:hover { border-color: var(--water); color: var(--text); background: rgba(45,212,191,0.1); }
+  .preset-chip.selected { border-color: var(--water); color: var(--text); background: rgba(45,212,191,0.18); }
+
+  @keyframes btn-pulse { 0%,100% { box-shadow: 0 0 0 0 rgba(249,115,22,0); } 50% { box-shadow: 0 0 0 6px rgba(249,115,22,0.18); } }
+  .submit-btn {
+    width: 100%; border: none; border-radius: 10px; padding: .75rem;
+    font-family: var(--font-display); font-size: 1rem; font-weight: 700; letter-spacing: .02em;
+    color: #1a1008; cursor: pointer; margin-top: .5rem;
+    background: linear-gradient(118deg, var(--hazard) 30%, var(--hazard-2));
+    transition: filter .15s; animation: btn-pulse 2.4s ease-in-out infinite;
   }
-  .preset-chip.selected {
-    border-color: #7c3aed;
-    color: #e2e8f0;
-    background: rgba(124,58,237,0.18);
+  .submit-btn:hover { filter: brightness(1.08); }
+
+  @keyframes field-in { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
+  .field, .submit-btn { opacity: 0; animation: field-in .35s ease forwards; }
+
+  @media (prefers-reduced-motion: reduce) {
+    .field, .submit-btn { opacity: 1; animation: none; }
   }
 {% endblock %}
 
 {% block content %}
+<div class="eyebrow" style="max-width:480px; margin:0 auto .85rem;">Log a sale &bull; invoice received</div>
 <div class="form-card">
   <h2 class="form-title">Log a Sale</h2>
   <form id="saleForm" method="POST" action="{{ url_for('log_sale') }}">

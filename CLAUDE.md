@@ -53,10 +53,13 @@ docker compose logs -f
 | `app.py` | Flask routes: `/` dashboard, `/log` sale form, `/milestones`, `/sales/<id>/delete` + `/sales/<id>/edit` (POST), `/api/sales` + `/api/stats` (JSON) |
 | `database.py` | All SQLite access. `db_init()` must run before first request. |
 | `prediction.py` | Weather-aware next-sale prediction. Consumes `stats` + recent locations, calls NWS API (`api.weather.gov/alerts/active`) for severe-weather alerts in states we've sold to, combines with WMA-based frequency + seasonal baselines. Called by the `/` route; rendered inside the prediction card in `index.html`. |
-| `templates/base.html` | Nav, global CSS, Chart.js 4.4.0 + ChartDataLabels CDN imports |
-| `templates/index.html` | Dashboard: KPI cards, milestone bar, prediction card, 4 charts, recent-transactions table, full-screen "All Transactions" panel (sticky search + month-grouped rows with per-month sparklines + footer totals), delete-confirm modal |
+| `templates/base.html` | Nav, `:root` design tokens, topographic backdrop, shared components (eyebrow, divider, kpi, badge, floodwater vessel, staggered reveal, reduced-motion guard). Self-hosts fonts + Chart.js from `static/` (see below). |
+| `templates/index.html` | Dashboard: asymmetric hero (oversized total-revenue + floodwater milestone vessel), weather-forecast hero feature (prediction + multi-hazard merged), KPI cluster, 4 charts, recent-transactions table, full-screen "All Transactions" panel (sticky search + month-grouped rows with per-month sparklines + footer totals), delete-confirm modal |
 | `templates/log_sale.html` | Sale entry form with location preset chips |
-| `templates/milestones.html` | Milestones timeline page (hit/unhit list from `get_milestones()`) |
+| `templates/milestones.html` | Milestones page; next-milestone shown as a floodwater vessel, then completed/upcoming lists from `get_milestones()` |
+| `static/fonts/` | Self-hosted woff2 + `fonts.css` (Bricolage Grotesque display, Instrument Sans body) — no Google Fonts CDN, so the UI renders offline on the Pi |
+| `static/js/` | Vendored `chart.umd.js` (4.4.0) + `chartjs-plugin-datalabels.min.js` (2.x) — no CDN |
+| `mockups/dashboard.html` | Standalone static design PoC (sample data, not wired to Flask) |
 
 **Dashboard charts** (`index.html`):
 | Chart | Type | Data source |
@@ -137,11 +140,11 @@ DB_PATH=              # optional: override SQLite file path (Docker sets this to
 
 ### UI design notes
 
-Dark theme (`#0f1117` bg, `#1e2130` cards). KPI card top-borders: orange/blue/green/purple. Orange bar chart, animated milestone + prediction fill bars, gradient orange→yellow hero text reused in several places (`.kpi-value-hero`, panel title, table-header underline, milestone-fill gradient).
+**"Floodworks" design system.** All colors + fonts are CSS custom properties in `base.html`'s `:root` — change them there, not per-page. Tokens: surfaces `--bg #0a0f15` / `--card #121c28` / `--border #223141`; story palette `--hazard` orange (alerts), `--hazard-2` yellow, `--water`/`--water-2`/`--water-deep` floodwater teals, `--kraft` sandbag tan, `--good` green, `--bad` rose; fonts `--font-display` (Bricolage Grotesque, headings/big numbers) + `--font-body` (Instrument Sans). Signature element: the **floodwater vessel** (`.vessel` + `.water`, in base.html) — an animated rising-water fill used for the dashboard milestone and the milestones-page hero. A faint topographic SVG backdrop (`.topo`) sits behind every page. The kraft→orange→yellow gradient (`.hero-num` / `.form-title`) is the recurring hero-text treatment. Staggered `.reveal` entrance + count-ups on load; all motion is wrapped in a `prefers-reduced-motion` guard.
 
 Transaction-row conventions (both dashboard preview and full-screen panel):
-- Platform **badge** colors: Amazon green, eBay blue, Walmart blue (Walmart blue is intentionally close to the Walmart brand `#0071dc`).
-- Platform-colored **left-border accent** (3px `box-shadow: inset 3px 0 0 …` on first `<td>`): Amazon `#22c55e`, eBay `#3b82f6`, Walmart `#facc15` (yellow). These are selected via `tr[data-platform="…"]` — every transaction row must have `data-platform="{{ s.platform }}"`.
+- Platform **badge** classes (in base.html): `.b-amazon` green, `.b-ebay` cyan, `.b-walmart` yellow; `.b-new` for the NEW pill.
+- Platform-colored **left-border accent** (3px `box-shadow: inset 3px 0 0 …` on first `<td>`): Amazon `var(--good)`, eBay `var(--water-2)`, Walmart `var(--hazard-2)`. These are selected via `tr[data-platform="…"]` — every transaction row must have `data-platform="{{ s.platform }}"`.
 - "NEW" pulse badge on the most recent row + an orange gradient tint via `tr.row-highlight`.
 - The full-screen panel groups rows by month using a Jinja `namespace` to emit `<tr class="month-header" data-month="YYYY-MM">` before the first row of each new month. JS (`enrichTxPanel()`) fills in the label/subtotal/count and draws a per-month orange sparkline onto the inline `<canvas class="mini-spark">` when the panel is first opened. Sparkline rendering is deferred to panel-open because `canvas.clientWidth` is 0 while `display:none`.
 - Relative dates ("Today" / "Yesterday" / "Nd ago" within 7 days) are applied client-side to any `<span class="rel-date" data-date="…">` — the raw ISO date goes in `data-date`, server-rendered text is the fallback.

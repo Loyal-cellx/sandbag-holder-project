@@ -11,6 +11,10 @@ sales-tracker/*.pyc
 sales-tracker/.env
 sales-tracker/sales.db
 
+# Test/screenshot artifacts
+.playwright-mcp/
+/*.png
+
 # Obsidian vault
 .obsidian/
 *.base

@@ -1,0 +1,121 @@
+- generic [active] [ref=e1]:
+  - generic:
+    - img
+  - navigation [ref=e2]:
+    - link "Sandbag // Sales" [ref=e3] [cursor=pointer]:
+      - /url: /
+    - generic [ref=e4]:
+      - link "Dashboard" [ref=e5] [cursor=pointer]:
+        - /url: /
+      - link "Log Sale" [ref=e6] [cursor=pointer]:
+        - /url: /log
+      - link "Milestones" [ref=e7] [cursor=pointer]:
+        - /url: /milestones
+  - generic [ref=e8]:
+    - generic [ref=e9]:
+      - heading "Milestones" [level=1] [ref=e10]
+      - paragraph [ref=e11]: 4 of 16 unlocked
+    - generic [ref=e12]:
+      - generic [ref=e13]:
+        - generic [ref=e14]: Next milestone
+        - generic [ref=e15]:
+          - generic [ref=e16]: Sell in 5 Different States
+          - generic [ref=e17]: 1 more states
+        - generic [ref=e19]: 4 / 5
+      - generic [ref=e22]:
+        - generic [ref=e23]: Progress
+        - generic [ref=e24]: 1%
+    - generic [ref=e26]:
+      - generic [ref=e27]:
+        - generic [ref=e28]: Milestones Hit
+        - generic [ref=e29]: 4 / 16
+        - generic [ref=e30]: of 16 total
+      - generic [ref=e31]:
+        - generic [ref=e32]: Velocity
+        - generic [ref=e33]: "1.0"
+        - generic [ref=e34]: per month
+    - generic [ref=e35]: Completed — 4
+    - generic [ref=e36]:
+      - generic [ref=e37]: ✓
+      - generic [ref=e38]:
+        - generic [ref=e39]: First Sale
+        - generic [ref=e40]: Jan 26, 2026
+    - generic [ref=e41]:
+      - generic [ref=e42]: ✓
+      - generic [ref=e43]:
+        - generic [ref=e44]: First Out-of-State Sale
+        - generic [ref=e45]: Jan 27, 2026
+        - generic [ref=e46]: 1 day after previous milestone
+    - generic [ref=e47]:
+      - generic [ref=e48]: ✓
+      - generic [ref=e49]:
+        - generic [ref=e50]: First eBay Sale
+        - generic [ref=e51]: Feb 07, 2026
+        - generic [ref=e52]: 11 days after previous milestone
+    - generic [ref=e53]:
+      - generic [ref=e54]: ✓
+      - generic [ref=e55]:
+        - generic [ref=e56]: $500 RevenueNEW
+        - generic [ref=e57]: Mar 06, 2026
+        - generic [ref=e58]: 27 days after previous milestone
+    - generic [ref=e59]: Upcoming — 12
+    - generic [ref=e60]:
+      - generic [ref=e61]: 🔒First Walmart Sale
+      - generic [ref=e63]:
+        - generic [ref=e64]: Not yet
+        - generic [ref=e65]: Not started
+    - generic [ref=e66]:
+      - generic [ref=e67]: 🔒Sell in 5 Different States
+      - generic [ref=e69]:
+        - generic [ref=e70]: 1 more states
+        - generic [ref=e71]: 4 / 5
+    - generic [ref=e72]:
+      - generic [ref=e73]: 🔒$1,000 Revenue
+      - generic [ref=e75]:
+        - generic [ref=e76]: $320 to go
+        - generic [ref=e77]: $680 / $1,000
+    - generic [ref=e78]:
+      - generic [ref=e79]: 🔒25 Sales
+      - generic [ref=e81]:
+        - generic [ref=e82]: 15 more sales
+        - generic [ref=e83]: 10 / 25
+    - generic [ref=e84]:
+      - generic [ref=e85]: 🔒$500 in a Single Month
+      - generic [ref=e87]:
+        - generic [ref=e88]: $224 more in one month
+        - generic [ref=e89]: $276 / $500
+    - generic [ref=e90]:
+      - generic [ref=e91]: 🔒$1,500 Revenue
+      - generic [ref=e93]:
+        - generic [ref=e94]: $820 to go
+        - generic [ref=e95]: $680 / $1,500
+    - generic [ref=e96]:
+      - generic [ref=e97]: 🔒$2,000 Revenue
+      - generic [ref=e99]:
+        - generic [ref=e100]: $1,320 to go
+        - generic [ref=e101]: $680 / $2,000
+    - generic [ref=e102]:
+      - generic [ref=e103]: 🔒Sell in 10 Different States
+      - generic [ref=e105]:
+        - generic [ref=e106]: 6 more states
+        - generic [ref=e107]: 4 / 10
+    - generic [ref=e108]:
+      - generic [ref=e109]: 🔒50 Sales
+      - generic [ref=e111]:
+        - generic [ref=e112]: 40 more sales
+        - generic [ref=e113]: 10 / 50
+    - generic [ref=e114]:
+      - generic [ref=e115]: 🔒$1,000 in a Single Month
+      - generic [ref=e117]:
+        - generic [ref=e118]: $724 more in one month
+        - generic [ref=e119]: $276 / $1,000
+    - generic [ref=e120]:
+      - generic [ref=e121]: 🔒$2,500 Revenue
+      - generic [ref=e123]:
+        - generic [ref=e124]: $1,820 to go
+        - generic [ref=e125]: $680 / $2,500
+    - generic [ref=e126]:
+      - generic [ref=e127]: 🔒100 Sales
+      - generic [ref=e129]:
+        - generic [ref=e130]: 90 more sales
+        - generic [ref=e131]: 10 / 100

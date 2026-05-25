@@ -9,10 +9,12 @@
 
   /* Next-milestone vessel hero */
   .ms-hero { display: grid; grid-template-columns: 1fr 1fr; gap: 1.25rem; margin-bottom: 1.25rem; }
-  .ms-hero-info { background: var(--card); border: 1px solid var(--border); border-top: 4px solid var(--water); border-radius: 18px; padding: 1.25rem; display: flex; flex-direction: column; justify-content: center; }
-  .ms-hero-name { font-family: var(--font-display); font-size: 1.4rem; font-weight: 800; color: var(--text); margin: .35rem 0 .2rem; }
-  .ms-hero-gap { font-size: .9rem; color: var(--water); font-weight: 600; }
-  .ms-hero-stat { font-size: .8rem; color: var(--faint); margin-top: .75rem; font-variant-numeric: tabular-nums; }
+  .ms-hero-info { background: var(--card); border: 1px solid var(--border); border-top: 4px solid var(--water); border-radius: 18px; padding: 1.5rem 1.6rem; display: flex; flex-direction: column; justify-content: space-between; gap: 1rem; }
+  .ms-hero-name { font-family: var(--font-display); font-size: clamp(2.2rem, 4.2vw, 3.6rem); font-weight: 800; line-height: .95; letter-spacing: -0.02em; color: var(--text); margin: .5rem 0 .35rem; }
+  .ms-hero-gap { font-size: clamp(1rem, 1.8vw, 1.35rem); color: var(--water); font-weight: 700; }
+  .ms-hero-stat { font-size: clamp(.85rem, 1.4vw, 1rem); color: var(--faint); font-variant-numeric: tabular-nums; }
+  .ms-hero-bar { background: var(--bg-2); border-radius: 999px; height: 8px; overflow: hidden; margin-top: .35rem; }
+  .ms-hero-bar > span { display: block; height: 100%; border-radius: 999px; background: linear-gradient(90deg, var(--water-deep), var(--water)); width: 0; transition: width 1s cubic-bezier(.22,1,.36,1); }
   .ms-vessel-card { background: var(--card); border: 1px solid var(--border); border-radius: 18px; padding: 1.25rem; display: flex; flex-direction: column; }
   .ms-vessel-card .vessel { flex: 1; min-height: 180px; }
   .ms-vessel-head { display: flex; justify-content: space-between; align-items: baseline; margin-bottom: .9rem; }
@@ -39,7 +41,7 @@
   .badge-new { background: var(--hazard); color: #1a1008; font-size: .5625rem; font-weight: 800; padding: .0625rem .375rem; border-radius: 999px; vertical-align: middle; margin-left: .35rem; animation: badge-pulse 2.4s ease-in-out infinite; }
 
   @media (max-width: 600px) { .ms-hero { grid-template-columns: 1fr; } }
-  @media (prefers-reduced-motion: reduce) { .badge-new { animation: none; } .ms-prog-fill { transition: none; } }
+  @media (prefers-reduced-motion: reduce) { .badge-new { animation: none; } .ms-prog-fill, .ms-hero-bar > span { transition: none; } }
 {% endblock %}
 
 {% block content %}
@@ -55,16 +57,21 @@
   <div class="ms-hero">
     <div class="ms-hero-info reveal" style="animation-delay:60ms">
       <div class="eyebrow">Next milestone</div>
-      <div class="ms-hero-name">{{ nm.name }}</div>
-      <div class="ms-hero-gap">{{ nm.gap_display }}</div>
-      <div class="ms-hero-stat">
-        {% if nm.type == "revenue" or nm.type == "monthly" %}
-          ${{ "{:,.0f}".format(nm.current) }} / ${{ "{:,.0f}".format(nm.threshold) }}
-        {% elif nm.type in ("count", "states") %}
-          {{ nm.current }} / {{ nm.threshold }}
-        {% else %}
-          0 / 1
-        {% endif %}
+      <div>
+        <div class="ms-hero-name">{{ nm.name }}</div>
+        <div class="ms-hero-gap">{{ nm.gap_display }}</div>
+      </div>
+      <div>
+        <div class="ms-hero-stat">
+          {% if nm.type == "revenue" or nm.type == "monthly" %}
+            ${{ "{:,.0f}".format(nm.current) }} / ${{ "{:,.0f}".format(nm.threshold) }}
+          {% elif nm.type in ("count", "states") %}
+            {{ nm.current }} / {{ nm.threshold }}
+          {% else %}
+            0 / 1
+          {% endif %}
+        </div>
+        <div class="ms-hero-bar"><span data-pct="{{ nm.progress_pct }}"></span></div>
       </div>
     </div>
     <div class="ms-vessel-card reveal" style="animation-delay:140ms">
@@ -158,9 +165,9 @@ const REDUCED = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
   }
 })();
 
-// Upcoming progress bars
+// Upcoming progress bars + hero bar
 setTimeout(() => {
-  document.querySelectorAll('.ms-prog-fill[data-pct]').forEach(el => { el.style.width = el.dataset.pct + '%'; });
+  document.querySelectorAll('.ms-prog-fill[data-pct], .ms-hero-bar > span[data-pct]').forEach(el => { el.style.width = el.dataset.pct + '%'; });
 }, 200);
 </script>
 {% endblock %}

@@ -171,12 +171,14 @@
 
     /* ── Hero gradient text (kraft→hazard→hazard-2), continuously flowing ── */
     .flowtext {
-      background: linear-gradient(118deg, var(--kraft) 4%, var(--hazard) 40%, var(--hazard-2) 64%, var(--hazard) 88%, var(--kraft));
-      background-size: 280% auto;
-      -webkit-background-clip: text; background-clip: text; -webkit-text-fill-color: transparent;
-      animation: grad-flow 9s ease-in-out infinite alternate;
+      background: linear-gradient(90deg, var(--kraft), var(--hazard), var(--hazard-2), var(--hazard), var(--kraft));
+      background-size: 200% auto;
+      -webkit-background-clip: text; background-clip: text;
+      color: var(--hazard); -webkit-text-fill-color: transparent;
+      will-change: background-position;
+      animation: grad-flow 4.5s linear infinite;
     }
-    @keyframes grad-flow { from { background-position: 0% center; } to { background-position: 100% center; } }
+    @keyframes grad-flow { to { background-position: -200% center; } }
 
     /* ── Page-load staggered reveal ── */
     @keyframes rise { from { opacity: 0; transform: translateY(14px); } to { opacity: 1; transform: none; } }

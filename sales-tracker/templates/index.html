@@ -82,8 +82,8 @@
   /* ── Left-column stack: Platform Split + Rolling 30 ── */
   .chart-col-stack { display: flex; flex-direction: column; gap: .9rem; }
   .chart-col-stack > .chart-card { flex: 0 1 auto; }
-  .chart-col-stack > .rolling-card { flex: 1 1 auto; display: flex; flex-direction: column; }
-  .rolling-card canvas { flex: 1 1 auto; min-height: 56px; }
+  .chart-col-stack > .rolling-card { flex: 0 1 auto; }
+  .r30-chart { position: relative; height: 120px; }
   .r30-top { display: flex; justify-content: space-between; align-items: flex-start; gap: .75rem; margin-bottom: .6rem; }
   .r30-num { font-family: var(--font-display); font-weight: 800; font-size: 1.75rem; color: var(--text); line-height: 1; }
   .r30-sub { font-size: .72rem; color: var(--faint); margin-top: .25rem; letter-spacing: .04em; }
@@ -322,7 +322,7 @@
         <div class="r30-delta" style="color:var(--faint);">—<div class="r30-delta-sub">no prior data</div></div>
         {% endif %}
       </div>
-      <canvas id="chartRolling30"></canvas>
+      <div class="r30-chart"><canvas id="chartRolling30"></canvas></div>
     </div>
   </div>
   <div class="chart-card reveal" style="animation-delay:140ms">

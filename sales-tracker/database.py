@@ -209,6 +209,7 @@ def get_stats():
     rolling_30_count = 0
     prev_30_revenue = 0.0
     daily_rolling = {}
+    daily_prev = {}
     for r in rolling_window_rows:
         if r["date"] >= cutoff_30:
             rolling_30_revenue += r["amount"]
@@ -216,6 +217,7 @@ def get_stats():
             daily_rolling[r["date"]] = daily_rolling.get(r["date"], 0.0) + r["amount"]
         else:
             prev_30_revenue += r["amount"]
+            daily_prev[r["date"]] = daily_prev.get(r["date"], 0.0) + r["amount"]
 
     rolling_30_delta_pct = (
         (rolling_30_revenue - prev_30_revenue) / prev_30_revenue * 100
@@ -223,6 +225,10 @@ def get_stats():
     )
     rolling_30_daily = [
         round(daily_rolling.get((today_d - timedelta(days=29 - i)).isoformat(), 0.0), 2)
+        for i in range(30)
+    ]
+    prev_30_daily = [
+        round(daily_prev.get((today_d - timedelta(days=59 - i)).isoformat(), 0.0), 2)
         for i in range(30)
     ]
 
@@ -278,6 +284,7 @@ def get_stats():
         "rolling_30_count": rolling_30_count,
         "rolling_30_delta_pct": round(rolling_30_delta_pct, 1) if rolling_30_delta_pct is not None else None,
         "rolling_30_daily": rolling_30_daily,
+        "prev_30_daily": prev_30_daily,
     }
 
 

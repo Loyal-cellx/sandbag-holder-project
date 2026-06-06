@@ -84,6 +84,11 @@
   .chart-col-stack > .chart-card { flex: 0 1 auto; }
   .chart-col-stack > .rolling-card { flex: 0 1 auto; }
   .r30-chart { position: relative; height: 120px; }
+  .r30-legend { display: flex; gap: 1rem; margin-top: .4rem; font-size: .6rem; color: var(--faint); letter-spacing: .04em; text-transform: uppercase; }
+  .r30-legend span { display: inline-flex; align-items: center; gap: .35rem; }
+  .r30-legend .sw { width: 12px; height: 0; border-top-width: 2px; border-top-style: solid; }
+  .r30-legend .sw-now  { border-top-color: var(--water); }
+  .r30-legend .sw-prev { border-top-color: var(--faint); border-top-style: dashed; }
   .r30-top { display: flex; justify-content: space-between; align-items: flex-start; gap: .75rem; margin-bottom: .6rem; }
   .r30-num { font-family: var(--font-display); font-weight: 800; font-size: 1.75rem; color: var(--text); line-height: 1; }
   .r30-sub { font-size: .72rem; color: var(--faint); margin-top: .25rem; letter-spacing: .04em; }
@@ -323,6 +328,10 @@
         {% endif %}
       </div>
       <div class="r30-chart"><canvas id="chartRolling30"></canvas></div>
+      <div class="r30-legend">
+        <span><span class="sw sw-now"></span>This 30d</span>
+        <span><span class="sw sw-prev"></span>Prev 30d</span>
+      </div>
     </div>
   </div>
   <div class="chart-card reveal" style="animation-delay:140ms">
@@ -619,23 +628,33 @@ new Chart(document.getElementById('chartState'), {
   }
 });
 
-// Rolling 30-day sparkline
+// Rolling 30-day cumulative trajectory: this 30d vs prev 30d
 (function() {
   const el = document.getElementById('chartRolling30');
   if (!el || !stats.rolling_30_daily) return;
+  const cumulative = arr => { let s = 0; return arr.map(v => s += v); };
+  const labels = stats.rolling_30_daily.map((_, i) => i);
+  const datasets = [];
+  if (stats.prev_30_daily) {
+    datasets.push({
+      data: cumulative(stats.prev_30_daily),
+      borderColor: C('--faint'),
+      borderDash: [4, 4], fill: false,
+      tension: 0, pointRadius: 0, borderWidth: 1.5, order: 1,
+    });
+  }
+  datasets.push({
+    data: cumulative(stats.rolling_30_daily),
+    borderColor: C('--water'),
+    backgroundColor: 'rgba(45,212,191,0.14)',
+    fill: true, tension: 0, pointRadius: 0, borderWidth: 2, order: 0,
+  });
   new Chart(el.getContext('2d'), {
     type: 'line',
-    data: {
-      labels: stats.rolling_30_daily.map((_, i) => i),
-      datasets: [{
-        data: stats.rolling_30_daily,
-        borderColor: C('--water'),
-        backgroundColor: 'rgba(45,212,191,0.14)',
-        fill: true, tension: 0.35, pointRadius: 0, borderWidth: 2,
-      }],
-    },
+    data: { labels, datasets },
     options: {
       responsive: true, maintainAspectRatio: false,
+      animation: REDUCED ? false : undefined,
       plugins: { legend: { display: false }, tooltip: { enabled: false }, datalabels: { display: false } },
       scales: { x: { display: false }, y: { display: false, beginAtZero: true } },
     },

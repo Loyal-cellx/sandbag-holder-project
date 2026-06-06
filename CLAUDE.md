@@ -129,6 +129,7 @@ sales: id, date (TEXT ISO-8601), amount (REAL), location (TEXT),
   "rolling_30_count": int,                  # sale count in trailing 30 days
   "rolling_30_delta_pct": float | None,     # % change vs the prior 30-day window; None if no prior data
   "rolling_30_daily": list[float],          # length-30 daily revenue series (oldest first), zero-filled
+  "prev_30_daily": list[float],             # length-30 daily revenue for the prior window (days 30-59 ago), oldest first, zero-filled
 }
 ```
 

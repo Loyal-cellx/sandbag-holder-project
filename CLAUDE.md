@@ -125,6 +125,10 @@ sales: id, date (TEXT ISO-8601), amount (REAL), location (TEXT),
   "last_sale_date": "YYYY-MM-DD" | None,
   "days_since_last_sale": int | None,
   "sale_gaps": list[int],                   # gap in days between each consecutive sale date (feeds prediction WMA)
+  "rolling_30_revenue": float,              # revenue in trailing 30 days (today included)
+  "rolling_30_count": int,                  # sale count in trailing 30 days
+  "rolling_30_delta_pct": float | None,     # % change vs the prior 30-day window; None if no prior data
+  "rolling_30_daily": list[float],          # length-30 daily revenue series (oldest first), zero-filled
 }
 ```
 

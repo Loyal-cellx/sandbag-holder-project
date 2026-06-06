@@ -195,6 +195,37 @@ def get_stats():
     daily_avg = this_month_revenue / days_elapsed if days_elapsed > 0 else 0
     projected_month_revenue = round(daily_avg * days_in_month, 2)
 
+    # ── Rolling 30-day window + prior 30-day for delta ──
+    today_d = date.today()
+    cutoff_30 = (today_d - timedelta(days=29)).isoformat()
+    cutoff_60 = (today_d - timedelta(days=59)).isoformat()
+
+    rolling_window_rows = conn.execute(
+        "SELECT date, amount FROM sales WHERE date >= ?",
+        (cutoff_60,),
+    ).fetchall()
+
+    rolling_30_revenue = 0.0
+    rolling_30_count = 0
+    prev_30_revenue = 0.0
+    daily_rolling = {}
+    for r in rolling_window_rows:
+        if r["date"] >= cutoff_30:
+            rolling_30_revenue += r["amount"]
+            rolling_30_count += 1
+            daily_rolling[r["date"]] = daily_rolling.get(r["date"], 0.0) + r["amount"]
+        else:
+            prev_30_revenue += r["amount"]
+
+    rolling_30_delta_pct = (
+        (rolling_30_revenue - prev_30_revenue) / prev_30_revenue * 100
+        if prev_30_revenue > 0 else None
+    )
+    rolling_30_daily = [
+        round(daily_rolling.get((today_d - timedelta(days=29 - i)).isoformat(), 0.0), 2)
+        for i in range(30)
+    ]
+
     all_dates_rows = conn.execute(
         "SELECT DISTINCT date FROM sales ORDER BY date ASC"
     ).fetchall()
@@ -243,6 +274,10 @@ def get_stats():
         "last_sale_date": last_sale_date,
         "days_since_last_sale": days_since_last_sale,
         "sale_gaps": gaps,
+        "rolling_30_revenue": round(rolling_30_revenue, 2),
+        "rolling_30_count": rolling_30_count,
+        "rolling_30_delta_pct": round(rolling_30_delta_pct, 1) if rolling_30_delta_pct is not None else None,
+        "rolling_30_daily": rolling_30_daily,
     }
 
 

@@ -3,8 +3,8 @@
 {% block title %}Dashboard — Sandbag Sales{% endblock %}
 
 {% block extra_style %}
-  /* ════════ HERO — asymmetric ════════ */
-  .hero { display: grid; grid-template-columns: 1.45fr 1fr; gap: 1.25rem; align-items: stretch; margin-bottom: 1.1rem; }
+  /* ════════ HERO — single column ════════ */
+  .hero { display: grid; grid-template-columns: 1fr; gap: 1.25rem; align-items: stretch; margin-bottom: 1.1rem; }
   .hero-figure {
     position: relative; overflow: hidden;
     background: radial-gradient(120% 140% at 0% 0%, rgba(45,212,191,0.10), transparent 55%), var(--card);
@@ -21,13 +21,30 @@
   .hero-sub .dot { color: var(--border-2); margin: 0 .45rem; }
   .hero-chips { display: flex; gap: .4rem; margin-top: 1rem; flex-wrap: wrap; }
 
-  /* ── Floodwater vessel card (milestone) ── */
-  .vessel-card { position: relative; background: var(--card); border: 1px solid var(--border); border-radius: 18px; padding: 1.25rem 1.25rem 1.1rem; display: flex; flex-direction: column; }
-  .vessel-head { display: flex; align-items: baseline; justify-content: space-between; gap: .5rem; }
-  .vessel-goal { font-family: var(--font-display); font-weight: 700; color: var(--text); font-size: .95rem; }
-  .vessel-card .vessel { flex: 1; min-height: 168px; margin-top: .9rem; }
-  .vessel-pct { font-family: var(--font-display); font-weight: 800; font-size: 1.6rem; color: var(--water); }
-  .vessel-foot { display: flex; justify-content: space-between; font-size: .72rem; color: var(--faint); margin-top: .7rem; }
+  /* ── Slim floodwater milestone strip ── */
+  .milestone-strip {
+    display: grid; grid-template-columns: auto 1fr auto; align-items: center; gap: 1rem;
+    background: var(--card); border: 1px solid var(--border); border-radius: 14px;
+    padding: .85rem 1.1rem; margin-bottom: 1.1rem;
+  }
+  .ms-label { font-family: var(--font-display); font-weight: 700; font-size: .9rem; color: var(--text); white-space: nowrap; }
+  .ms-bar {
+    position: relative; height: 10px;
+    background:
+      repeating-linear-gradient(90deg, rgba(255,255,255,0.04) 0 1px, transparent 1px 24px),
+      var(--bg-2);
+    border: 1px solid var(--border-2); border-radius: 999px; overflow: hidden;
+  }
+  .ms-fill {
+    position: absolute; inset: 0 auto 0 0; width: 0;
+    background: linear-gradient(90deg, var(--water) 0%, var(--water-deep) 100%);
+    box-shadow: 0 0 18px rgba(45,212,191,0.35);
+    transition: width 1.8s cubic-bezier(.22,1,.36,1);
+  }
+  .ms-meta { display: flex; align-items: baseline; gap: .65rem; white-space: nowrap; }
+  .ms-pct { font-family: var(--font-display); font-weight: 800; font-size: 1.1rem; color: var(--water); }
+  .ms-foot { font-size: .72rem; color: var(--faint); }
+  .ms-dot { margin: 0 .35rem; color: var(--border-2); }
 
   /* ════════ HAZARD — hero feature ════════ */
   .hazard-feature {
@@ -61,6 +78,19 @@
   .chart-card { background: var(--card); border: 1px solid var(--border); border-radius: 14px; padding: 1rem 1rem .75rem; }
   .chart-card.span2 { grid-column: 1 / -1; }
   .chart-card h3 { font-size: .66rem; font-weight: 700; letter-spacing: .12em; text-transform: uppercase; color: var(--muted); margin-bottom: .6rem; }
+
+  /* ── Left-column stack: Platform Split + Rolling 30 ── */
+  .chart-col-stack { display: flex; flex-direction: column; gap: .9rem; }
+  .chart-col-stack > .chart-card { flex: 0 1 auto; }
+  .chart-col-stack > .rolling-card { flex: 1 1 auto; display: flex; flex-direction: column; }
+  .rolling-card canvas { flex: 1 1 auto; min-height: 56px; }
+  .r30-top { display: flex; justify-content: space-between; align-items: flex-start; gap: .75rem; margin-bottom: .6rem; }
+  .r30-num { font-family: var(--font-display); font-weight: 800; font-size: 1.75rem; color: var(--text); line-height: 1; }
+  .r30-sub { font-size: .72rem; color: var(--faint); margin-top: .25rem; letter-spacing: .04em; }
+  .r30-delta { text-align: right; font-family: var(--font-display); font-weight: 700; font-size: .95rem; }
+  .r30-delta.up   { color: var(--good); }
+  .r30-delta.down { color: var(--bad); }
+  .r30-delta-sub { font-family: var(--font-body); font-weight: 400; font-size: .65rem; color: var(--faint); margin-top: .1rem; letter-spacing: .04em; }
 
   /* ════════ Transactions table ════════ */
   .table-wrap { background: var(--card); border: 1px solid var(--border); border-radius: 14px; overflow-x: auto; margin-top: .9rem; }
@@ -123,6 +153,10 @@
     .hero-num { width: 100%; }
     .kpi-row { grid-template-columns: 1fr; }
     .chart-grid { grid-template-columns: 1fr; }
+    .milestone-strip { grid-template-columns: 1fr; gap: .55rem; padding: .75rem .85rem; }
+    .milestone-strip .ms-meta { justify-content: space-between; }
+    .chart-col-stack { gap: .75rem; }
+    .r30-num { font-size: 1.45rem; }
   }
   @media (max-width: 480px) {
     th { padding: .4rem .5rem; }
@@ -130,12 +164,14 @@
     .td-notes { padding: 0 .5rem .4rem 1.25rem; }
     tr.month-header td { padding: .45rem .5rem; }
     tr.month-header canvas.mini-spark { width: 54px !important; height: 16px !important; }
+    #txCopy, #txExport { padding: .4rem .55rem; }
+    #txCopyLabel, #txExportLabel { display: none; }
   }
 {% endblock %}
 
 {% block content %}
 
-<!-- HERO: oversized total revenue (asymmetric) + floodwater milestone vessel -->
+<!-- HERO: oversized total revenue + slim milestone strip -->
 <section class="hero">
   <div class="hero-figure reveal" style="animation-delay:60ms">
     <div class="eyebrow">Total hauled &bull; all time</div>
@@ -151,21 +187,22 @@
       <span class="chip">Avg gap <b id="statFrequency">—</b></span>
     </div>
   </div>
-
-  <div class="vessel-card reveal" style="animation-delay:140ms">
-    <div class="vessel-head">
-      <div class="vessel-goal">🎯 <span id="milestoneLabel">Next milestone</span></div>
-      <div class="vessel-pct" id="milestonePct">0%</div>
-    </div>
-    <div class="vessel">
-      <div class="water" id="milestoneFill" data-pct="0"></div>
-    </div>
-    <div class="vessel-foot">
-      <span id="milestoneBanked">${{ "%.0f"|format(stats.total_revenue) }} banked</span>
-      <span id="milestoneSub"></span>
-    </div>
-  </div>
 </section>
+
+<div class="milestone-strip reveal" style="animation-delay:140ms">
+  <div class="ms-label">🎯 <span id="milestoneLabel">Next milestone</span></div>
+  <div class="ms-bar" aria-hidden="true">
+    <div class="ms-fill" id="milestoneFill" data-pct="0"></div>
+  </div>
+  <div class="ms-meta">
+    <span class="ms-pct" id="milestonePct">0%</span>
+    <span class="ms-foot">
+      <span id="milestoneBanked">${{ "%.0f"|format(stats.total_revenue) }} banked</span>
+      <span class="ms-dot">·</span>
+      <span id="milestoneSub"></span>
+    </span>
+  </div>
+</div>
 
 <!-- HAZARD: weather-aware forecast promoted to hero feature -->
 {% if prediction.avg_freq %}
@@ -264,9 +301,29 @@
 <!-- Charts -->
 <div class="section-h">Breakdown</div>
 <div class="chart-grid">
-  <div class="chart-card reveal" style="animation-delay:80ms">
-    <h3>Platform split</h3>
-    <div id="chartPlatformWrap" style="position:relative;"><canvas id="chartPlatform"></canvas></div>
+  <div class="chart-col-stack">
+    <div class="chart-card reveal" style="animation-delay:80ms">
+      <h3>Platform split</h3>
+      <div id="chartPlatformWrap" style="position:relative;"><canvas id="chartPlatform"></canvas></div>
+    </div>
+    <div class="chart-card rolling-card reveal" style="animation-delay:160ms">
+      <h3>Rolling 30 days</h3>
+      <div class="r30-top">
+        <div>
+          <div class="r30-num">${{ "{:,.0f}".format(stats.rolling_30_revenue) }}</div>
+          <div class="r30-sub">{{ stats.rolling_30_count }} sale{{ '' if stats.rolling_30_count == 1 else 's' }}</div>
+        </div>
+        {% if stats.rolling_30_delta_pct is not none %}
+        <div class="r30-delta {{ 'up' if stats.rolling_30_delta_pct >= 0 else 'down' }}">
+          {{ '▲' if stats.rolling_30_delta_pct >= 0 else '▼' }} {{ "%.0f"|format(stats.rolling_30_delta_pct|abs) }}%
+          <div class="r30-delta-sub">vs prev 30d</div>
+        </div>
+        {% else %}
+        <div class="r30-delta" style="color:var(--faint);">—<div class="r30-delta-sub">no prior data</div></div>
+        {% endif %}
+      </div>
+      <canvas id="chartRolling30"></canvas>
+    </div>
   </div>
   <div class="chart-card reveal" style="animation-delay:140ms">
     <h3>Revenue by state</h3>
@@ -334,6 +391,10 @@
     <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:.75rem;">
       <h2 class="flowtext" style="font-family:var(--font-display); font-size:1.4rem; font-weight:800; margin:0;">All Transactions</h2>
       <div style="display:flex; gap:.5rem; align-items:center; flex-shrink:0;">
+        <button id="txCopy" style="display:inline-flex; align-items:center; gap:.4rem; background:rgba(45,212,191,0.08); border:1px solid rgba(45,212,191,0.35); color:var(--water); border-radius:8px; padding:.4rem .85rem; font-size:.8125rem; font-weight:600; cursor:pointer; transition:background .15s, border-color .15s, color .15s;">
+          <svg id="txCopyIcon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+          <span id="txCopyLabel">Copy</span>
+        </button>
         <button id="txExport" style="display:inline-flex; align-items:center; gap:.4rem; background:rgba(214,183,140,0.08); border:1px solid rgba(214,183,140,0.35); color:var(--kraft); border-radius:8px; padding:.4rem .85rem; font-size:.8125rem; font-weight:600; cursor:pointer; transition:background .15s, border-color .15s, color .15s;">
           <svg id="txExportIcon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3v12"/><path d="m7 10 5 5 5-5"/><path d="M5 21h14"/></svg>
           <span id="txExportLabel">Export CSV</span>
@@ -492,7 +553,7 @@ document.getElementById('kpiVelocity').textContent = stats.avg_weekly_sales.toFi
   const water = document.getElementById('milestoneFill');
   const pctEl = document.getElementById('milestonePct');
   water.dataset.pct = pct;
-  setTimeout(() => { water.style.height = pct.toFixed(1) + '%'; }, 250);
+  setTimeout(() => { water.style.width = pct.toFixed(1) + '%'; }, 250);
   if (REDUCED) { pctEl.textContent = pct.toFixed(0) + '%'; }
   else {
     const t0 = performance.now();
@@ -557,6 +618,29 @@ new Chart(document.getElementById('chartState'), {
     }
   }
 });
+
+// Rolling 30-day sparkline
+(function() {
+  const el = document.getElementById('chartRolling30');
+  if (!el || !stats.rolling_30_daily) return;
+  new Chart(el.getContext('2d'), {
+    type: 'line',
+    data: {
+      labels: stats.rolling_30_daily.map((_, i) => i),
+      datasets: [{
+        data: stats.rolling_30_daily,
+        borderColor: C('--water'),
+        backgroundColor: 'rgba(45,212,191,0.14)',
+        fill: true, tension: 0.35, pointRadius: 0, borderWidth: 2,
+      }],
+    },
+    options: {
+      responsive: true, maintainAspectRatio: false,
+      plugins: { legend: { display: false }, tooltip: { enabled: false }, datalabels: { display: false } },
+      scales: { x: { display: false }, y: { display: false, beginAtZero: true } },
+    },
+  });
+})();
 
 // Weekly line chart
 new Chart(document.getElementById('chartWeekly'), {
@@ -707,6 +791,62 @@ document.getElementById('txPanelClose').addEventListener('click', () => { txPane
       btn.style.color = '';
       btn.style.borderColor = '';
       btn.style.background = '';
+    }, 1600);
+  });
+})();
+
+// ── Copy filtered transactions → clipboard (TSV) ──
+(function() {
+  const btn = document.getElementById('txCopy');
+  if (!btn) return;
+  const label = document.getElementById('txCopyLabel');
+
+  btn.addEventListener('click', async () => {
+    // Respect the active search filter: skip rows hidden by display:none
+    const rows = Array.from(txPanel.querySelectorAll('tbody tr[data-id]'))
+      .filter(tr => tr.style.display !== 'none');
+
+    const header = ['Date', 'Amount', 'Profit', 'State', 'Platform', 'Notes'].join('\t');
+    const lines = rows.map(tr => {
+      const d = tr.dataset;
+      const notes = (d.notes || '').replace(/[\t\r\n]+/g, ' ');
+      return [
+        d.date || '',
+        parseFloat(d.amount || 0).toFixed(2),
+        parseFloat(d.profit || 0).toFixed(2),
+        d.location || '',
+        d.platform || '',
+        notes,
+      ].join('\t');
+    });
+    const tsv = [header, ...lines].join('\n');
+
+    let ok = false;
+    try {
+      await navigator.clipboard.writeText(tsv);
+      ok = true;
+    } catch (e) {
+      // Fallback for non-secure contexts: hidden textarea + execCommand
+      try {
+        const ta = document.createElement('textarea');
+        ta.value = tsv;
+        ta.style.position = 'fixed'; ta.style.opacity = '0';
+        document.body.appendChild(ta); ta.select();
+        ok = document.execCommand('copy');
+        ta.remove();
+      } catch (_) { /* swallow */ }
+    }
+
+    const prev = label.textContent;
+    label.textContent = ok ? ('Copied ' + rows.length) : 'Copy failed';
+    if (ok) {
+      btn.style.color = 'var(--good)';
+      btn.style.borderColor = 'rgba(74,222,128,0.45)';
+      btn.style.background = 'rgba(74,222,128,0.10)';
+    }
+    setTimeout(() => {
+      label.textContent = prev;
+      btn.style.color = ''; btn.style.borderColor = ''; btn.style.background = '';
     }, 1600);
   });
 })();

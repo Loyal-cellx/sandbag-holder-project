@@ -1,7 +1,9 @@
+.git/
 .env
 venv/
 .venv/
 __pycache__/
 *.pyc
 sales.db
-seed.py
+mockups/
+tests/

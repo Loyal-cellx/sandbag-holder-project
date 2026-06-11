@@ -7,6 +7,7 @@ services:
       - .env
     volumes:
       - db-data:/app/data
+      - /srv/data/backups/sales-tracker:/app/backups
     environment:
       - DB_PATH=/app/data/sales.db
     restart: unless-stopped

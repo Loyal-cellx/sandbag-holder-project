@@ -1,7 +1,7 @@
 from flask import Flask, render_template, request, redirect, url_for, jsonify, flash
-from database import db_init, add_sale, get_all_sales, get_stats, get_distinct_locations, get_all_locations, delete_sale, update_sale, get_milestones
+from database import db_init, add_sale, get_all_sales, get_stats, get_distinct_locations, get_all_locations, delete_sale, update_sale, get_milestones, get_sale
 from prediction import get_prediction
-from datetime import date, datetime
+from datetime import date, datetime, timezone
 import os
 from dotenv import load_dotenv
 
@@ -67,21 +67,35 @@ def log_sale():
 
 @app.route("/sales/<int:sale_id>/delete", methods=["POST"])
 def delete_sale_route(sale_id):
-    delete_sale(sale_id)
+    # Require the custom fetch header — browsers won't attach it on a cross-site
+    # form/navigation, so this rejects naive CSRF without a token scheme.
+    if request.headers.get("X-Requested-With") != "fetch":
+        return jsonify({"ok": False, "error": "Forbidden"}), 403
+    if not delete_sale(sale_id):
+        return jsonify({"ok": False, "error": "Sale not found"}), 404
     return jsonify({"ok": True})
 
 
 @app.route("/sales/<int:sale_id>/edit", methods=["POST"])
 def edit_sale_route(sale_id):
-    data = request.get_json(force=True)
+    # silent=True + JSON content-type requirement: a non-JSON body yields None
+    # (→ 400), and the application/json type forces a CORS preflight cross-site.
+    data = request.get_json(silent=True)
+    if data is None:
+        return jsonify({"ok": False, "error": "Expected JSON body"}), 400
     amount = data.get("amount")
     notes = data.get("notes")
     if amount is not None:
-        amount = float(amount)
+        try:
+            amount = float(amount)
+        except (TypeError, ValueError):
+            return jsonify({"ok": False, "error": "Amount must be a number"}), 400
         if amount <= 0:
             return jsonify({"ok": False, "error": "Amount must be positive"}), 400
-    update_sale(sale_id, amount=amount, notes=notes)
-    return jsonify({"ok": True})
+    if not update_sale(sale_id, amount=amount, notes=notes):
+        return jsonify({"ok": False, "error": "Sale not found"}), 404
+    sale = get_sale(sale_id)
+    return jsonify({"ok": True, "amount": sale["amount"], "profit": sale["profit"]})
 
 
 @app.route("/milestones")
@@ -98,6 +112,14 @@ def api_sales():
 @app.route("/api/stats")
 def api_stats():
     return jsonify(get_stats())
+
+
+@app.route("/api/prediction")
+def api_prediction():
+    prediction = get_prediction(get_stats(), get_all_locations())
+    prediction["generated_at"] = datetime.now(timezone.utc).isoformat()
+    prediction["cache_ttl_seconds"] = 1800
+    return jsonify(prediction)
 
 
 @app.route("/health")

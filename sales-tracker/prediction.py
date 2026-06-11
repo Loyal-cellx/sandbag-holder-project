@@ -520,6 +520,8 @@ def get_prediction(stats, locations):
         "avg_freq": avg_freq,
         "eta_days": eta_days,
         "alerts": alerts,
+        "time_pts": time_pts,
+        "weather_pts": weather_pts,
         "season_pts": season_pts,
         "season_label": season_label,
         "fires": fires,

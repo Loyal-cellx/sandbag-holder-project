@@ -1,10 +1,14 @@
 import sqlite3
-from datetime import datetime, date, timedelta
+from datetime import datetime, date, timedelta, timezone
 import datetime as dt
 import calendar
 import os
 
 DB_PATH = os.getenv("DB_PATH") or os.path.join(os.path.dirname(__file__), "sales.db")
+
+# Profit per unit is $49 of the $69 sell price. Single source of truth —
+# also surfaced to the client via the API so the browser never recomputes it.
+PROFIT_MARGIN = 49 / 69
 
 
 def _connect():
@@ -45,34 +49,56 @@ def add_sale(date_str, amount, location, platform, notes=""):
     conn = _connect()
     conn.execute(
         "INSERT INTO sales (date, amount, location, platform, notes, created_at) VALUES (?, ?, ?, ?, ?, ?)",
-        (date_str, amount, location, _normalize_platform(platform), notes, datetime.utcnow().isoformat()),
+        (date_str, amount, location, _normalize_platform(platform), notes, datetime.now(timezone.utc).isoformat()),
     )
     conn.commit()
     conn.close()
 
 
 def delete_sale(sale_id):
+    """Delete a sale. Returns the number of rows removed (0 → no such id)."""
     conn = _connect()
-    conn.execute("DELETE FROM sales WHERE id = ?", (sale_id,))
+    cur = conn.execute("DELETE FROM sales WHERE id = ?", (sale_id,))
+    affected = cur.rowcount
     conn.commit()
     conn.close()
+    return affected
 
 
 def update_sale(sale_id, amount=None, notes=None):
+    """Update a sale's amount and/or notes. Returns 1 if the row exists, else 0
+    (so callers can return a 404 for a missing id)."""
     conn = _connect()
+    affected = 0
     if amount is not None:
-        conn.execute("UPDATE sales SET amount = ? WHERE id = ?", (amount, sale_id))
+        cur = conn.execute("UPDATE sales SET amount = ? WHERE id = ?", (amount, sale_id))
+        affected = max(affected, cur.rowcount)
     if notes is not None:
-        conn.execute("UPDATE sales SET notes = ? WHERE id = ?", (notes, sale_id))
+        cur = conn.execute("UPDATE sales SET notes = ? WHERE id = ?", (notes, sale_id))
+        affected = max(affected, cur.rowcount)
+    if amount is None and notes is None:
+        # Nothing to change — still verify the row exists so a bad id 404s.
+        affected = 1 if conn.execute("SELECT 1 FROM sales WHERE id = ?", (sale_id,)).fetchone() else 0
     conn.commit()
     conn.close()
+    return affected
+
+
+def get_sale(sale_id):
+    """Single sale as a dict with server-computed profit, or None if missing."""
+    conn = _connect()
+    row = conn.execute("SELECT * FROM sales WHERE id = ?", (sale_id,)).fetchone()
+    conn.close()
+    if row is None:
+        return None
+    return dict(row) | {"profit": round(row["amount"] * PROFIT_MARGIN, 2)}
 
 
 def get_all_sales():
     conn = _connect()
     rows = conn.execute("SELECT * FROM sales ORDER BY date DESC, id DESC").fetchall()
     conn.close()
-    return [dict(r) | {"profit": round(r["amount"] * 49 / 69, 2)} for r in rows]
+    return [dict(r) | {"profit": round(r["amount"] * PROFIT_MARGIN, 2)} for r in rows]
 
 
 def get_distinct_locations():
@@ -185,7 +211,6 @@ def get_stats():
     avg_weekly_revenue = round(total_revenue / weeks_elapsed, 2)
     avg_weekly_sales   = round(total_sales   / weeks_elapsed, 1)
 
-    PROFIT_MARGIN = 49 / 69
     total_profit = round(total_revenue * PROFIT_MARGIN, 2)
     this_month_profit = round(this_month_revenue * PROFIT_MARGIN, 2)
 

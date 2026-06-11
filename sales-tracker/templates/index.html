@@ -727,7 +727,7 @@ document.body.addEventListener('click', e => {
 document.getElementById('deleteCancel').addEventListener('click', () => { modal.style.display = 'none'; pendingSaleId = null; });
 document.getElementById('deleteConfirm').addEventListener('click', () => {
   if (!pendingSaleId) return;
-  fetch('/sales/' + pendingSaleId + '/delete', { method: 'POST' })
+  fetch('/sales/' + pendingSaleId + '/delete', { method: 'POST', headers: { 'X-Requested-With': 'fetch' } })
     .then(r => r.json())
     .then(data => {
       if (data.ok) {
@@ -996,10 +996,20 @@ document.body.addEventListener('click', e => {
   const cell = notesRow.querySelector('td');
   if (cell.querySelector('input')) return;
   const orig = cell.innerHTML;
-  cell.innerHTML = '<input type="text" value="' + curNotes.replace(/"/g, '&quot;') + '" placeholder="Add a note…" style="width:70%; background:var(--bg); border:1px solid var(--water); color:var(--text); border-radius:4px; padding:.15rem .3rem; font-size:.75rem;">' +
-    ' <button style="background:var(--good); color:#06231a; border:none; border-radius:4px; padding:.15rem .4rem; font-size:.7rem; cursor:pointer;" class="ie-save">Save</button>' +
-    ' <button style="background:var(--border); color:var(--muted); border:none; border-radius:4px; padding:.15rem .4rem; font-size:.7rem; cursor:pointer;" class="ie-cancel">Cancel</button>';
-  const inp = cell.querySelector('input'); inp.focus();
+  const inp = document.createElement('input');
+  inp.type = 'text';
+  inp.value = curNotes;            // DOM property — no HTML escaping needed
+  inp.placeholder = 'Add a note…';
+  inp.style.cssText = 'width:70%; background:var(--bg); border:1px solid var(--water); color:var(--text); border-radius:4px; padding:.15rem .3rem; font-size:.75rem;';
+  const saveBtn = document.createElement('button');
+  saveBtn.className = 'ie-save'; saveBtn.textContent = 'Save';
+  saveBtn.style.cssText = 'background:var(--good); color:#06231a; border:none; border-radius:4px; padding:.15rem .4rem; font-size:.7rem; cursor:pointer;';
+  const cancelBtn = document.createElement('button');
+  cancelBtn.className = 'ie-cancel'; cancelBtn.textContent = 'Cancel';
+  cancelBtn.style.cssText = 'background:var(--border); color:var(--muted); border:none; border-radius:4px; padding:.15rem .4rem; font-size:.7rem; cursor:pointer;';
+  cell.textContent = '';
+  cell.append(inp, ' ', saveBtn, ' ', cancelBtn);
+  inp.focus();
   cell.querySelector('.ie-cancel').addEventListener('click', ev => { ev.stopPropagation(); if (orig) { cell.innerHTML = orig; } else { notesRow.remove(); } });
   cell.querySelector('.ie-save').addEventListener('click', ev => {
     ev.stopPropagation();
@@ -1034,10 +1044,19 @@ txPanel.addEventListener('click', e => {
   const row = cell.closest('tr');
   const cur = parseFloat(row.dataset.amount);
   const orig = cell.innerHTML;
-  cell.innerHTML = '<input type="number" step="0.01" min="0.01" value="' + cur.toFixed(2) + '" style="width:5rem; background:var(--bg); border:1px solid var(--hazard); color:var(--hazard-2); border-radius:4px; padding:.15rem .3rem; font-size:.8125rem;">' +
-    ' <button style="background:var(--good); color:#06231a; border:none; border-radius:4px; padding:.15rem .4rem; font-size:.7rem; cursor:pointer;" class="ie-save">Save</button>' +
-    ' <button style="background:var(--border); color:var(--muted); border:none; border-radius:4px; padding:.15rem .4rem; font-size:.7rem; cursor:pointer;" class="ie-cancel">Cancel</button>';
-  const inp = cell.querySelector('input'); inp.focus(); inp.select();
+  const inp = document.createElement('input');
+  inp.type = 'number'; inp.step = '0.01'; inp.min = '0.01';
+  inp.value = cur.toFixed(2);
+  inp.style.cssText = 'width:5rem; background:var(--bg); border:1px solid var(--hazard); color:var(--hazard-2); border-radius:4px; padding:.15rem .3rem; font-size:.8125rem;';
+  const saveBtn = document.createElement('button');
+  saveBtn.className = 'ie-save'; saveBtn.textContent = 'Save';
+  saveBtn.style.cssText = 'background:var(--good); color:#06231a; border:none; border-radius:4px; padding:.15rem .4rem; font-size:.7rem; cursor:pointer;';
+  const cancelBtn = document.createElement('button');
+  cancelBtn.className = 'ie-cancel'; cancelBtn.textContent = 'Cancel';
+  cancelBtn.style.cssText = 'background:var(--border); color:var(--muted); border:none; border-radius:4px; padding:.15rem .4rem; font-size:.7rem; cursor:pointer;';
+  cell.textContent = '';
+  cell.append(inp, ' ', saveBtn, ' ', cancelBtn);
+  inp.focus(); inp.select();
   cell.querySelector('.ie-cancel').addEventListener('click', ev => { ev.stopPropagation(); cell.innerHTML = orig; });
   cell.querySelector('.ie-save').addEventListener('click', ev => {
     ev.stopPropagation();
@@ -1046,7 +1065,7 @@ txPanel.addEventListener('click', e => {
     fetch('/sales/' + id + '/edit', { method: 'POST', body: JSON.stringify({ amount: val }), headers: { 'Content-Type': 'application/json' } })
       .then(r => r.json()).then(d => {
         if (d.ok) {
-          const profit = (val * 49 / 69);
+          const profit = d.profit;   // server-computed — single source of truth
           row.dataset.amount = val; row.dataset.profit = profit.toFixed(2);
           cell.textContent = '$' + val.toFixed(2);
           const profitCell = row.querySelector('.panel-profit');

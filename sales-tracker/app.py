@@ -51,6 +51,12 @@ def log_sale():
             flash("Platform must be Amazon, eBay, or Walmart.")
             return redirect(url_for("log_sale"))
 
+        try:
+            datetime.strptime(sale_date, "%Y-%m-%d")
+        except ValueError:
+            flash("Date must be a valid calendar date (YYYY-MM-DD).")
+            return redirect(url_for("log_sale"))
+
         add_sale(sale_date, amount, location, platform, notes)
         return redirect(url_for("index"))
 
@@ -92,6 +98,11 @@ def api_sales():
 @app.route("/api/stats")
 def api_stats():
     return jsonify(get_stats())
+
+
+@app.route("/health")
+def health():
+    return jsonify({"status": "ok"})
 
 
 if __name__ == "__main__":

@@ -10,6 +10,6 @@ COPY . .
 EXPOSE 5050
 
 HEALTHCHECK --interval=60s --timeout=5s --start-period=15s --retries=3 \
-  CMD python -c "import urllib.request; urllib.request.urlopen('http://localhost:5050/', timeout=3)" || exit 1
+  CMD python -c "import urllib.request; urllib.request.urlopen('http://localhost:5050/health', timeout=3)" || exit 1
 
-CMD ["python", "app.py"]
+CMD ["gunicorn","--workers","1","--threads","4","--timeout","60","--bind","0.0.0.0:5050","app:app"]

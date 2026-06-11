@@ -4,7 +4,7 @@ import datetime as dt
 import calendar
 import os
 
-DB_PATH = os.getenv("DB_PATH", os.path.join(os.path.dirname(__file__), "sales.db"))
+DB_PATH = os.getenv("DB_PATH") or os.path.join(os.path.dirname(__file__), "sales.db")
 
 
 def _connect():

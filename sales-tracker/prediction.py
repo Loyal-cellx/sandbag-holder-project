@@ -4,6 +4,7 @@ import urllib.request
 import urllib.parse
 import urllib.error
 import json
+from concurrent.futures import ThreadPoolExecutor
 from datetime import date
 
 # State name → postal code for NWS API
@@ -479,10 +480,18 @@ def get_prediction(stats, locations):
         if code and code not in state_codes:
             state_codes.append(code)
 
-    alerts = _get_cached_alerts(state_codes)
-    fires = _cached("nifc_active", state_codes, _fetch_nifc_active)
-    burn_scars = _cached("nifc_scars", state_codes, _fetch_nifc_burn_scars)
-    storms = _cached("nhc", state_codes, _fetch_nhc_storms)
+    # Fan the four independent external feeds out concurrently. Each is wrapped in
+    # _cached(), which only hits the network on a cold/expired entry. Cold-cache
+    # latency drops from ~20s (4 sequential ~5s fetches) to ~5s (slowest single feed).
+    with ThreadPoolExecutor(max_workers=4) as pool:
+        f_alerts = pool.submit(_get_cached_alerts, state_codes)
+        f_fires = pool.submit(_cached, "nifc_active", state_codes, _fetch_nifc_active)
+        f_scars = pool.submit(_cached, "nifc_scars", state_codes, _fetch_nifc_burn_scars)
+        f_storms = pool.submit(_cached, "nhc", state_codes, _fetch_nhc_storms)
+    alerts = f_alerts.result()
+    fires = f_fires.result()
+    burn_scars = f_scars.result()
+    storms = f_storms.result()
 
     month = date.today().month
     season_pts, season_label = _score_season(month, state_codes)

@@ -219,6 +219,7 @@
       <a class="link {% if request.endpoint == 'index' %}active{% endif %}" href="{{ url_for('index') }}" {% if request.endpoint == 'index' %}aria-current="page"{% endif %}>Dashboard</a>
       <a class="link {% if request.endpoint == 'log_sale' %}active{% endif %}" href="{{ url_for('log_sale') }}" {% if request.endpoint == 'log_sale' %}aria-current="page"{% endif %}>Log Sale</a>
       <a class="link {% if request.endpoint == 'milestones' %}active{% endif %}" href="{{ url_for('milestones') }}" {% if request.endpoint == 'milestones' %}aria-current="page"{% endif %}>Milestones</a>
+      <a class="link {% if request.endpoint == 'history' %}active{% endif %}" href="{{ url_for('history') }}" {% if request.endpoint == 'history' %}aria-current="page"{% endif %}>Climate Log</a>
     </div>
   </nav>
 

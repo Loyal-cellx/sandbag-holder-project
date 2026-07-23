@@ -1,5 +1,5 @@
 from flask import Flask, render_template, request, redirect, url_for, jsonify, flash
-from database import db_init, add_sale, get_all_sales, get_stats, get_distinct_locations, get_all_locations, delete_sale, update_sale, get_milestones, get_sale
+from database import db_init, add_sale, get_all_sales, get_stats, get_distinct_locations, get_all_locations, delete_sale, update_sale, get_milestones, get_sale, get_climate_snapshots, save_climate_snapshot
 from prediction import get_prediction
 from datetime import date, datetime, timezone
 import os
@@ -125,6 +125,28 @@ def api_prediction():
 @app.route("/health")
 def health():
     return jsonify({"status": "ok"})
+
+
+@app.route("/history")
+def history():
+    snapshots = get_climate_snapshots(limit=365)
+    return render_template("history.html", snapshots=snapshots)
+
+
+@app.route("/api/snapshots")
+def api_snapshots():
+    return jsonify(get_climate_snapshots(limit=365))
+
+
+@app.route("/api/take-snapshot", methods=["POST"])
+def api_take_snapshot():
+    """Trigger a climate+sales snapshot for today. Called by nightly cron."""
+    try:
+        from snapshot import take_snapshot
+        snap = take_snapshot()
+        return jsonify({"ok": True, "snapshot_date": snap["snapshot_date"]})
+    except Exception as e:
+        return jsonify({"ok": False, "error": str(e)}), 500
 
 
 if __name__ == "__main__":

@@ -30,6 +30,26 @@ def db_init():
             created_at TEXT NOT NULL
         )
     """)
+    conn.execute("""
+        CREATE TABLE IF NOT EXISTS climate_snapshots (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            snapshot_date TEXT NOT NULL UNIQUE,
+            sales_today INTEGER NOT NULL DEFAULT 0,
+            revenue_today REAL NOT NULL DEFAULT 0,
+            total_sales INTEGER NOT NULL DEFAULT 0,
+            total_revenue REAL NOT NULL DEFAULT 0,
+            noaa_alert_count INTEGER NOT NULL DEFAULT 0,
+            flood_alerts INTEGER NOT NULL DEFAULT 0,
+            fire_count INTEGER NOT NULL DEFAULT 0,
+            fire_acres REAL NOT NULL DEFAULT 0,
+            hurricane_alerts INTEGER NOT NULL DEFAULT 0,
+            storm_alerts INTEGER NOT NULL DEFAULT 0,
+            tornado_alerts INTEGER NOT NULL DEFAULT 0,
+            alert_types_json TEXT NOT NULL DEFAULT '[]',
+            notes TEXT,
+            captured_at TEXT NOT NULL
+        )
+    """)
     conn.commit()
     conn.close()
 
@@ -311,6 +331,54 @@ def get_stats():
         "rolling_30_daily": rolling_30_daily,
         "prev_30_daily": prev_30_daily,
     }
+
+
+def save_climate_snapshot(snap: dict):
+    """Insert or replace a daily climate snapshot. `snap` keys match column names."""
+    conn = _connect()
+    conn.execute("""
+        INSERT INTO climate_snapshots (
+            snapshot_date, sales_today, revenue_today,
+            total_sales, total_revenue,
+            noaa_alert_count, flood_alerts, fire_count, fire_acres,
+            hurricane_alerts, storm_alerts, tornado_alerts,
+            alert_types_json, notes, captured_at
+        ) VALUES (
+            :snapshot_date, :sales_today, :revenue_today,
+            :total_sales, :total_revenue,
+            :noaa_alert_count, :flood_alerts, :fire_count, :fire_acres,
+            :hurricane_alerts, :storm_alerts, :tornado_alerts,
+            :alert_types_json, :notes, :captured_at
+        )
+        ON CONFLICT(snapshot_date) DO UPDATE SET
+            sales_today       = excluded.sales_today,
+            revenue_today     = excluded.revenue_today,
+            total_sales       = excluded.total_sales,
+            total_revenue     = excluded.total_revenue,
+            noaa_alert_count  = excluded.noaa_alert_count,
+            flood_alerts      = excluded.flood_alerts,
+            fire_count        = excluded.fire_count,
+            fire_acres        = excluded.fire_acres,
+            hurricane_alerts  = excluded.hurricane_alerts,
+            storm_alerts      = excluded.storm_alerts,
+            tornado_alerts    = excluded.tornado_alerts,
+            alert_types_json  = excluded.alert_types_json,
+            notes             = excluded.notes,
+            captured_at       = excluded.captured_at
+    """, snap)
+    conn.commit()
+    conn.close()
+
+
+def get_climate_snapshots(limit=365):
+    """Return daily climate snapshots ordered oldest-first."""
+    conn = _connect()
+    rows = conn.execute(
+        "SELECT * FROM climate_snapshots ORDER BY snapshot_date ASC LIMIT ?",
+        (limit,)
+    ).fetchall()
+    conn.close()
+    return [dict(r) for r in rows]
 
 
 def get_milestones():

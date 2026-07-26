@@ -207,7 +207,8 @@ def health():
 @app.route("/history")
 def history():
     snapshots = get_climate_snapshots(limit=365)
-    return render_template("history.html", snapshots=snapshots)
+    sale_weather = get_all_sale_weather()
+    return render_template("history.html", snapshots=snapshots, sale_weather=sale_weather)
 
 
 @app.route("/api/snapshots")

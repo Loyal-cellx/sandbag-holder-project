@@ -2,26 +2,20 @@
 {% block title %}Climate Log — Sandbag Sales{% endblock %}
 
 {% block extra_style %}
-.hist-hero {
-  margin: 1.5rem 0 1.2rem;
-}
+.hist-hero { margin: 1.5rem 0 1.2rem; }
 .hist-hero h1 {
   font-family: var(--font-display); font-weight: 800;
   font-size: clamp(1.6rem, 5vw, 2.4rem); line-height: 1.1;
   margin-bottom: .4rem;
 }
-.hist-hero p {
-  color: var(--muted); font-size: .88rem; max-width: 520px; line-height: 1.55;
-}
+.hist-hero p { color: var(--muted); font-size: .88rem; max-width: 520px; line-height: 1.55; }
 
-/* chart wrapper */
 .chart-wrap {
   background: var(--card); border: 1px solid var(--border);
   border-radius: 14px; padding: 1.2rem 1.2rem 1rem; margin-bottom: 1.4rem;
 }
 .chart-wrap canvas { display: block; }
 
-/* empty state */
 .empty-state {
   background: var(--card); border: 1px solid var(--border);
   border-radius: 14px; padding: 2.5rem 1.5rem;
@@ -29,7 +23,6 @@
 }
 .empty-state strong { display: block; font-size: 1.1rem; color: var(--text); margin-bottom: .5rem; }
 
-/* table */
 .snap-table-wrap {
   background: var(--card); border: 1px solid var(--border);
   border-radius: 14px; overflow: hidden; margin-top: 1.4rem;
@@ -48,107 +41,88 @@
 .snap-table tr:last-child td { border-bottom: none; }
 .snap-table tr:hover td { background: var(--card-2); }
 
-.alert-pill {
+.weather-pill {
   display: inline-flex; align-items: center; gap: .25rem;
-  font-size: .65rem; font-weight: 700; padding: .15rem .45rem;
-  border-radius: 999px; margin: .1rem .1rem 0 0;
+  font-size: .65rem; font-weight: 600; padding: .15rem .45rem;
+  border-radius: 999px;
+  background: rgba(45,212,191,0.12); color: var(--water);
 }
-.pill-flood    { background: rgba(56,189,248,0.15); color: var(--water-2); }
-.pill-fire     { background: rgba(249,115,22,0.15); color: var(--hazard); }
-.pill-hurr     { background: rgba(250,204,21,0.15); color: var(--hazard-2); }
-.pill-storm    { background: rgba(52,211,153,0.15); color: var(--good); }
-.pill-tornado  { background: rgba(251,113,133,0.15); color: var(--bad); }
-
 .muted-cell { color: var(--faint); }
-.rev-cell   { font-family: var(--font-display); font-weight: 700; color: var(--good); }
+.rev-cell { font-family: var(--font-display); font-weight: 700; color: var(--good); }
 
-/* legend */
 .chart-legend {
   display: flex; gap: 1.1rem; flex-wrap: wrap;
   margin-bottom: .75rem; font-size: .72rem;
 }
-.leg-item {
-  display: flex; align-items: center; gap: .35rem; color: var(--muted);
-}
-.leg-dot {
-  width: 10px; height: 10px; border-radius: 50%;
-}
+.leg-item { display: flex; align-items: center; gap: .35rem; color: var(--muted); }
+.leg-dot { width: 10px; height: 10px; border-radius: 50%; }
 {% endblock %}
 
 {% block content %}
 <div class="hist-hero reveal" style="animation-delay:.05s">
   <p class="eyebrow">Climate Log</p>
-  <h1>Sales × <span class="flowtext">Climate</span></h1>
-  <p>Daily snapshots of national disaster conditions alongside sales performance. Captured every night at 11:59 PM.</p>
+  <h1>Sales × <span class="flowtext">Weather</span></h1>
+  <p>Real historical weather at the time and location of each sale, fetched from Open-Meteo. Captured automatically when you log a sale.</p>
 </div>
 
-{% if not snapshots %}
+{% if not sale_weather %}
   <div class="empty-state reveal" style="animation-delay:.1s">
-    <strong>No snapshots yet</strong>
-    The first snapshot will be captured tonight at midnight, or you can trigger one manually via <code>POST /api/take-snapshot</code>.
+    <strong>No weather data yet</strong>
+    Weather is fetched automatically when you log a sale.
   </div>
 {% else %}
 
-<!-- ── Charts ─────────────────────────────────────────────────────────────── -->
+<!-- ── Chart 1: Temp range + precip ───────────────────────────────────────── -->
 <div class="chart-wrap reveal" style="animation-delay:.1s">
-  <div class="section-h">Sales vs Climate Alerts Over Time</div>
+  <div class="section-h">Temperature &amp; Precipitation at Sale Location</div>
   <div class="chart-legend">
-    <div class="leg-item"><div class="leg-dot" style="background:var(--water)"></div> Daily Revenue ($)</div>
-    <div class="leg-item"><div class="leg-dot" style="background:var(--water-2)"></div> Sales Count</div>
-    <div class="leg-item"><div class="leg-dot" style="background:var(--hazard)"></div> Active Fires</div>
-    <div class="leg-item"><div class="leg-dot" style="background:rgba(56,189,248,0.8)"></div> Flood Alerts</div>
-    <div class="leg-item"><div class="leg-dot" style="background:var(--hazard-2)"></div> Hurricane Alerts</div>
+    <div class="leg-item"><div class="leg-dot" style="background:rgba(249,115,22,0.8)"></div> High °F</div>
+    <div class="leg-item"><div class="leg-dot" style="background:rgba(45,212,191,0.8)"></div> Low °F</div>
+    <div class="leg-item"><div class="leg-dot" style="background:rgba(56,189,248,0.5)"></div> Precip (in)</div>
   </div>
-  <canvas id="historyChart" height="120"></canvas>
+  <canvas id="tempChart" height="110"></canvas>
 </div>
 
+<!-- ── Chart 2: Windspeed ─────────────────────────────────────────────────── -->
 <div class="chart-wrap reveal" style="animation-delay:.15s">
-  <div class="section-h">Total Active Fires (National) &amp; Fire Acres</div>
-  <canvas id="fireChart" height="80"></canvas>
+  <div class="section-h">Max Windspeed at Sale Location (mph)</div>
+  <canvas id="windChart" height="70"></canvas>
 </div>
 
 <!-- ── Table ──────────────────────────────────────────────────────────────── -->
 <div class="divider reveal" style="animation-delay:.2s"></div>
-<div class="section-h reveal" style="animation-delay:.22s">Raw Snapshots</div>
+<div class="section-h reveal" style="animation-delay:.22s">Per-Sale Weather Log</div>
 <div class="snap-table-wrap reveal" style="animation-delay:.25s">
   <table class="snap-table">
     <thead>
       <tr>
         <th>Date</th>
-        <th>Sales</th>
+        <th>Location</th>
+        <th>Conditions</th>
+        <th>High °F</th>
+        <th>Low °F</th>
+        <th>Precip</th>
+        <th>Wind (max)</th>
         <th>Revenue</th>
-        <th>NOAA Alerts</th>
-        <th>Alert Breakdown</th>
-        <th>Active Fires</th>
-        <th>Fire Acres</th>
-        <th>All-Time Total</th>
       </tr>
     </thead>
     <tbody>
-      {% for s in snapshots | reverse %}
+      {% for w in sale_weather %}
       <tr>
-        <td>{{ s.snapshot_date }}</td>
-        <td>{{ s.sales_today }}</td>
-        <td class="rev-cell">{% if s.revenue_today > 0 %}${{ "%.0f"|format(s.revenue_today) }}{% else %}<span class="muted-cell">—</span>{% endif %}</td>
+        <td>{{ w.sale_date }}</td>
+        <td>{{ w.location }}</td>
         <td>
-          {% if s.noaa_alert_count > 0 %}
-            <span style="font-weight:700">{{ s.noaa_alert_count }}</span>
+          {% if w.weather_desc %}
+            <span class="weather-pill">{{ w.weather_desc }}</span>
           {% else %}
-            <span class="muted-cell">0</span>
-          {% endif %}
-        </td>
-        <td>
-          {% if s.flood_alerts > 0 %}<span class="alert-pill pill-flood">🌊 {{ s.flood_alerts }} flood</span>{% endif %}
-          {% if s.hurricane_alerts > 0 %}<span class="alert-pill pill-hurr">🌀 {{ s.hurricane_alerts }} hurr.</span>{% endif %}
-          {% if s.storm_alerts > 0 %}<span class="alert-pill pill-storm">⛈ {{ s.storm_alerts }} storm</span>{% endif %}
-          {% if s.tornado_alerts > 0 %}<span class="alert-pill pill-tornado">🌪 {{ s.tornado_alerts }} tornado</span>{% endif %}
-          {% if s.flood_alerts == 0 and s.hurricane_alerts == 0 and s.storm_alerts == 0 and s.tornado_alerts == 0 %}
             <span class="muted-cell">—</span>
           {% endif %}
         </td>
-        <td>{% if s.fire_count > 0 %}<span style="color:var(--hazard);font-weight:700">{{ s.fire_count }}</span>{% else %}<span class="muted-cell">0</span>{% endif %}</td>
-        <td class="muted-cell">{% if s.fire_acres > 0 %}{{ "{:,.0f}".format(s.fire_acres) }} ac{% else %}—{% endif %}</td>
-        <td class="muted-cell">{{ s.total_sales }} sales / ${{ "%.0f"|format(s.total_revenue) }}</td>
+        <td>{% if w.temp_max_f is not none %}{{ "%.0f"|format(w.temp_max_f) }}°{% else %}<span class="muted-cell">—</span>{% endif %}</td>
+        <td>{% if w.temp_min_f is not none %}{{ "%.0f"|format(w.temp_min_f) }}°{% else %}<span class="muted-cell">—</span>{% endif %}</td>
+        <td>{% if w.precipitation_in is not none and w.precipitation_in > 0 %}<span style="color:var(--water-2)">{{ "%.2f"|format(w.precipitation_in) }}"</span>{% else %}<span class="muted-cell">dry</span>{% endif %}</td>
+        <td>{% if w.windspeed_max_mph is not none %}{{ "%.0f"|format(w.windspeed_max_mph) }} mph{% else %}<span class="muted-cell">—</span>{% endif %}</td>
+        <td class="rev-cell">${{ "%.0f"|format(w.amount) }}</td>
       </tr>
       {% endfor %}
     </tbody>
@@ -157,181 +131,113 @@
 
 <script>
 (function() {
-  const raw = {{ snapshots | tojson }};
-  const labels  = raw.map(s => s.snapshot_date);
-  const revenue = raw.map(s => s.revenue_today);
-  const sales   = raw.map(s => s.sales_today);
-  const fires   = raw.map(s => s.fire_count);
-  const floods  = raw.map(s => s.flood_alerts);
-  const hurrs   = raw.map(s => s.hurricane_alerts);
-  const fireAc  = raw.map(s => s.fire_acres);
+  const raw = {{ sale_weather | tojson }};
+  // oldest-first for charts
+  const asc = [...raw].reverse();
 
-  const gridColor  = 'rgba(34,49,65,0.6)';
-  const tickColor  = '#56697c';
-  const baseOpts   = {
-    responsive: true,
-    interaction: { mode: 'index', intersect: false },
-    plugins: {
-      legend: { display: false },
-      tooltip: {
-        backgroundColor: '#121c28',
-        borderColor: '#223141',
-        borderWidth: 1,
-        titleColor: '#e8eef4',
-        bodyColor: '#8a9bad',
-        padding: 10,
-      }
-    },
-    scales: {
-      x: {
-        ticks: { color: tickColor, maxRotation: 45, font: { size: 10 } },
-        grid: { color: gridColor },
-      }
-    }
+  const labels  = asc.map(w => w.sale_date + ' · ' + w.location.split(' ').map(p=>p[0]).join(''));
+  const highs   = asc.map(w => w.temp_max_f);
+  const lows    = asc.map(w => w.temp_min_f);
+  const precip  = asc.map(w => w.precipitation_in);
+  const wind    = asc.map(w => w.windspeed_max_mph);
+
+  const gridColor = 'rgba(34,49,65,0.6)';
+  const tickColor = '#56697c';
+  const tipOpts = {
+    backgroundColor: '#121c28', borderColor: '#223141', borderWidth: 1,
+    titleColor: '#e8eef4', bodyColor: '#8a9bad', padding: 10,
   };
 
-  // ── History chart ──────────────────────────────────────────────────────
-  const ctx1 = document.getElementById('historyChart').getContext('2d');
-  new Chart(ctx1, {
+  // ── Temp + precip chart ──────────────────────────────────────────────────
+  new Chart(document.getElementById('tempChart').getContext('2d'), {
     type: 'bar',
     data: {
       labels,
       datasets: [
         {
-          label: 'Revenue ($)',
-          data: revenue,
-          backgroundColor: 'rgba(45,212,191,0.25)',
-          borderColor: 'rgba(45,212,191,0.8)',
+          label: 'Precip (in)',
+          data: precip,
+          backgroundColor: 'rgba(56,189,248,0.25)',
+          borderColor: 'rgba(56,189,248,0.6)',
           borderWidth: 1,
-          borderRadius: 3,
-          yAxisID: 'y',
+          borderRadius: 2,
+          yAxisID: 'yPrecip',
           order: 3,
         },
         {
-          label: 'Sales Count',
-          data: sales,
+          label: 'High °F',
+          data: highs,
           type: 'line',
-          borderColor: 'rgba(56,189,248,0.9)',
-          backgroundColor: 'transparent',
+          borderColor: 'rgba(249,115,22,0.85)',
+          backgroundColor: 'rgba(249,115,22,0.08)',
           borderWidth: 2,
           pointRadius: 3,
           tension: 0.3,
-          yAxisID: 'y2',
+          yAxisID: 'yTemp',
           order: 1,
+          fill: '+1',
         },
         {
-          label: 'Active Fires',
-          data: fires,
+          label: 'Low °F',
+          data: lows,
           type: 'line',
-          borderColor: 'rgba(249,115,22,0.8)',
-          backgroundColor: 'transparent',
-          borderWidth: 1.5,
-          borderDash: [4, 3],
-          pointRadius: 2,
+          borderColor: 'rgba(45,212,191,0.85)',
+          backgroundColor: 'rgba(45,212,191,0.08)',
+          borderWidth: 2,
+          pointRadius: 3,
           tension: 0.3,
-          yAxisID: 'y3',
-          order: 2,
-        },
-        {
-          label: 'Flood Alerts',
-          data: floods,
-          type: 'line',
-          borderColor: 'rgba(56,189,248,0.5)',
-          backgroundColor: 'transparent',
-          borderWidth: 1.5,
-          borderDash: [2, 4],
-          pointRadius: 2,
-          tension: 0.3,
-          yAxisID: 'y3',
-          order: 2,
-        },
-        {
-          label: 'Hurricane Alerts',
-          data: hurrs,
-          type: 'line',
-          borderColor: 'rgba(250,204,21,0.7)',
-          backgroundColor: 'transparent',
-          borderWidth: 1.5,
-          borderDash: [2, 4],
-          pointRadius: 2,
-          tension: 0.3,
-          yAxisID: 'y3',
+          yAxisID: 'yTemp',
           order: 2,
         },
       ]
     },
     options: {
-      ...baseOpts,
+      responsive: true,
+      interaction: { mode: 'index', intersect: false },
+      plugins: { legend: { display: false }, tooltip: tipOpts },
       scales: {
-        ...baseOpts.scales,
-        y: {
+        x: { ticks: { color: tickColor, maxRotation: 55, font: { size: 9 } }, grid: { color: gridColor } },
+        yTemp: {
           position: 'left',
-          ticks: { color: tickColor, callback: v => '$' + v },
+          ticks: { color: tickColor, callback: v => v + '°F' },
           grid: { color: gridColor },
-          title: { display: true, text: 'Revenue', color: tickColor, font: { size: 10 } },
+          title: { display: true, text: 'Temp °F', color: tickColor, font: { size: 10 } },
         },
-        y2: {
+        yPrecip: {
           position: 'right',
-          ticks: { color: 'rgba(56,189,248,0.7)', stepSize: 1 },
+          ticks: { color: 'rgba(56,189,248,0.7)', callback: v => v + '"' },
           grid: { display: false },
-          title: { display: true, text: 'Sales', color: 'rgba(56,189,248,0.7)', font: { size: 10 } },
-        },
-        y3: {
-          position: 'right',
-          ticks: { color: 'rgba(249,115,22,0.7)', stepSize: 1 },
-          grid: { display: false },
-          title: { display: true, text: 'Alerts / Fires', color: 'rgba(249,115,22,0.7)', font: { size: 10 } },
+          title: { display: true, text: 'Precip (in)', color: 'rgba(56,189,248,0.7)', font: { size: 10 } },
+          min: 0,
         },
       }
     }
   });
 
-  // ── Fire chart ─────────────────────────────────────────────────────────
-  const ctx2 = document.getElementById('fireChart').getContext('2d');
-  new Chart(ctx2, {
+  // ── Wind chart ───────────────────────────────────────────────────────────
+  new Chart(document.getElementById('windChart').getContext('2d'), {
     type: 'bar',
     data: {
       labels,
-      datasets: [
-        {
-          label: 'Active Fires',
-          data: fires,
-          backgroundColor: 'rgba(249,115,22,0.3)',
-          borderColor: 'rgba(249,115,22,0.8)',
-          borderWidth: 1,
-          borderRadius: 2,
-          yAxisID: 'y',
-          order: 2,
-        },
-        {
-          label: 'Fire Acres (k)',
-          data: fireAc.map(a => +(a / 1000).toFixed(1)),
-          type: 'line',
-          borderColor: 'rgba(250,204,21,0.7)',
-          backgroundColor: 'transparent',
-          borderWidth: 2,
-          pointRadius: 2,
-          tension: 0.3,
-          yAxisID: 'y2',
-          order: 1,
-        },
-      ]
+      datasets: [{
+        label: 'Max Wind (mph)',
+        data: wind,
+        backgroundColor: 'rgba(250,204,21,0.2)',
+        borderColor: 'rgba(250,204,21,0.75)',
+        borderWidth: 1,
+        borderRadius: 3,
+      }]
     },
     options: {
-      ...baseOpts,
+      responsive: true,
+      interaction: { mode: 'index', intersect: false },
+      plugins: { legend: { display: false }, tooltip: tipOpts },
       scales: {
-        ...baseOpts.scales,
+        x: { ticks: { color: tickColor, maxRotation: 55, font: { size: 9 } }, grid: { color: gridColor } },
         y: {
-          position: 'left',
-          ticks: { color: tickColor, stepSize: 1 },
+          ticks: { color: tickColor, callback: v => v + ' mph' },
           grid: { color: gridColor },
-          title: { display: true, text: 'Fire Count', color: tickColor, font: { size: 10 } },
-        },
-        y2: {
-          position: 'right',
-          ticks: { color: 'rgba(250,204,21,0.7)', callback: v => v + 'k ac' },
-          grid: { display: false },
-          title: { display: true, text: 'Acres (k)', color: 'rgba(250,204,21,0.7)', font: { size: 10 } },
+          min: 0,
         },
       }
     }

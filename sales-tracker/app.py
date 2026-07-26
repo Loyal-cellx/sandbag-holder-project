@@ -235,14 +235,51 @@ def history():
     # Monthly counts (for monthly trend data already in stats, reuse)
     stats = get_stats()
 
+    # ── Pace acceleration ────────────────────────────────────────────────────
+    all_sale_dates = sorted(s["date"] for s in sales)
+    n = len(all_sale_dates)
+    mid = n // 2
+
+    def _half_stats(dates):
+        if len(dates) < 2:
+            return None
+        start = _dt.strptime(dates[0], "%Y-%m-%d")
+        end   = _dt.strptime(dates[-1], "%Y-%m-%d")
+        span  = (end - start).days or 1
+        return {"count": len(dates), "days": span, "rate": round(span / len(dates), 1)}
+
+    first_half_stats  = _half_stats(all_sale_dates[:mid])
+    second_half_stats = _half_stats(all_sale_dates[mid:])
+    pace_speedup = None
+    if first_half_stats and second_half_stats and second_half_stats["rate"] > 0:
+        pace_speedup = round(first_half_stats["rate"] / second_half_stats["rate"], 1)
+
+    # ── Insight callouts ─────────────────────────────────────────────────────
+    dow_names = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"]
+    best_dow_idx   = dow_counts.index(max(dow_counts)) if sales else 0
+    best_dow_name  = dow_names[best_dow_idx]
+    best_dow_count = dow_counts[best_dow_idx]
+
+    top_state     = stats["by_location"][0] if stats.get("by_location") else None
+    top_state_pct = round(top_state["count"] / len(sales) * 100) if (top_state and sales) else 0
+
     patterns = {
-        "dow_counts": dow_counts,          # list[7], Mon–Sun
-        "multi_days": multi_days,
-        "gaps": gaps,
-        "avg_gap": round(sum(g["days"] for g in gaps) / len(gaps), 1) if gaps else None,
-        "max_gap": max((g["days"] for g in gaps), default=0),
-        "min_gap": min((g["days"] for g in gaps), default=0),
-        "burst_days": sum(1 for g in gaps if g["days"] <= 3),
+        "dow_counts":    dow_counts,
+        "multi_days":    multi_days,
+        "gaps":          gaps,
+        "avg_gap":       round(sum(g["days"] for g in gaps) / len(gaps), 1) if gaps else None,
+        "max_gap":       max((g["days"] for g in gaps), default=0),
+        "min_gap":       min((g["days"] for g in gaps), default=0),
+        "burst_days":    sum(1 for g in gaps if g["days"] <= 3),
+        # pace
+        "first_half":    first_half_stats,
+        "second_half":   second_half_stats,
+        "pace_speedup":  pace_speedup,
+        # insights
+        "top_state":     top_state,
+        "top_state_pct": top_state_pct,
+        "best_dow_name": best_dow_name,
+        "best_dow_count": best_dow_count,
     }
 
     return render_template("history.html", patterns=patterns, stats=stats)

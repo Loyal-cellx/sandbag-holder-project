@@ -10,6 +10,40 @@
 }
 .hist-hero p { color: var(--muted); font-size: .88rem; max-width: 520px; line-height: 1.55; }
 
+/* ── Insight cards ───────────────────────────────────────────────────────── */
+.insight-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: .75rem; margin-bottom: 1.4rem;
+}
+.insight-card {
+  background: var(--card); border: 1px solid var(--border);
+  border-radius: 12px; padding: 1rem 1.1rem;
+  position: relative; overflow: hidden;
+}
+.insight-card::before {
+  content: '';
+  position: absolute; top: 0; left: 0;
+  width: 3px; height: 100%;
+  border-radius: 12px 0 0 12px;
+}
+.insight-card.market::before  { background: var(--water); }
+.insight-card.accel::before   { background: var(--hazard); }
+.insight-card.bestday::before { background: var(--hazard-2); }
+.insight-card .i-eyebrow {
+  font-size: .6rem; font-weight: 700; letter-spacing: .12em;
+  text-transform: uppercase; margin-bottom: .35rem;
+}
+.insight-card.market  .i-eyebrow { color: var(--water); }
+.insight-card.accel   .i-eyebrow { color: var(--hazard); }
+.insight-card.bestday .i-eyebrow { color: var(--hazard-2); }
+.insight-card .i-stat {
+  font-family: var(--font-display); font-size: 1.5rem; font-weight: 800;
+  color: var(--text); line-height: 1.1; margin-bottom: .25rem;
+}
+.insight-card .i-body { font-size: .75rem; color: var(--muted); line-height: 1.5; }
+
+/* ── Charts / KPI ────────────────────────────────────────────────────────── */
 .chart-wrap {
   background: var(--card); border: 1px solid var(--border);
   border-radius: 14px; padding: 1.2rem 1.2rem 1rem; margin-bottom: 1.4rem;
@@ -26,6 +60,8 @@
 .kpi-card .label { font-size: .62rem; font-weight: 700; letter-spacing: .1em; text-transform: uppercase; color: var(--faint); }
 .kpi-card .val { font-family: var(--font-display); font-size: 1.6rem; font-weight: 800; color: var(--text); line-height: 1.1; margin-top: .2rem; }
 .kpi-card .sub { font-size: .72rem; color: var(--muted); margin-top: .15rem; }
+.kpi-card.accent-orange { border-color: rgba(249,115,22,0.3); }
+.kpi-card.accent-orange .label { color: var(--hazard); }
 
 .snap-table-wrap {
   background: var(--card); border: 1px solid var(--border);
@@ -59,8 +95,45 @@
   <p>When sales happen, how often, and where the bursts come from.</p>
 </div>
 
+<!-- ── Insight cards ──────────────────────────────────────────────────────── -->
+<div class="insight-grid reveal" style="animation-delay:.07s">
+
+  {% if patterns.top_state %}
+  <div class="insight-card market">
+    <div class="i-eyebrow">Top Market</div>
+    <div class="i-stat">{{ patterns.top_state.location }}</div>
+    <div class="i-body">
+      {{ patterns.top_state_pct }}% of all sales &mdash;
+      {{ patterns.top_state.count }} of {{ stats.total_sales }} orders.
+      Your strongest geographic market.
+    </div>
+  </div>
+  {% endif %}
+
+  {% if patterns.pace_speedup %}
+  <div class="insight-card accel">
+    <div class="i-eyebrow">Acceleration</div>
+    <div class="i-stat">{{ patterns.pace_speedup }}&times; faster</div>
+    <div class="i-body">
+      Last {{ patterns.second_half.count }} orders arrived in {{ patterns.second_half.days }} days.
+      First {{ patterns.first_half.count }} took {{ patterns.first_half.days }} days.
+    </div>
+  </div>
+  {% endif %}
+
+  <div class="insight-card bestday">
+    <div class="i-eyebrow">Best Day</div>
+    <div class="i-stat">{{ patterns.best_dow_name }}</div>
+    <div class="i-body">
+      {{ patterns.best_dow_count }} of {{ stats.total_sales }} sales land on {{ patterns.best_dow_name }}s &mdash;
+      more than any other day of the week.
+    </div>
+  </div>
+
+</div>
+
 <!-- ── KPI strip ─────────────────────────────────────────────────────────── -->
-<div class="kpi-row reveal" style="animation-delay:.08s">
+<div class="kpi-row reveal" style="animation-delay:.1s">
   <div class="kpi-card">
     <div class="label">Avg gap</div>
     <div class="val">{{ patterns.avg_gap }}<span style="font-size:1rem;color:var(--muted)">d</span></div>
@@ -79,38 +152,60 @@
   <div class="kpi-card">
     <div class="label">Burst windows</div>
     <div class="val">{{ patterns.burst_days }}</div>
-    <div class="sub">gaps ≤ 3 days</div>
+    <div class="sub">gaps &le; 3 days</div>
   </div>
   <div class="kpi-card">
     <div class="label">Multi-sale days</div>
     <div class="val">{{ patterns.multi_days | length }}</div>
     <div class="sub">2+ sales in one day</div>
   </div>
+  {% if patterns.first_half %}
+  <div class="kpi-card accent-orange">
+    <div class="label">Early pace</div>
+    <div class="val">{{ patterns.first_half.rate }}<span style="font-size:1rem;color:var(--muted)">d</span></div>
+    <div class="sub">days per order, first half</div>
+  </div>
+  {% endif %}
+  {% if patterns.second_half %}
+  <div class="kpi-card accent-orange">
+    <div class="label">Recent pace</div>
+    <div class="val">{{ patterns.second_half.rate }}<span style="font-size:1rem;color:var(--muted)">d</span></div>
+    <div class="sub">days per order, now</div>
+  </div>
+  {% endif %}
 </div>
 
 <!-- ── Day of week chart ──────────────────────────────────────────────────── -->
-<div class="chart-wrap reveal" style="animation-delay:.1s">
+<div class="chart-wrap reveal" style="animation-delay:.13s">
   <div class="section-h">Sales by Day of Week</div>
   <canvas id="dowChart" height="80"></canvas>
 </div>
 
+<!-- ── Top States chart ───────────────────────────────────────────────────── -->
+{% if stats.by_location %}
+<div class="chart-wrap reveal" style="animation-delay:.16s">
+  <div class="section-h">Sales by State — Top {{ stats.by_location | length }}</div>
+  <canvas id="stateChart" height="120"></canvas>
+</div>
+{% endif %}
+
 <!-- ── Gap timeline chart ─────────────────────────────────────────────────── -->
-<div class="chart-wrap reveal" style="animation-delay:.13s">
+<div class="chart-wrap reveal" style="animation-delay:.19s">
   <div class="section-h">Days Between Sales (Gap Timeline)</div>
   <canvas id="gapChart" height="80"></canvas>
 </div>
 
 <!-- ── Monthly trend chart ────────────────────────────────────────────────── -->
-<div class="chart-wrap reveal" style="animation-delay:.16s">
+<div class="chart-wrap reveal" style="animation-delay:.22s">
   <div class="section-h">Monthly Sales Count</div>
   <canvas id="monthChart" height="70"></canvas>
 </div>
 
 <!-- ── Multi-sale days table ─────────────────────────────────────────────── -->
 {% if patterns.multi_days %}
-<div class="divider reveal" style="animation-delay:.2s"></div>
-<div class="section-h reveal" style="animation-delay:.22s">Burst Days — Multiple Sales in One Day</div>
-<div class="snap-table-wrap reveal" style="animation-delay:.25s">
+<div class="divider reveal" style="animation-delay:.26s"></div>
+<div class="section-h reveal" style="animation-delay:.28s">Burst Days — Multiple Sales in One Day</div>
+<div class="snap-table-wrap reveal" style="animation-delay:.3s">
   <table class="snap-table">
     <thead>
       <tr><th>Date</th><th>Sales</th><th>Revenue</th></tr>
@@ -137,13 +232,11 @@
     titleColor: '#e8eef4', bodyColor: '#8a9bad', padding: 10,
   };
 
-  // ── Day of week ─────────────────────────────────────────────────────────
-  const dowData  = {{ patterns.dow_counts | tojson }};
+  // ── Day of week ──────────────────────────────────────────────────────────
+  const dowData   = {{ patterns.dow_counts | tojson }};
   const dowLabels = ['Mon','Tue','Wed','Thu','Fri','Sat','Sun'];
-  const dowColors = dowData.map((v, i) => {
-    const max = Math.max(...dowData);
-    return v === max ? 'rgba(45,212,191,0.85)' : 'rgba(45,212,191,0.25)';
-  });
+  const dowMax    = Math.max(...dowData);
+  const dowColors = dowData.map(v => v === dowMax ? 'rgba(45,212,191,0.85)' : 'rgba(45,212,191,0.25)');
   new Chart(document.getElementById('dowChart').getContext('2d'), {
     type: 'bar',
     data: {
@@ -167,12 +260,49 @@
     }
   });
 
+  // ── Top States (horizontal bar) ──────────────────────────────────────────
+  const stateEl = document.getElementById('stateChart');
+  if (stateEl) {
+    const byLoc   = {{ stats.by_location | tojson }};
+    const stateLabels = byLoc.map(s => s.location);
+    const stateCounts = byLoc.map(s => s.count);
+    const stateMax    = Math.max(...stateCounts);
+    const stateColors = stateCounts.map(v =>
+      v === stateMax ? 'rgba(249,115,22,0.75)' : 'rgba(249,115,22,0.25)'
+    );
+    new Chart(stateEl.getContext('2d'), {
+      type: 'bar',
+      data: {
+        labels: stateLabels,
+        datasets: [{
+          label: 'Orders',
+          data: stateCounts,
+          backgroundColor: stateColors,
+          borderColor: stateColors.map(c => c.replace('0.25','0.7').replace('0.75','1')),
+          borderWidth: 1,
+          borderRadius: 4,
+        }]
+      },
+      options: {
+        indexAxis: 'y',
+        responsive: true,
+        plugins: { legend: { display: false }, tooltip: tipOpts },
+        scales: {
+          x: { ticks: { color: tickColor, stepSize: 1 }, grid: { color: gridColor }, min: 0 },
+          y: { ticks: { color: tickColor, font: { size: 11 } }, grid: { color: gridColor } },
+        }
+      }
+    });
+  }
+
   // ── Gap timeline ─────────────────────────────────────────────────────────
-  const gaps = {{ patterns.gaps | tojson }};
+  const gaps      = {{ patterns.gaps | tojson }};
   const gapLabels = gaps.map(g => g.to);
   const gapDays   = gaps.map(g => g.days);
   const avgGap    = {{ patterns.avg_gap or 0 }};
-  const gapColors = gapDays.map(d => d <= 3 ? 'rgba(249,115,22,0.7)' : d > 10 ? 'rgba(251,113,133,0.5)' : 'rgba(45,212,191,0.35)');
+  const gapColors = gapDays.map(d =>
+    d <= 3 ? 'rgba(249,115,22,0.7)' : d > 10 ? 'rgba(251,113,133,0.5)' : 'rgba(45,212,191,0.35)'
+  );
   new Chart(document.getElementById('gapChart').getContext('2d'), {
     type: 'bar',
     data: {

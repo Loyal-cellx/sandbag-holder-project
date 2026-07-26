@@ -3,6 +3,10 @@ from database import db_init, add_sale, get_all_sales, get_stats, get_distinct_l
 from prediction import get_prediction
 from datetime import date, datetime, timezone
 import os
+import json
+import threading
+import urllib.request
+import urllib.error
 from dotenv import load_dotenv
 
 load_dotenv()
@@ -15,6 +19,34 @@ app.secret_key = os.getenv("SECRET_KEY", "change-me-in-env")
 db_init()
 
 VALID_PLATFORMS = {"Amazon", "eBay", "Walmart"}
+
+NETWORTH_REVENUE_URL = os.getenv("NETWORTH_API_URL", "http://dataworks:5052/api/revenue")
+
+
+def _sync_revenue_background():
+    """Push all monthly revenue totals to the net worth tracker (upsert, fire-and-forget)."""
+    def _do_sync():
+        try:
+            by_month = get_stats().get("by_month", [])
+            for entry in by_month:
+                payload = json.dumps({
+                    "month": entry["month"],
+                    "amount": round(entry["revenue"], 2),
+                    "units": entry["count"],
+                    "note": "sandbag dashboard sync",
+                }).encode()
+                req = urllib.request.Request(
+                    NETWORTH_REVENUE_URL,
+                    data=payload,
+                    headers={"Content-Type": "application/json"},
+                    method="POST",
+                )
+                with urllib.request.urlopen(req, timeout=5):
+                    pass
+        except Exception:
+            pass  # Never let a sync failure affect the sale-logging flow
+
+    threading.Thread(target=_do_sync, daemon=True).start()
 
 
 @app.route("/")
@@ -58,6 +90,7 @@ def log_sale():
             return redirect(url_for("log_sale"))
 
         add_sale(sale_date, amount, location, platform, notes)
+        _sync_revenue_background()
         return redirect(url_for("index"))
 
     today = date.today().isoformat()
@@ -73,6 +106,7 @@ def delete_sale_route(sale_id):
         return jsonify({"ok": False, "error": "Forbidden"}), 403
     if not delete_sale(sale_id):
         return jsonify({"ok": False, "error": "Sale not found"}), 404
+    _sync_revenue_background()
     return jsonify({"ok": True})
 
 
@@ -94,6 +128,7 @@ def edit_sale_route(sale_id):
             return jsonify({"ok": False, "error": "Amount must be positive"}), 400
     if not update_sale(sale_id, amount=amount, notes=notes):
         return jsonify({"ok": False, "error": "Sale not found"}), 404
+    _sync_revenue_background()
     sale = get_sale(sale_id)
     return jsonify({"ok": True, "amount": sale["amount"], "profit": sale["profit"]})
 

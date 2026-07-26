@@ -206,9 +206,46 @@ def health():
 
 @app.route("/history")
 def history():
-    snapshots = get_climate_snapshots(limit=365)
-    sale_weather = get_all_sale_weather()
-    return render_template("history.html", snapshots=snapshots, sale_weather=sale_weather)
+    from collections import Counter, defaultdict
+    from datetime import datetime as _dt
+    import calendar as _cal
+
+    sales = get_all_sales()
+
+    # Day of week counts
+    dow_counts = [0] * 7  # Mon=0 … Sun=6
+    for s in sales:
+        dow_counts[_dt.strptime(s["date"], "%Y-%m-%d").weekday()] += 1
+
+    # Multi-sale days (days with 2+ sales)
+    date_counts = Counter(s["date"] for s in sales)
+    multi_days = sorted(
+        [{"date": d, "count": c} for d, c in date_counts.items() if c >= 2],
+        key=lambda x: x["date"], reverse=True
+    )
+
+    # Gap series (between consecutive sale dates)
+    sorted_dates = sorted(date_counts.keys())
+    gaps = []
+    for i in range(1, len(sorted_dates)):
+        a = _dt.strptime(sorted_dates[i-1], "%Y-%m-%d")
+        b = _dt.strptime(sorted_dates[i], "%Y-%m-%d")
+        gaps.append({"from": sorted_dates[i-1], "to": sorted_dates[i], "days": (b - a).days})
+
+    # Monthly counts (for monthly trend data already in stats, reuse)
+    stats = get_stats()
+
+    patterns = {
+        "dow_counts": dow_counts,          # list[7], Mon–Sun
+        "multi_days": multi_days,
+        "gaps": gaps,
+        "avg_gap": round(sum(g["days"] for g in gaps) / len(gaps), 1) if gaps else None,
+        "max_gap": max((g["days"] for g in gaps), default=0),
+        "min_gap": min((g["days"] for g in gaps), default=0),
+        "burst_days": sum(1 for g in gaps if g["days"] <= 3),
+    }
+
+    return render_template("history.html", patterns=patterns, stats=stats)
 
 
 @app.route("/api/snapshots")

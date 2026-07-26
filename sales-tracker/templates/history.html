@@ -1,5 +1,5 @@
 {% extends "base.html" %}
-{% block title %}Climate Log — Sandbag Sales{% endblock %}
+{% block title %}Patterns — Sandbag Sales{% endblock %}
 
 {% block extra_style %}
 .hist-hero { margin: 1.5rem 0 1.2rem; }
@@ -14,14 +14,18 @@
   background: var(--card); border: 1px solid var(--border);
   border-radius: 14px; padding: 1.2rem 1.2rem 1rem; margin-bottom: 1.4rem;
 }
-.chart-wrap canvas { display: block; }
 
-.empty-state {
-  background: var(--card); border: 1px solid var(--border);
-  border-radius: 14px; padding: 2.5rem 1.5rem;
-  text-align: center; color: var(--muted); font-size: .9rem;
+.kpi-row {
+  display: grid; grid-template-columns: repeat(auto-fit, minmax(130px, 1fr));
+  gap: .8rem; margin-bottom: 1.4rem;
 }
-.empty-state strong { display: block; font-size: 1.1rem; color: var(--text); margin-bottom: .5rem; }
+.kpi-card {
+  background: var(--card); border: 1px solid var(--border);
+  border-radius: 12px; padding: .9rem 1rem;
+}
+.kpi-card .label { font-size: .62rem; font-weight: 700; letter-spacing: .1em; text-transform: uppercase; color: var(--faint); }
+.kpi-card .val { font-family: var(--font-display); font-size: 1.6rem; font-weight: 800; color: var(--text); line-height: 1.1; margin-top: .2rem; }
+.kpi-card .sub { font-size: .72rem; color: var(--muted); margin-top: .15rem; }
 
 .snap-table-wrap {
   background: var(--card); border: 1px solid var(--border);
@@ -40,107 +44,92 @@
 }
 .snap-table tr:last-child td { border-bottom: none; }
 .snap-table tr:hover td { background: var(--card-2); }
-
-.weather-pill {
-  display: inline-flex; align-items: center; gap: .25rem;
-  font-size: .65rem; font-weight: 600; padding: .15rem .45rem;
-  border-radius: 999px;
-  background: rgba(45,212,191,0.12); color: var(--water);
+.burst-badge {
+  display: inline-block; font-size: .62rem; font-weight: 700;
+  padding: .1rem .4rem; border-radius: 999px;
+  background: rgba(249,115,22,0.15); color: var(--hazard);
 }
 .muted-cell { color: var(--faint); }
-.rev-cell { font-family: var(--font-display); font-weight: 700; color: var(--good); }
-
-.chart-legend {
-  display: flex; gap: 1.1rem; flex-wrap: wrap;
-  margin-bottom: .75rem; font-size: .72rem;
-}
-.leg-item { display: flex; align-items: center; gap: .35rem; color: var(--muted); }
-.leg-dot { width: 10px; height: 10px; border-radius: 50%; }
 {% endblock %}
 
 {% block content %}
 <div class="hist-hero reveal" style="animation-delay:.05s">
-  <p class="eyebrow">Climate Log</p>
-  <h1>Sales × <span class="flowtext">Weather</span></h1>
-  <p>Real historical weather at the time and location of each sale, fetched from Open-Meteo. Captured automatically when you log a sale.</p>
+  <p class="eyebrow">Sales Intelligence</p>
+  <h1>Sale <span class="flowtext">Patterns</span></h1>
+  <p>When sales happen, how often, and where the bursts come from.</p>
 </div>
 
-{% if not sale_weather %}
-  <div class="empty-state reveal" style="animation-delay:.1s">
-    <strong>No weather data yet</strong>
-    Weather is fetched automatically when you log a sale.
+<!-- ── KPI strip ─────────────────────────────────────────────────────────── -->
+<div class="kpi-row reveal" style="animation-delay:.08s">
+  <div class="kpi-card">
+    <div class="label">Avg gap</div>
+    <div class="val">{{ patterns.avg_gap }}<span style="font-size:1rem;color:var(--muted)">d</span></div>
+    <div class="sub">between sale days</div>
   </div>
-{% else %}
+  <div class="kpi-card">
+    <div class="label">Fastest streak</div>
+    <div class="val">{{ patterns.min_gap }}<span style="font-size:1rem;color:var(--muted)">d</span></div>
+    <div class="sub">shortest gap</div>
+  </div>
+  <div class="kpi-card">
+    <div class="label">Longest dry spell</div>
+    <div class="val">{{ patterns.max_gap }}<span style="font-size:1rem;color:var(--muted)">d</span></div>
+    <div class="sub">longest gap</div>
+  </div>
+  <div class="kpi-card">
+    <div class="label">Burst windows</div>
+    <div class="val">{{ patterns.burst_days }}</div>
+    <div class="sub">gaps ≤ 3 days</div>
+  </div>
+  <div class="kpi-card">
+    <div class="label">Multi-sale days</div>
+    <div class="val">{{ patterns.multi_days | length }}</div>
+    <div class="sub">2+ sales in one day</div>
+  </div>
+</div>
 
-<!-- ── Chart 1: Temp range + precip ───────────────────────────────────────── -->
+<!-- ── Day of week chart ──────────────────────────────────────────────────── -->
 <div class="chart-wrap reveal" style="animation-delay:.1s">
-  <div class="section-h">Temperature &amp; Precipitation at Sale Location</div>
-  <div class="chart-legend">
-    <div class="leg-item"><div class="leg-dot" style="background:rgba(249,115,22,0.8)"></div> High °F</div>
-    <div class="leg-item"><div class="leg-dot" style="background:rgba(45,212,191,0.8)"></div> Low °F</div>
-    <div class="leg-item"><div class="leg-dot" style="background:rgba(56,189,248,0.5)"></div> Precip (in)</div>
-  </div>
-  <canvas id="tempChart" height="110"></canvas>
+  <div class="section-h">Sales by Day of Week</div>
+  <canvas id="dowChart" height="80"></canvas>
 </div>
 
-<!-- ── Chart 2: Windspeed ─────────────────────────────────────────────────── -->
-<div class="chart-wrap reveal" style="animation-delay:.15s">
-  <div class="section-h">Max Windspeed at Sale Location (mph)</div>
-  <canvas id="windChart" height="70"></canvas>
+<!-- ── Gap timeline chart ─────────────────────────────────────────────────── -->
+<div class="chart-wrap reveal" style="animation-delay:.13s">
+  <div class="section-h">Days Between Sales (Gap Timeline)</div>
+  <canvas id="gapChart" height="80"></canvas>
 </div>
 
-<!-- ── Table ──────────────────────────────────────────────────────────────── -->
+<!-- ── Monthly trend chart ────────────────────────────────────────────────── -->
+<div class="chart-wrap reveal" style="animation-delay:.16s">
+  <div class="section-h">Monthly Sales Count</div>
+  <canvas id="monthChart" height="70"></canvas>
+</div>
+
+<!-- ── Multi-sale days table ─────────────────────────────────────────────── -->
+{% if patterns.multi_days %}
 <div class="divider reveal" style="animation-delay:.2s"></div>
-<div class="section-h reveal" style="animation-delay:.22s">Per-Sale Weather Log</div>
+<div class="section-h reveal" style="animation-delay:.22s">Burst Days — Multiple Sales in One Day</div>
 <div class="snap-table-wrap reveal" style="animation-delay:.25s">
   <table class="snap-table">
     <thead>
-      <tr>
-        <th>Date</th>
-        <th>Location</th>
-        <th>Conditions</th>
-        <th>High °F</th>
-        <th>Low °F</th>
-        <th>Precip</th>
-        <th>Wind (max)</th>
-        <th>Revenue</th>
-      </tr>
+      <tr><th>Date</th><th>Sales</th><th>Revenue</th></tr>
     </thead>
     <tbody>
-      {% for w in sale_weather %}
+      {% for d in patterns.multi_days %}
       <tr>
-        <td>{{ w.sale_date }}</td>
-        <td>{{ w.location }}</td>
-        <td>
-          {% if w.weather_desc %}
-            <span class="weather-pill">{{ w.weather_desc }}</span>
-          {% else %}
-            <span class="muted-cell">—</span>
-          {% endif %}
-        </td>
-        <td>{% if w.temp_max_f is not none %}{{ "%.0f"|format(w.temp_max_f) }}°{% else %}<span class="muted-cell">—</span>{% endif %}</td>
-        <td>{% if w.temp_min_f is not none %}{{ "%.0f"|format(w.temp_min_f) }}°{% else %}<span class="muted-cell">—</span>{% endif %}</td>
-        <td>{% if w.precipitation_in is not none and w.precipitation_in > 0 %}<span style="color:var(--water-2)">{{ "%.2f"|format(w.precipitation_in) }}"</span>{% else %}<span class="muted-cell">dry</span>{% endif %}</td>
-        <td>{% if w.windspeed_max_mph is not none %}{{ "%.0f"|format(w.windspeed_max_mph) }} mph{% else %}<span class="muted-cell">—</span>{% endif %}</td>
-        <td class="rev-cell">${{ "%.0f"|format(w.amount) }}</td>
+        <td>{{ d.date }}</td>
+        <td><span class="burst-badge">{{ d.count }}x</span></td>
+        <td style="font-family:var(--font-display);font-weight:700;color:var(--good)">${{ (d.count * 69) }}</td>
       </tr>
       {% endfor %}
     </tbody>
   </table>
 </div>
+{% endif %}
 
 <script>
 (function() {
-  const raw = {{ sale_weather | tojson }};
-  // oldest-first for charts
-  const asc = [...raw].reverse();
-
-  const labels  = asc.map(w => w.sale_date + ' · ' + w.location.split(' ').map(p=>p[0]).join(''));
-  const highs   = asc.map(w => w.temp_max_f);
-  const lows    = asc.map(w => w.temp_min_f);
-  const precip  = asc.map(w => w.precipitation_in);
-  const wind    = asc.map(w => w.windspeed_max_mph);
-
   const gridColor = 'rgba(34,49,65,0.6)';
   const tickColor = '#56697c';
   const tipOpts = {
@@ -148,47 +137,65 @@
     titleColor: '#e8eef4', bodyColor: '#8a9bad', padding: 10,
   };
 
-  // ── Temp + precip chart ──────────────────────────────────────────────────
-  new Chart(document.getElementById('tempChart').getContext('2d'), {
+  // ── Day of week ─────────────────────────────────────────────────────────
+  const dowData  = {{ patterns.dow_counts | tojson }};
+  const dowLabels = ['Mon','Tue','Wed','Thu','Fri','Sat','Sun'];
+  const dowColors = dowData.map((v, i) => {
+    const max = Math.max(...dowData);
+    return v === max ? 'rgba(45,212,191,0.85)' : 'rgba(45,212,191,0.25)';
+  });
+  new Chart(document.getElementById('dowChart').getContext('2d'), {
     type: 'bar',
     data: {
-      labels,
+      labels: dowLabels,
+      datasets: [{
+        label: 'Sales',
+        data: dowData,
+        backgroundColor: dowColors,
+        borderColor: dowColors.map(c => c.replace('0.25','0.8').replace('0.85','1')),
+        borderWidth: 1,
+        borderRadius: 5,
+      }]
+    },
+    options: {
+      responsive: true,
+      plugins: { legend: { display: false }, tooltip: tipOpts },
+      scales: {
+        x: { ticks: { color: tickColor }, grid: { color: gridColor } },
+        y: { ticks: { color: tickColor, stepSize: 1 }, grid: { color: gridColor }, min: 0 },
+      }
+    }
+  });
+
+  // ── Gap timeline ─────────────────────────────────────────────────────────
+  const gaps = {{ patterns.gaps | tojson }};
+  const gapLabels = gaps.map(g => g.to);
+  const gapDays   = gaps.map(g => g.days);
+  const avgGap    = {{ patterns.avg_gap or 0 }};
+  const gapColors = gapDays.map(d => d <= 3 ? 'rgba(249,115,22,0.7)' : d > 10 ? 'rgba(251,113,133,0.5)' : 'rgba(45,212,191,0.35)');
+  new Chart(document.getElementById('gapChart').getContext('2d'), {
+    type: 'bar',
+    data: {
+      labels: gapLabels,
       datasets: [
         {
-          label: 'Precip (in)',
-          data: precip,
-          backgroundColor: 'rgba(56,189,248,0.25)',
-          borderColor: 'rgba(56,189,248,0.6)',
+          label: 'Gap (days)',
+          data: gapDays,
+          backgroundColor: gapColors,
+          borderColor: gapColors.map(c => c.replace('0.7','0.9').replace('0.5','0.7').replace('0.35','0.6')),
           borderWidth: 1,
-          borderRadius: 2,
-          yAxisID: 'yPrecip',
-          order: 3,
+          borderRadius: 3,
         },
         {
-          label: 'High °F',
-          data: highs,
+          label: 'Avg gap',
+          data: gapDays.map(() => avgGap),
           type: 'line',
-          borderColor: 'rgba(249,115,22,0.85)',
-          backgroundColor: 'rgba(249,115,22,0.08)',
-          borderWidth: 2,
-          pointRadius: 3,
-          tension: 0.3,
-          yAxisID: 'yTemp',
-          order: 1,
-          fill: '+1',
-        },
-        {
-          label: 'Low °F',
-          data: lows,
-          type: 'line',
-          borderColor: 'rgba(45,212,191,0.85)',
-          backgroundColor: 'rgba(45,212,191,0.08)',
-          borderWidth: 2,
-          pointRadius: 3,
-          tension: 0.3,
-          yAxisID: 'yTemp',
-          order: 2,
-        },
+          borderColor: 'rgba(250,204,21,0.6)',
+          borderDash: [4,3],
+          borderWidth: 1.5,
+          pointRadius: 0,
+          tension: 0,
+        }
       ]
     },
     options: {
@@ -196,53 +203,36 @@
       interaction: { mode: 'index', intersect: false },
       plugins: { legend: { display: false }, tooltip: tipOpts },
       scales: {
-        x: { ticks: { color: tickColor, maxRotation: 55, font: { size: 9 } }, grid: { color: gridColor } },
-        yTemp: {
-          position: 'left',
-          ticks: { color: tickColor, callback: v => v + '°F' },
-          grid: { color: gridColor },
-          title: { display: true, text: 'Temp °F', color: tickColor, font: { size: 10 } },
-        },
-        yPrecip: {
-          position: 'right',
-          ticks: { color: 'rgba(56,189,248,0.7)', callback: v => v + '"' },
-          grid: { display: false },
-          title: { display: true, text: 'Precip (in)', color: 'rgba(56,189,248,0.7)', font: { size: 10 } },
-          min: 0,
-        },
+        x: { ticks: { color: tickColor, maxRotation: 45, font: { size: 9 } }, grid: { color: gridColor } },
+        y: { ticks: { color: tickColor, callback: v => v + 'd' }, grid: { color: gridColor }, min: 0 },
       }
     }
   });
 
-  // ── Wind chart ───────────────────────────────────────────────────────────
-  new Chart(document.getElementById('windChart').getContext('2d'), {
+  // ── Monthly trend ─────────────────────────────────────────────────────────
+  const byMonth = {{ stats.by_month | tojson }};
+  new Chart(document.getElementById('monthChart').getContext('2d'), {
     type: 'bar',
     data: {
-      labels,
+      labels: byMonth.map(m => m.month),
       datasets: [{
-        label: 'Max Wind (mph)',
-        data: wind,
-        backgroundColor: 'rgba(250,204,21,0.2)',
-        borderColor: 'rgba(250,204,21,0.75)',
+        label: 'Sales',
+        data: byMonth.map(m => m.count),
+        backgroundColor: 'rgba(56,189,248,0.25)',
+        borderColor: 'rgba(56,189,248,0.8)',
         borderWidth: 1,
-        borderRadius: 3,
+        borderRadius: 4,
       }]
     },
     options: {
       responsive: true,
-      interaction: { mode: 'index', intersect: false },
       plugins: { legend: { display: false }, tooltip: tipOpts },
       scales: {
-        x: { ticks: { color: tickColor, maxRotation: 55, font: { size: 9 } }, grid: { color: gridColor } },
-        y: {
-          ticks: { color: tickColor, callback: v => v + ' mph' },
-          grid: { color: gridColor },
-          min: 0,
-        },
+        x: { ticks: { color: tickColor }, grid: { color: gridColor } },
+        y: { ticks: { color: tickColor, stepSize: 1 }, grid: { color: gridColor }, min: 0 },
       }
     }
   });
 })();
 </script>
-{% endif %}
 {% endblock %}

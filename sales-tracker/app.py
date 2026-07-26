@@ -1,5 +1,5 @@
 from flask import Flask, render_template, request, redirect, url_for, jsonify, flash
-from database import db_init, add_sale, get_all_sales, get_stats, get_distinct_locations, get_all_locations, delete_sale, update_sale, get_milestones, get_sale, get_climate_snapshots, save_climate_snapshot
+from database import db_init, add_sale, get_all_sales, get_stats, get_distinct_locations, get_all_locations, delete_sale, update_sale, get_milestones, get_sale, get_climate_snapshots, save_climate_snapshot, save_sale_weather, get_sale_weather, get_all_sale_weather, get_sales_missing_weather
 from prediction import get_prediction
 from datetime import date, datetime, timezone
 import os
@@ -21,6 +21,34 @@ db_init()
 VALID_PLATFORMS = {"Amazon", "eBay", "Walmart"}
 
 NETWORTH_REVENUE_URL = os.getenv("NETWORTH_API_URL", "http://dataworks:5052/api/revenue")
+
+
+def _fetch_weather_for_sale_background(sale_id: int, date_str: str, location: str):
+    """Fire-and-forget: fetch historical weather for a sale and save to DB."""
+    import sys
+    import json
+    import urllib.parse
+    sys.path.insert(0, os.path.dirname(__file__))
+    from backfill_weather import STATE_COORDS, WMO_DESC, fetch_weather
+
+    def _do():
+        try:
+            loc = location.strip().title()
+            coords = STATE_COORDS.get(loc)
+            if not coords:
+                return
+            lat, lon = coords
+            weather = fetch_weather(lat, lon, date_str)
+            if not weather:
+                return
+            weather["sale_date"] = date_str
+            weather["location"] = loc
+            weather["fetched_at"] = datetime.now(timezone.utc).isoformat()
+            save_sale_weather(sale_id, weather)
+        except Exception:
+            pass
+
+    threading.Thread(target=_do, daemon=True).start()
 
 
 def _sync_revenue_background():
@@ -89,8 +117,9 @@ def log_sale():
             flash("Date must be a valid calendar date (YYYY-MM-DD).")
             return redirect(url_for("log_sale"))
 
-        add_sale(sale_date, amount, location, platform, notes)
+        sale_id = add_sale(sale_date, amount, location, platform, notes)
         _sync_revenue_background()
+        _fetch_weather_for_sale_background(sale_id, sale_date, location)
         return redirect(url_for("index"))
 
     today = date.today().isoformat()
@@ -155,6 +184,19 @@ def api_prediction():
     prediction["generated_at"] = datetime.now(timezone.utc).isoformat()
     prediction["cache_ttl_seconds"] = 1800
     return jsonify(prediction)
+
+
+@app.route("/api/sale-weather")
+def api_sale_weather():
+    return jsonify(get_all_sale_weather())
+
+
+@app.route("/api/sale-weather/<int:sale_id>")
+def api_sale_weather_one(sale_id):
+    data = get_sale_weather(sale_id)
+    if data is None:
+        return jsonify({"error": "Not found"}), 404
+    return jsonify(data)
 
 
 @app.route("/health")

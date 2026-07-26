@@ -50,6 +50,22 @@ def db_init():
             captured_at TEXT NOT NULL
         )
     """)
+    conn.execute("""
+        CREATE TABLE IF NOT EXISTS sale_weather (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            sale_id INTEGER NOT NULL UNIQUE REFERENCES sales(id) ON DELETE CASCADE,
+            sale_date TEXT NOT NULL,
+            location TEXT NOT NULL,
+            temp_max_f REAL,
+            temp_min_f REAL,
+            temp_mean_f REAL,
+            precipitation_in REAL,
+            windspeed_max_mph REAL,
+            weather_code INTEGER,
+            weather_desc TEXT,
+            fetched_at TEXT NOT NULL
+        )
+    """)
     conn.commit()
     conn.close()
 
@@ -67,12 +83,14 @@ def _normalize_platform(platform):
 
 def add_sale(date_str, amount, location, platform, notes=""):
     conn = _connect()
-    conn.execute(
+    cur = conn.execute(
         "INSERT INTO sales (date, amount, location, platform, notes, created_at) VALUES (?, ?, ?, ?, ?, ?)",
         (date_str, amount, location, _normalize_platform(platform), notes, datetime.now(timezone.utc).isoformat()),
     )
+    sale_id = cur.lastrowid
     conn.commit()
     conn.close()
+    return sale_id
 
 
 def delete_sale(sale_id):
@@ -331,6 +349,69 @@ def get_stats():
         "rolling_30_daily": rolling_30_daily,
         "prev_30_daily": prev_30_daily,
     }
+
+
+def save_sale_weather(sale_id: int, weather: dict):
+    """Insert or replace weather data for a sale."""
+    conn = _connect()
+    conn.execute("""
+        INSERT INTO sale_weather (
+            sale_id, sale_date, location,
+            temp_max_f, temp_min_f, temp_mean_f,
+            precipitation_in, windspeed_max_mph,
+            weather_code, weather_desc, fetched_at
+        ) VALUES (
+            :sale_id, :sale_date, :location,
+            :temp_max_f, :temp_min_f, :temp_mean_f,
+            :precipitation_in, :windspeed_max_mph,
+            :weather_code, :weather_desc, :fetched_at
+        )
+        ON CONFLICT(sale_id) DO UPDATE SET
+            temp_max_f        = excluded.temp_max_f,
+            temp_min_f        = excluded.temp_min_f,
+            temp_mean_f       = excluded.temp_mean_f,
+            precipitation_in  = excluded.precipitation_in,
+            windspeed_max_mph = excluded.windspeed_max_mph,
+            weather_code      = excluded.weather_code,
+            weather_desc      = excluded.weather_desc,
+            fetched_at        = excluded.fetched_at
+    """, {"sale_id": sale_id, **weather})
+    conn.commit()
+    conn.close()
+
+
+def get_sale_weather(sale_id: int):
+    """Return weather dict for a sale, or None."""
+    conn = _connect()
+    row = conn.execute("SELECT * FROM sale_weather WHERE sale_id = ?", (sale_id,)).fetchone()
+    conn.close()
+    return dict(row) if row else None
+
+
+def get_all_sale_weather():
+    """Return all sale weather rows joined with sale info, ordered by date DESC."""
+    conn = _connect()
+    rows = conn.execute("""
+        SELECT sw.*, s.amount, s.platform
+        FROM sale_weather sw
+        JOIN sales s ON s.id = sw.sale_id
+        ORDER BY sw.sale_date DESC
+    """).fetchall()
+    conn.close()
+    return [dict(r) for r in rows]
+
+
+def get_sales_missing_weather():
+    """Return sales that don't yet have a weather record."""
+    conn = _connect()
+    rows = conn.execute("""
+        SELECT s.id, s.date, s.location FROM sales s
+        LEFT JOIN sale_weather sw ON sw.sale_id = s.id
+        WHERE sw.id IS NULL
+        ORDER BY s.date ASC
+    """).fetchall()
+    conn.close()
+    return [dict(r) for r in rows]
 
 
 def save_climate_snapshot(snap: dict):

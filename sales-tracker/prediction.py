@@ -5,9 +5,10 @@ import urllib.parse
 import urllib.error
 import json
 from concurrent.futures import ThreadPoolExecutor
-from datetime import date
+from datetime import date, datetime, timezone
 
-# State name → postal code for NWS API
+# ── State reference data ──────────────────────────────────────────────────────
+
 STATE_CODES = {
     "Alabama": "AL", "Alaska": "AK", "Arizona": "AZ", "Arkansas": "AR",
     "California": "CA", "Colorado": "CO", "Connecticut": "CT", "Delaware": "DE",
@@ -32,7 +33,17 @@ HURRICANE_STATES = {"FL", "TX", "NC", "SC", "LA", "GA", "AL", "MS", "VA",
 SNOWMELT_STATES = {"AK", "MN", "WI", "MI", "ND", "SD", "MT", "WY", "ID",
                    "VT", "NH", "ME", "NY", "WA", "OR", "CO"}
 
-# Monthly general activity baseline (higher = warmer/more active storm weather)
+# Geo-weights based on actual historical sales share.
+# PREMIUM = top 3 states by order volume (FL 20%, TX 9%, AK 7%).
+# ACTIVE = states with 2+ historical orders. All others default to 1.0.
+# These amplify alert scores for states where sandbag buyers actually live.
+GEO_WEIGHT = {
+    "FL": 2.2, "TX": 1.8, "AK": 1.6,         # premium: proven high-volume markets
+    "CA": 1.3, "GA": 1.3, "CO": 1.3, "WI": 1.3,
+    "MI": 1.2, "MT": 1.2, "OK": 1.2, "NC": 1.2,
+}
+
+# Monthly general activity baseline (higher = warmer / more active storm weather)
 MONTHLY_BASELINE = {1: 1, 2: 2, 3: 5, 4: 7, 5: 8, 6: 9,
                     7: 10, 8: 10, 9: 9, 10: 7, 11: 4, 12: 2}
 
@@ -41,30 +52,30 @@ HURRICANE_MONTHLY = {6: 6, 7: 8, 8: 10, 9: 10, 10: 8, 11: 6}
 
 # Spring snowmelt boost by month (applied to northern states)
 SNOWMELT_MONTHLY = {3: 4, 4: 8, 5: 6}
-# Alaska peaks later in the melt season
 ALASKA_MELT_MONTHLY = {4: 10, 5: 10, 3: 5}
 
-# Relevance scores for NWS alert types (max weather component = 35 pts)
+# Alert scores — only flood/hurricane/surge type alerts move sandbag demand.
+# Tornado/thunderstorm alerts are low value for this product; scored low intentionally.
 ALERT_SCORES = {
-    "Flood Warning": 12,
-    "Flash Flood Warning": 12,
-    "Hurricane Warning": 10,
-    "Tropical Storm Warning": 10,
-    "Storm Surge Warning": 8,
-    "Coastal Flood Warning": 7,
-    "High Wind Warning": 6,
-    "Extreme Wind Warning": 6,
-    "Severe Thunderstorm Warning": 4,
-    "Tornado Warning": 4,
-    "Flood Watch": 6,
-    "Flash Flood Watch": 6,
-    "Hurricane Watch": 5,
-    "Tropical Storm Watch": 5,
-    "Storm Surge Watch": 4,
-    "Coastal Flood Watch": 3,
-    "High Wind Watch": 3,
-    "Severe Thunderstorm Watch": 2,
-    "Tornado Watch": 2,
+    "Flood Warning": 14,
+    "Flash Flood Warning": 14,
+    "Hurricane Warning": 11,
+    "Tropical Storm Warning": 11,
+    "Storm Surge Warning": 9,
+    "Coastal Flood Warning": 8,
+    "Flood Watch": 8,
+    "Flash Flood Watch": 8,
+    "Hurricane Watch": 6,
+    "Tropical Storm Watch": 6,
+    "Storm Surge Watch": 5,
+    "Coastal Flood Watch": 4,
+    "High Wind Warning": 3,
+    "Extreme Wind Warning": 3,
+    "Severe Thunderstorm Warning": 2,
+    "Tornado Warning": 2,
+    "High Wind Watch": 2,
+    "Severe Thunderstorm Watch": 1,
+    "Tornado Watch": 1,
 }
 
 ALERT_ICONS = {
@@ -81,26 +92,23 @@ ALERT_ICONS = {
 }
 
 # In-memory cache shared by every external feed below.
-# Key: (source_tag, sorted_state_codes_key) → {"data": list, "ts": float}
 _cache = {}
 CACHE_TTL = 30 * 60  # 30 minutes
 
-# ── Multi-hazard data sources (NIFC + NHC) ───────────────────────────────────
+
+# ── NIFC / NHC endpoint constants ──────────────────────────────────────────────
+
 NIFC_ACTIVE_URL = ("https://services3.arcgis.com/T4QMspbfLg3qTGWY/ArcGIS/rest/"
                    "services/WFIGS_Incident_Locations_Current/FeatureServer/0/query")
-# Perimeter history has no state attribute, so we use the current-season perimeter
-# service (attr_POOState filterable). Fires from this season ARE the burn scars
-# that matter for current rain. For multi-year coverage we'd need spatial bbox queries.
-NIFC_PERIM_URL = ("https://services3.arcgis.com/T4QMspbfLg3qTGWY/ArcGIS/rest/"
-                  "services/WFIGS_Interagency_Perimeters_Current/FeatureServer/0/query")
-NHC_CURRENT_URL = "https://www.nhc.noaa.gov/CurrentStorms.json"
+NIFC_PERIM_URL  = ("https://services3.arcgis.com/T4QMspbfLg3qTGWY/ArcGIS/rest/"
+                   "services/WFIGS_Interagency_Perimeters_Current/FeatureServer/0/query")
+NHC_CURRENT_URL  = "https://www.nhc.noaa.gov/CurrentStorms.json"
+USGS_FLOOD_URL   = "https://waterwatch.usgs.gov/webservices/floodstage?format=json"
 
-MIN_FIRE_ACRES = 100              # ignore tiny incidents
-CONE_RADIUS_MI = 400              # rough cone-of-uncertainty proximity
-FORECAST_HOURS_AHEAD = 72         # NHC track projection window
+MIN_FIRE_ACRES    = 100
+CONE_RADIUS_MI    = 400
+FORECAST_HOURS_AHEAD = 72
 
-# Approximate state centroids (lat, lon) — only states plausibly reachable by
-# Atlantic/Gulf cyclones (or HI for E. Pacific). Used for hurricane proximity checks.
 STATE_CENTROIDS = {
     "FL": (27.8, -81.7), "TX": (31.0, -99.0), "LA": (31.0, -92.0),
     "MS": (32.7, -89.7), "AL": (32.8, -86.8), "GA": (32.7, -83.5),
@@ -112,7 +120,7 @@ STATE_CENTROIDS = {
 }
 
 
-# ── Generic helpers ──────────────────────────────────────────────────────────
+# ── Generic helpers ────────────────────────────────────────────────────────────
 
 def _get_icon(event):
     for keyword, icon in ALERT_ICONS.items():
@@ -121,18 +129,24 @@ def _get_icon(event):
     return "⚠️"
 
 
-def _http_json(url, timeout=5):
-    """GET a URL and return parsed JSON, or None on any network/parse failure."""
+def _http_json(url, timeout=6):
+    """GET a URL, return parsed JSON, or None on any failure. Reads in chunks to handle large responses."""
     req = urllib.request.Request(url, headers={"User-Agent": "SandbagSalesTracker/1.0"})
     try:
         with urllib.request.urlopen(req, timeout=timeout) as resp:
-            return json.loads(resp.read())
+            chunks = []
+            while True:
+                chunk = resp.read(1024 * 1024)  # 1MB chunks
+                if not chunk:
+                    break
+                chunks.append(chunk)
+            return json.loads(b"".join(chunks))
     except (urllib.error.URLError, OSError, json.JSONDecodeError):
         return None
 
 
 def _cached(source_tag, state_codes, fetcher):
-    """Cache wrapper keyed by (source_tag, sorted_state_codes). Empty result is still cached."""
+    """Cache wrapper keyed by (source_tag, sorted_state_codes). Empty results are cached."""
     key = (source_tag, ",".join(sorted(state_codes)))
     hit = _cache.get(key)
     if hit and (time.time() - hit["ts"]) < CACHE_TTL:
@@ -151,7 +165,7 @@ def _haversine_mi(lat1, lon1, lat2, lon2):
     return 2 * R * math.asin(math.sqrt(a))
 
 
-# ── NWS alerts ───────────────────────────────────────────────────────────────
+# ── NWS alerts ─────────────────────────────────────────────────────────────────
 
 def _fetch_nws_alerts(state_codes):
     if not state_codes:
@@ -179,11 +193,15 @@ def _fetch_nws_alerts(state_codes):
         if key in seen:
             continue
         seen.add(key)
+        base_score = ALERT_SCORES.get(event, 0)
+        geo_mult = GEO_WEIGHT.get(state, 1.0)
         alerts.append({
             "event": event,
             "state": state,
             "icon": _get_icon(event),
-            "score": ALERT_SCORES.get(event, 0),
+            "score": base_score,
+            "geo_mult": round(geo_mult, 2),
+            "weighted_score": round(base_score * geo_mult, 1),
         })
     return alerts
 
@@ -192,16 +210,88 @@ def _get_cached_alerts(state_codes):
     return _cached("nws", state_codes, _fetch_nws_alerts)
 
 
-# ── NIFC active wildfires ────────────────────────────────────────────────────
+# ── USGS WaterWatch flood stage ─────────────────────────────────────────────────
+
+# FIPS state codes → postal codes for filtering USGS gauge data
+FIPS_TO_POSTAL = {
+    "01": "AL", "02": "AK", "04": "AZ", "05": "AR", "06": "CA",
+    "08": "CO", "09": "CT", "10": "DE", "12": "FL", "13": "GA",
+    "15": "HI", "16": "ID", "17": "IL", "18": "IN", "19": "IA",
+    "20": "KS", "21": "KY", "22": "LA", "23": "ME", "24": "MD",
+    "25": "MA", "26": "MI", "27": "MN", "28": "MS", "29": "MO",
+    "30": "MT", "31": "NE", "32": "NV", "33": "NH", "34": "NJ",
+    "35": "NM", "36": "NY", "37": "NC", "38": "ND", "39": "OH",
+    "40": "OK", "41": "OR", "42": "PA", "44": "RI", "45": "SC",
+    "46": "SD", "47": "TN", "48": "TX", "49": "UT", "50": "VT",
+    "51": "VA", "53": "WA", "54": "WV", "55": "WI", "56": "WY",
+}
+
+# Severity weight per flood category
+FLOOD_STAGE_WEIGHT = {
+    "action": 0.5,
+    "flood":  1.5,
+    "major":  2.5,
+    "record": 4.0,
+}
+
+
+def _fetch_usgs_flood(customer_state_codes):
+    """
+    Return a dict summarizing USGS gauges at/above action stage in customer states.
+    Weighted by severity (action=0.5, flood=1.5, major=2.5, record=4.0) and geo-weight.
+    Returns: {"by_state": {state: {count, weight, peak_category}}, "total_weight": float}
+    """
+    data = _http_json(USGS_FLOOD_URL, timeout=8)
+    if not data or "site" not in data:
+        return {"by_state": {}, "total_weight": 0.0}
+
+    by_state = {}
+    for site in data.get("site", []):
+        # USGS WaterWatch returns state as site_no first 2 digits (FIPS) for some formats
+        # or as a 'state' field depending on version. Try both.
+        state_raw = (site.get("state") or "").upper()
+        if not state_raw:
+            # Try FIPS prefix from site_no
+            site_no = site.get("site_no", "")
+            fips = site_no[:2] if len(site_no) >= 2 else ""
+            state_raw = FIPS_TO_POSTAL.get(fips, "")
+
+        if state_raw not in customer_state_codes:
+            continue
+
+        flood_stage = (site.get("flood_stage") or "").lower()
+        if flood_stage not in FLOOD_STAGE_WEIGHT:
+            continue
+
+        severity_w = FLOOD_STAGE_WEIGHT[flood_stage]
+        geo_w = GEO_WEIGHT.get(state_raw, 1.0)
+        weighted = severity_w * geo_w
+
+        if state_raw not in by_state:
+            by_state[state_raw] = {"count": 0, "weight": 0.0, "peak_category": "action"}
+        by_state[state_raw]["count"] += 1
+        by_state[state_raw]["weight"] += weighted
+        # Track peak severity
+        order = ["action", "flood", "major", "record"]
+        if order.index(flood_stage) > order.index(by_state[state_raw]["peak_category"]):
+            by_state[state_raw]["peak_category"] = flood_stage
+
+    total_weight = sum(v["weight"] for v in by_state.values())
+    return {"by_state": by_state, "total_weight": total_weight}
+
+
+def _get_cached_usgs(state_codes):
+    return _cached("usgs_flood", state_codes, _fetch_usgs_flood)
+
+
+# ── NIFC active wildfires ───────────────────────────────────────────────────────
 
 def _wfigs_state_clause(state_codes):
-    """Build a SQL IN-clause against POOState formatted as 'US-XX'."""
     quoted = ",".join(f"'US-{c}'" for c in state_codes)
     return f"POOState IN ({quoted})"
 
 
 def _fetch_nifc_active(state_codes):
-    """Active large wildfires (>100 ac) in customer states. Sorted by acres desc, top 5."""
     where = (f"({_wfigs_state_clause(state_codes)}) "
              f"AND IncidentSize > {MIN_FIRE_ACRES} "
              f"AND IncidentTypeCategory = 'WF' "
@@ -232,11 +322,9 @@ def _fetch_nifc_active(state_codes):
     return fires
 
 
-# ── NIFC fire perimeters (burn-scar proxy, current fire season) ──────────────
+# ── NIFC fire perimeters (burn-scar proxy) ─────────────────────────────────────
 
 def _fetch_nifc_burn_scars(state_codes):
-    """Largest fire perimeter per state from the current season — proxy for active burn scars."""
-    # Perimeters service uses attr_-prefixed field names.
     quoted = ",".join(f"'US-{c}'" for c in state_codes)
     where = f"attr_POOState IN ({quoted}) AND poly_GISAcres > {MIN_FIRE_ACRES}"
     qs = urllib.parse.urlencode({
@@ -256,7 +344,6 @@ def _fetch_nifc_burn_scars(state_codes):
         acres = a.get("poly_GISAcres")
         if not st or not acres:
             continue
-        # Already sorted by acres desc, so the first one we see per state wins.
         if st in by_state:
             continue
         ts = a.get("attr_FireDiscoveryDateTime")
@@ -275,7 +362,7 @@ def _fetch_nifc_burn_scars(state_codes):
     return list(by_state.values())
 
 
-# ── NHC active tropical cyclones ─────────────────────────────────────────────
+# ── NHC active tropical cyclones ───────────────────────────────────────────────
 
 CLASS_LABELS = {
     "HU": "Hurricane",
@@ -288,16 +375,13 @@ CLASS_LABELS = {
 
 
 def _project_track(lat, lon, dir_deg, speed_kt, hours_ahead):
-    """Project a chain of (lat, lon) points forward every 12h using current motion vector.
-    Returns the current position alone if motion vector is missing/zero."""
     points = [(lat, lon)]
     if dir_deg is None or speed_kt is None or speed_kt <= 0:
         return points
     bearing = math.radians(dir_deg)
     for h in range(12, hours_ahead + 1, 12):
-        nautical_miles = speed_kt * h            # kt × hours = nm
+        nautical_miles = speed_kt * h
         statute_miles = nautical_miles * 1.15078
-        # Approximate flat-earth offset; fine at <1500 mi for a UI heuristic.
         d_lat = (statute_miles * math.cos(bearing)) / 69.0
         d_lon = (statute_miles * math.sin(bearing)) / (69.0 * max(0.2, math.cos(math.radians(lat))))
         points.append((lat + d_lat, lon + d_lon))
@@ -305,7 +389,6 @@ def _project_track(lat, lon, dir_deg, speed_kt, hours_ahead):
 
 
 def _fetch_nhc_storms(customer_state_codes):
-    """Active named storms whose current track passes within CONE_RADIUS_MI of a customer state centroid."""
     data = _http_json(NHC_CURRENT_URL)
     if not data:
         return []
@@ -352,21 +435,24 @@ def _fetch_nhc_storms(customer_state_codes):
     return storms
 
 
-# ── Scoring functions ────────────────────────────────────────────────────────
+# ── Scoring functions ──────────────────────────────────────────────────────────
 
 def _weighted_moving_avg(gaps):
-    """Exponentially-weighted moving average of sale gaps.
-    Most recent gap gets the highest weight. Returns None if < 2 gaps."""
-    if not gaps:
+    """
+    Exponentially-weighted moving average of sale gaps.
+    Filters out 0-day gaps first — same-day multi-sales aren't meaningful intervals.
+    Most recent gap gets highest weight. Returns None if < 2 valid gaps.
+    """
+    clean = [g for g in gaps if g > 0]
+    if len(clean) < 2:
         return None
-    # weights: 1, 1.5, 2, 2.5, ... (oldest to newest)
-    weights = [1.0 + 0.5 * i for i in range(len(gaps))]
-    wma = sum(g * w for g, w in zip(gaps, weights)) / sum(weights)
+    weights = [1.0 + 0.5 * i for i in range(len(clean))]
+    wma = sum(g * w for g, w in zip(clean, weights)) / sum(weights)
     return round(wma, 1)
 
 
 def _score_time(days_since, wma_freq):
-    """0–45 pts based on days elapsed vs weighted moving average frequency."""
+    """0-45 pts based on days elapsed vs weighted moving average frequency."""
     if days_since is None or not wma_freq or wma_freq == 0:
         return 0
     ratio = days_since / wma_freq
@@ -377,13 +463,25 @@ def _score_time(days_since, wma_freq):
 
 
 def _score_weather(alerts):
-    """0–35 pts based on active NWS severe weather alerts."""
-    return min(sum(a["score"] for a in alerts), 35)
+    """
+    0-35 pts based on active NWS severe weather alerts, geo-weighted by customer state.
+    Uses weighted_score (base_score × geo_mult) instead of raw score.
+    """
+    return min(round(sum(a["weighted_score"] for a in alerts)), 35)
+
+
+def _score_usgs(usgs_data):
+    """
+    0-10 pts based on USGS gauges at/above action stage in customer states.
+    total_weight already incorporates severity and geo-weight.
+    Scale: weight 5 → 5 pts, weight 10 → 10 pts, capped at 10.
+    """
+    total_w = usgs_data.get("total_weight", 0.0)
+    return min(round(total_w / 2.0), 10)
 
 
 def _score_combo(alerts, fires, burn_scars):
-    """0–10 pts: a flood watch/warning over a state with active fire or fresh burn scar.
-    This is the only path through which fires affect the score — pure wildfires don't sell sandbags."""
+    """0-10 pts: flood alert over a state with active fire or fresh burn scar."""
     fire_states = {f["state"] for f in fires} | {b["state"] for b in burn_scars}
     if not fire_states:
         return 0, []
@@ -393,7 +491,6 @@ def _score_combo(alerts, fires, burn_scars):
         ev = (a.get("event") or "").lower()
         if "flood" not in ev:
             continue
-        # _fetch_nws_alerts already extracts a 2-letter code from areaDesc.
         st_code = (a.get("state") or "").upper()
         if st_code and st_code in fire_states:
             pts += 5
@@ -402,7 +499,7 @@ def _score_combo(alerts, fires, burn_scars):
 
 
 def _score_nhc(storms):
-    """0–12 pts: each active cyclone with cone over a customer state, +bonus for hurricane class."""
+    """0-12 pts: each active cyclone with cone over a customer state."""
     pts = 0
     for s in storms:
         pts += 6
@@ -412,30 +509,23 @@ def _score_nhc(storms):
 
 
 def _score_season(month, state_codes):
-    """0–20 pts based on month + state-specific seasonal factors.
-    Returns (pts, label) tuple."""
+    """0-20 pts based on month + state-specific seasonal factors."""
     state_set = set(state_codes)
 
-    # Hurricane component: applies to coastal/Gulf states
     hurricane_pts = 0
     if state_set & HURRICANE_STATES:
         hurricane_pts = HURRICANE_MONTHLY.get(month, 0)
 
-    # Snowmelt/spring thaw component
     melt_pts = 0
     if "AK" in state_set:
         melt_pts = max(melt_pts, ALASKA_MELT_MONTHLY.get(month, 0))
     if state_set & SNOWMELT_STATES:
         melt_pts = max(melt_pts, SNOWMELT_MONTHLY.get(month, 0))
 
-    # General warm-weather baseline (applies everywhere)
     baseline_pts = MONTHLY_BASELINE.get(month, 1)
-
-    # Take the highest applicable factor (they describe the same demand driver)
     seasonal_pts = max(hurricane_pts, melt_pts, baseline_pts)
     capped = min(seasonal_pts, 20)
 
-    # Pick the most descriptive label
     if hurricane_pts >= melt_pts and hurricane_pts > 0:
         label = "Hurricane Season"
     elif melt_pts >= 8 and "AK" in state_set:
@@ -452,25 +542,74 @@ def _score_season(month, state_codes):
     return capped, label
 
 
-# ── Main entry point ─────────────────────────────────────────────────────────
+def _score_velocity(stats):
+    """
+    0-15 pts based on recent sales momentum.
+    Compares rolling_30_count vs the historical daily rate × 30.
+    Uses avg_days_between_sales to compute historical rate (avoids needing first_sale_date).
+    Accelerating trend = higher score. Declining = lower.
+    """
+    rolling_30   = stats.get("rolling_30_count") or 0
+    total_sales  = stats.get("total_sales") or 0
+    avg_gap      = stats.get("avg_days_between_sales")  # avg days between sales
+
+    if total_sales < 5 or not avg_gap or avg_gap <= 0:
+        return 0
+
+    # Historical rate: 1 sale every avg_gap days
+    historical_daily = 1.0 / avg_gap
+    expected_30 = historical_daily * 30   # ~6.8 sales/30 days at 4.4-day avg gap
+
+    if expected_30 <= 0:
+        return 0
+
+    ratio = rolling_30 / expected_30
+    # ratio 1.0 = on historical pace → 7 pts
+    # ratio 2.0+ = double pace → 15 pts
+    # ratio 0.5 or less → 0 pts
+    if ratio <= 0.5:
+        return 0
+    elif ratio <= 1.0:
+        return round((ratio - 0.5) / 0.5 * 7)
+    else:
+        return min(round(7 + (ratio - 1.0) / 1.0 * 8), 15)
+
+
+def _score_dow(today_date=None):
+    """
+    0-5 pts based on day of week.
+    Mon/Tue/Wed/Thu are historically 3x stronger than Fri/Sat/Sun.
+    """
+    d = today_date or date.today()
+    # weekday(): 0=Mon, 1=Tue, 2=Wed, 3=Thu, 4=Fri, 5=Sat, 6=Sun
+    if d.weekday() <= 3:   # Mon-Thu
+        return 4
+    return 0
+
+
+# ── Main entry point ───────────────────────────────────────────────────────────
 
 def get_prediction(stats, locations):
     """
     Returns a prediction dict:
-      score         int 0–99
-      label         "LOW" | "MEDIUM" | "HIGH"
-      color         CSS color string
-      days_since    int | None
-      wma_freq      float | None   (weighted moving avg gap)
-      avg_freq      float | None   (simple avg for display comparison)
-      eta_days      float | None
-      alerts        list of alert dicts
-      season_pts    int
-      season_label  str | None
+      score           int 0-99
+      label           "LOW" | "MEDIUM" | "HIGH"
+      color           CSS color string
+      days_since      int | None
+      wma_freq        float | None   (weighted moving avg gap, 0-gaps filtered)
+      avg_freq        float | None   (simple avg for display comparison)
+      eta_days        float | None
+      alerts          list of alert dicts (now include weighted_score + geo_mult)
+      season_pts      int
+      season_label    str | None
+      velocity_pts    int
+      gauge_pts       int
+      dow_pts         int
+      usgs_data       dict  (by_state breakdown)
     """
     days_since = stats.get("days_since_last_sale")
-    avg_freq = stats.get("avg_days_between_sales")
-    gaps = stats.get("sale_gaps", [])
+    avg_freq   = stats.get("avg_days_between_sales")
+    gaps       = stats.get("sale_gaps", [])
 
     wma_freq = _weighted_moving_avg(gaps) or avg_freq
 
@@ -480,54 +619,76 @@ def get_prediction(stats, locations):
         if code and code not in state_codes:
             state_codes.append(code)
 
-    # Fan the four independent external feeds out concurrently. Each is wrapped in
-    # _cached(), which only hits the network on a cold/expired entry. Cold-cache
-    # latency drops from ~20s (4 sequential ~5s fetches) to ~5s (slowest single feed).
-    with ThreadPoolExecutor(max_workers=4) as pool:
+    # Fan 5 independent external feeds out concurrently (cold cache ~6s worst case)
+    with ThreadPoolExecutor(max_workers=5) as pool:
         f_alerts = pool.submit(_get_cached_alerts, state_codes)
-        f_fires = pool.submit(_cached, "nifc_active", state_codes, _fetch_nifc_active)
-        f_scars = pool.submit(_cached, "nifc_scars", state_codes, _fetch_nifc_burn_scars)
-        f_storms = pool.submit(_cached, "nhc", state_codes, _fetch_nhc_storms)
-    alerts = f_alerts.result()
-    fires = f_fires.result()
+        f_fires  = pool.submit(_cached, "nifc_active", state_codes, _fetch_nifc_active)
+        f_scars  = pool.submit(_cached, "nifc_scars",  state_codes, _fetch_nifc_burn_scars)
+        f_storms = pool.submit(_cached, "nhc",          state_codes, _fetch_nhc_storms)
+        f_usgs   = pool.submit(_get_cached_usgs,        state_codes)
+
+    alerts    = f_alerts.result()
+    fires     = f_fires.result()
     burn_scars = f_scars.result()
-    storms = f_storms.result()
+    storms    = f_storms.result()
+    usgs_data = f_usgs.result()
 
     month = date.today().month
+
+    time_pts          = _score_time(days_since, wma_freq)
+    weather_pts       = _score_weather(alerts)
     season_pts, season_label = _score_season(month, state_codes)
+    combo_pts, combo_states  = _score_combo(alerts, fires, burn_scars)
+    nhc_pts           = _score_nhc(storms)
+    velocity_pts      = _score_velocity(stats)
+    gauge_pts         = _score_usgs(usgs_data)
+    dow_pts           = _score_dow()
 
-    time_pts = _score_time(days_since, wma_freq)
-    weather_pts = _score_weather(alerts)
-    combo_pts, combo_states = _score_combo(alerts, fires, burn_scars)
-    nhc_pts = _score_nhc(storms)
-    score = min(time_pts + weather_pts + season_pts + combo_pts + nhc_pts, 99)
+    score = min(
+        time_pts + weather_pts + season_pts + combo_pts +
+        nhc_pts + velocity_pts + gauge_pts + dow_pts,
+        99
+    )
 
-    if score <= 30:
+    # Recalibrated thresholds:
+    # LOW (0-25): slow period, no weather pressure, off-season
+    # MEDIUM (26-55): normal pace + some weather signals
+    # HIGH (56+): strong weather events hitting customer states, or major storm + accelerating pace
+    if score <= 25:
         label, color = "LOW", "#64748b"
-    elif score <= 60:
+    elif score <= 55:
         label, color = "MEDIUM", "#f97316"
     else:
         label, color = "HIGH", "#4ade80"
 
-    eta_days = max(0, round((wma_freq or 0) - (days_since or 0), 1)) if wma_freq and days_since is not None else None
+    # ETA: how many days until the WMA-predicted next sale (capped at 0)
+    eta_days = (
+        max(0, round((wma_freq or 0) - (days_since or 0), 1))
+        if wma_freq and days_since is not None
+        else None
+    )
 
     return {
-        "score": score,
-        "label": label,
-        "color": color,
-        "days_since": days_since,
-        "wma_freq": wma_freq,
-        "avg_freq": avg_freq,
-        "eta_days": eta_days,
-        "alerts": alerts,
-        "time_pts": time_pts,
-        "weather_pts": weather_pts,
-        "season_pts": season_pts,
+        "score":        score,
+        "label":        label,
+        "color":        color,
+        "days_since":   days_since,
+        "wma_freq":     wma_freq,
+        "avg_freq":     avg_freq,
+        "eta_days":     eta_days,
+        "alerts":       alerts,
+        "time_pts":     time_pts,
+        "weather_pts":  weather_pts,
+        "season_pts":   season_pts,
         "season_label": season_label,
-        "fires": fires,
-        "burn_scars": burn_scars,
-        "storms": storms,
-        "combo_pts": combo_pts,
+        "velocity_pts": velocity_pts,
+        "gauge_pts":    gauge_pts,
+        "dow_pts":      dow_pts,
+        "fires":        fires,
+        "burn_scars":   burn_scars,
+        "storms":       storms,
+        "combo_pts":    combo_pts,
         "combo_states": combo_states,
-        "nhc_pts": nhc_pts,
+        "nhc_pts":      nhc_pts,
+        "usgs_data":    usgs_data,
     }

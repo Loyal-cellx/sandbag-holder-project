@@ -195,12 +195,6 @@
   <canvas id="gapChart" height="80"></canvas>
 </div>
 
-<!-- ── Monthly trend chart ────────────────────────────────────────────────── -->
-<div class="chart-wrap reveal" style="animation-delay:.22s">
-  <div class="section-h">Monthly Sales Count</div>
-  <canvas id="monthChart" height="70"></canvas>
-</div>
-
 <!-- ── Multi-sale days table ─────────────────────────────────────────────── -->
 {% if patterns.multi_days %}
 <div class="divider reveal" style="animation-delay:.26s"></div>
@@ -339,30 +333,6 @@
     }
   });
 
-  // ── Monthly trend ─────────────────────────────────────────────────────────
-  const byMonth = {{ stats.by_month | tojson }};
-  new Chart(document.getElementById('monthChart').getContext('2d'), {
-    type: 'bar',
-    data: {
-      labels: byMonth.map(m => m.month),
-      datasets: [{
-        label: 'Sales',
-        data: byMonth.map(m => m.count),
-        backgroundColor: 'rgba(56,189,248,0.25)',
-        borderColor: 'rgba(56,189,248,0.8)',
-        borderWidth: 1,
-        borderRadius: 4,
-      }]
-    },
-    options: {
-      responsive: true,
-      plugins: { legend: { display: false }, tooltip: tipOpts },
-      scales: {
-        x: { ticks: { color: tickColor }, grid: { color: gridColor } },
-        y: { ticks: { color: tickColor, stepSize: 1 }, grid: { color: gridColor }, min: 0 },
-      }
-    }
-  });
 })();
 </script>
 {% endblock %}

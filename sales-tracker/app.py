@@ -186,6 +186,85 @@ def api_prediction():
     return jsonify(prediction)
 
 
+# ── AI forecast ───────────────────────────────────────────────────────────────
+# Simple in-process cache so we don't call Claude on every page load.
+_ai_forecast_cache = {"text": None, "ts": 0}
+_AI_CACHE_TTL = 1800  # 30 minutes
+
+def _build_forecast_prompt(prediction, stats):
+    """Build a tightly scoped prompt for Claude Haiku."""
+    alerts_summary = ", ".join(
+        f"{a['event']} ({a['state']})" for a in prediction.get("alerts", [])[:6]
+    ) or "none"
+    fires_summary = ", ".join(
+        f"{f['name']} {f['state']} {f['acres']:,}ac" for f in prediction.get("fires", [])[:3]
+    ) or "none"
+    storms_summary = ", ".join(
+        f"{s['class_label']} {s['name']}" for s in prediction.get("storms", [])
+    ) or "none"
+    usgs = prediction.get("usgs_data", {})
+    gauge_states = ", ".join(usgs.get("by_state", {}).keys()) or "none"
+
+    return f"""Sandbag business sales forecast. ONE sentence, max 25 words, specific states/events only.
+
+Score: {prediction['score']}/99 ({prediction['label']}) | days since sale: {prediction.get('days_since','?')} | WMA interval: {prediction.get('wma_freq','?')}d | 30-day orders: {stats.get('rolling_30_count',0)}
+Alerts: {alerts_summary}
+Fires: {fires_summary} | Cyclones: {storms_summary} | Gauges: {gauge_states}
+Season: {prediction.get('season_label') or 'none'} | {date.today().strftime('%a %b %d')}
+
+Forecast (one sentence, max 25 words):"""
+
+
+@app.route("/api/ai-forecast")
+def api_ai_forecast():
+    global _ai_forecast_cache
+    now = datetime.now(timezone.utc).timestamp()
+
+    # Serve cache if fresh (unless bust=1 is passed)
+    bust = request.args.get("bust") == "1"
+    if not bust and _ai_forecast_cache["text"] and (now - _ai_forecast_cache["ts"]) < _AI_CACHE_TTL:
+        age = int(now - _ai_forecast_cache["ts"])
+        return jsonify({
+            "forecast": _ai_forecast_cache["text"],
+            "cached": True,
+            "age_seconds": age,
+        })
+
+    api_key = os.getenv("ANTHROPIC_API_KEY")
+    if not api_key:
+        return jsonify({"error": "ANTHROPIC_API_KEY not set"}), 500
+
+    prediction = get_prediction(get_stats(), get_all_locations())
+    stats = get_stats()
+    prompt = _build_forecast_prompt(prediction, stats)
+
+    payload = json.dumps({
+        "model": "claude-haiku-4-5",
+        "max_tokens": 200,
+        "messages": [{"role": "user", "content": prompt}],
+    }).encode()
+
+    req = urllib.request.Request(
+        "https://api.anthropic.com/v1/messages",
+        data=payload,
+        headers={
+            "x-api-key": api_key,
+            "anthropic-version": "2023-06-01",
+            "content-type": "application/json",
+        },
+        method="POST",
+    )
+
+    try:
+        with urllib.request.urlopen(req, timeout=15) as resp:
+            body = json.loads(resp.read())
+        text = body["content"][0]["text"].strip()
+        _ai_forecast_cache = {"text": text, "ts": now}
+        return jsonify({"forecast": text, "cached": False, "age_seconds": 0})
+    except (urllib.error.HTTPError, urllib.error.URLError, KeyError, json.JSONDecodeError) as e:
+        return jsonify({"error": str(e)}), 502
+
+
 @app.route("/api/sale-weather")
 def api_sale_weather():
     return jsonify(get_all_sale_weather())

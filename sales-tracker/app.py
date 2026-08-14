@@ -1,6 +1,7 @@
 from flask import Flask, render_template, request, redirect, url_for, jsonify, flash
 from database import db_init, add_sale, get_all_sales, get_stats, get_distinct_locations, get_all_locations, delete_sale, update_sale, get_milestones, get_sale, get_climate_snapshots, save_climate_snapshot, save_sale_weather, get_sale_weather, get_all_sale_weather, get_sales_missing_weather
 from prediction import get_prediction
+from tuftler_analytics import analytics_bp, get_analytics
 from datetime import date, datetime, timezone
 import os
 import json
@@ -14,8 +15,10 @@ load_dotenv()
 app = Flask(__name__)
 app.secret_key = os.getenv("SECRET_KEY", "change-me-in-env")
 
-# Idempotent table creation — runs at import time so wsgi servers (gunicorn/etc.)
-# also have a ready table on first request, not just `python app.py`.
+# Register analytics blueprint
+app.config["SALES_DB"] = os.getenv("DB_PATH", "/app/data/sales.db")
+app.register_blueprint(analytics_bp)
+
 db_init()
 
 VALID_PLATFORMS = {"Amazon", "eBay", "Walmart"}

@@ -1,0 +1,551 @@
+{% extends "base.html" %}
+
+{% block title %}Analytics — Sandbag Sales{% endblock %}
+
+{% block extra_style %}
+  /* ── Analytics page layout ── */
+  .an-page { max-width: var(--maxw); margin: 0 auto; padding: 0 1.1rem 3rem; position: relative; z-index: 1; }
+  .an-eyebrow { font-size: .66rem; font-weight: 700; letter-spacing: .14em; text-transform: uppercase; color: var(--faint); margin-bottom: .35rem; }
+  .an-title { font-family: var(--font-display); font-weight: 800; font-size: clamp(1.6rem,5vw,2.4rem); line-height: 1.1; margin-bottom: .25rem; }
+  .an-sub { font-size: .82rem; color: var(--muted); margin-bottom: 1.6rem; }
+
+  /* ── Section header ── */
+  .sec-head { display: flex; align-items: baseline; gap: .65rem; margin: 1.6rem 0 .65rem; }
+  .sec-head h2 { font-family: var(--font-display); font-weight: 700; font-size: 1rem; }
+  .sec-head .sec-badge { font-size: .6rem; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; padding: .15rem .5rem; border-radius: 999px; background: rgba(255,255,255,0.06); border: 1px solid var(--border-2); color: var(--faint); }
+
+  /* ── Headline KPIs ── */
+  .hl-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(130px,1fr)); gap: .75rem; margin-bottom: 1.25rem; }
+  .hl-card { background: var(--card); border: 1px solid var(--border); border-radius: 14px; padding: .9rem 1rem .8rem; }
+  .hl-card .label { font-size: .58rem; font-weight: 700; letter-spacing: .1em; text-transform: uppercase; color: var(--faint); margin-bottom: .25rem; }
+  .hl-card .val { font-family: var(--font-display); font-weight: 800; font-size: 1.55rem; line-height: 1; }
+  .hl-card .sub { font-size: .68rem; color: var(--muted); margin-top: .2rem; }
+  .col-rev { color: var(--hazard-2); }
+  .col-prof { color: var(--good); }
+  .col-unit { color: var(--water); }
+  .col-marg { color: var(--kraft); }
+
+  /* ── Generic table card ── */
+  .an-card { background: var(--card); border: 1px solid var(--border); border-radius: 14px; overflow: hidden; margin-bottom: .75rem; }
+  .an-card-head { padding: .7rem 1rem; border-bottom: 1px solid var(--border); font-size: .62rem; font-weight: 700; letter-spacing: .1em; text-transform: uppercase; color: var(--faint); display: flex; justify-content: space-between; align-items: center; }
+  .an-card-head .note { font-weight: 400; text-transform: none; letter-spacing: 0; color: var(--faint); opacity: .7; font-size: .6rem; }
+  .an-tbl { width: 100%; border-collapse: collapse; font-size: .8rem; }
+  .an-tbl th { text-align: right; font-size: .58rem; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; color: var(--faint); padding: .5rem .85rem; }
+  .an-tbl th:first-child { text-align: left; }
+  .an-tbl td { text-align: right; padding: .45rem .85rem; border-top: 1px solid var(--bg-2); color: var(--muted); font-variant-numeric: tabular-nums; }
+  .an-tbl td:first-child { text-align: left; color: var(--text); }
+  .an-tbl tr:hover td { background: rgba(255,255,255,0.018); }
+  .an-tbl .hi { color: var(--text); font-weight: 600; }
+  .an-tbl .gr { color: var(--good); }
+  .an-tbl .or { color: var(--hazard); }
+  .an-tbl .ye { color: var(--hazard-2); }
+  .an-tbl .cy { color: var(--water); }
+
+  /* ── Bar in a cell ── */
+  .bar-wrap { display: flex; align-items: center; gap: .5rem; }
+  .bar-track { flex: 1; height: 5px; background: var(--bg-2); border-radius: 3px; overflow: hidden; min-width: 40px; }
+  .bar-fill { height: 100%; border-radius: 3px; background: var(--water); }
+  .bar-fill.or { background: var(--hazard); }
+  .bar-fill.ye { background: var(--hazard-2); }
+  .bar-fill.gr { background: var(--good); }
+
+  /* ── Two-column grid ── */
+  .two-col { display: grid; grid-template-columns: 1fr 1fr; gap: .75rem; }
+  @media(max-width:640px){ .two-col { grid-template-columns: 1fr; } .hl-grid { grid-template-columns: repeat(2,1fr); } }
+
+  /* ── US SVG map ── */
+  .map-wrap { width: 100%; overflow: hidden; padding: .75rem 0 0; }
+  .us-map-svg { width: 100%; height: auto; display: block; }
+  .us-map-svg .state {
+    fill: var(--bg-2);
+    stroke: var(--border);
+    stroke-width: 0.7px;
+    cursor: pointer;
+    transition: fill .13s, stroke .13s;
+  }
+  .us-map-svg .state.has-sales { stroke: rgba(45,212,191,0.45); }
+  .us-map-svg .state.selected  { stroke: var(--water) !important; stroke-width: 1.5px; filter: brightness(1.25); }
+  @media (hover: hover) {
+    .us-map-svg .state:hover { filter: brightness(1.2); }
+  }
+  /* detail strip under map */
+  .map-detail {
+    min-height: 2.8rem; padding: .6rem 1rem;
+    display: flex; align-items: center; gap: 1.5rem; flex-wrap: wrap;
+    border-top: 1px solid var(--border);
+    font-size: .78rem; color: var(--muted);
+  }
+  .map-detail .md-name { font-weight: 700; color: var(--text); font-size: .85rem; }
+  .map-detail .md-stat { display: flex; flex-direction: column; }
+  .map-detail .md-stat span:first-child { font-size: .6rem; text-transform: uppercase; letter-spacing: .08em; color: var(--faint); }
+  .map-detail .md-stat b { color: var(--text); }
+  .map-detail .md-empty { color: var(--faint); font-size: .75rem; }
+
+  /* ── State list below map ── */
+  .geo-list-tbl td, .geo-list-tbl th { cursor: default; }
+  .geo-list-tbl tr.list-selected td { background: rgba(45,212,191,0.07); }
+  .geo-list-tbl tbody tr { cursor: pointer; }
+  .geo-list-tbl tbody tr td { min-height: 44px; }
+
+  /* ── Cut-line strip ── */
+  .cutline { display: flex; gap: 2px; flex-wrap: wrap; padding: .75rem 1rem; }
+  .cut-day { width: 8px; height: 8px; border-radius: 2px; background: var(--bg-2); flex-shrink: 0; }
+  .cut-day.s1 { background: var(--water-deep); }
+  .cut-day.s2 { background: var(--water); }
+  .cut-day.s3 { background: var(--hazard-2); }
+  .cut-day.s4 { background: var(--hazard); }
+
+  /* ── Cadence badges ── */
+  .badge-row { display: flex; gap: .5rem; flex-wrap: wrap; padding: .85rem 1rem; }
+  .cbadge { font-size: .7rem; font-weight: 600; padding: .25rem .7rem; border-radius: 999px; background: var(--bg-2); border: 1px solid var(--border-2); color: var(--muted); }
+  .cbadge b { color: var(--text); }
+
+  /* ── Pace bar ── */
+  .pace-wrap { padding: .85rem 1rem 1rem; }
+  .pace-bar-track { height: 10px; background: var(--bg-2); border-radius: 5px; overflow: hidden; margin: .5rem 0; position: relative; }
+  .pace-bar-done { height: 100%; background: linear-gradient(90deg,var(--water),var(--water-deep)); border-radius: 5px; }
+  .pace-bar-proj { height: 100%; position: absolute; top: 0; background: rgba(45,212,191,0.25); border-radius: 5px; border-right: 2px dashed var(--water); }
+  .pace-meta { display: flex; justify-content: space-between; font-size: .7rem; color: var(--faint); margin-top: .3rem; }
+
+  /* ── Mom chip ── */
+  .mom { font-size: .65rem; font-weight: 700; padding: .1rem .4rem; border-radius: 999px; }
+  .mom.up   { background: rgba(52,211,153,.16); color: var(--good); }
+  .mom.down { background: rgba(251,113,133,.16); color: var(--bad); }
+  .mom.flat { background: rgba(255,255,255,.07); color: var(--faint); }
+
+  /* ── P-value pill ── */
+  .pv { font-size: .6rem; padding: .08rem .38rem; border-radius: 999px; border: 1px solid; }
+  .pv.sig  { border-color: rgba(52,211,153,.4); color: var(--good); }
+  .pv.sug  { border-color: rgba(250,204,21,.4); color: var(--hazard-2); }
+  .pv.ns   { border-color: var(--border-2); color: var(--faint); }
+
+  /* ── Drought pills ── */
+  .drought-row { display: flex; gap: .5rem; flex-wrap: wrap; padding: .5rem 1rem .85rem; }
+  .drought-pill { font-size: .7rem; padding: .25rem .65rem; border-radius: 8px; background: var(--bg-2); border: 1px solid var(--border-2); color: var(--muted); }
+  .drought-pill b { color: var(--text); }
+  .drought-pill .dt { font-size: .6rem; color: var(--faint); display: block; margin-top: .1rem; }
+
+  /* ── Empty state ── */
+  .an-empty { text-align: center; padding: 4rem 2rem; color: var(--faint); }
+  .an-empty h2 { font-size: 1.1rem; margin-bottom: .5rem; color: var(--muted); }
+{% endblock %}
+
+{% block content %}
+<div class="an-page">
+
+  {% if a.empty %}
+  <div class="an-empty">
+    <h2>No data yet</h2>
+    <p>Log your first sale and come back.</p>
+  </div>
+  {% else %}
+
+  {# ── PAGE HEADER ── #}
+  <p class="an-eyebrow">Teardown</p>
+  <h1 class="an-title">Sales Analytics</h1>
+  <p class="an-sub">{{ a.headline.units }} units · {{ a.headline.first }} → {{ a.headline.last }} · {{ a.headline.span_days }} days · generated {{ a.generated }}</p>
+
+  {# ── HEADLINE KPIs ── #}
+  <div class="hl-grid">
+    <div class="hl-card">
+      <div class="label">Revenue</div>
+      <div class="val col-rev">${{ "%.0f"|format(a.headline.revenue) }}</div>
+      <div class="sub">gross</div>
+    </div>
+    <div class="hl-card">
+      <div class="label">Profit</div>
+      <div class="val col-prof">${{ "%.0f"|format(a.headline.profit) }}</div>
+      <div class="sub">{{ a.headline.margin }}% margin</div>
+    </div>
+    <div class="hl-card">
+      <div class="label">Units</div>
+      <div class="val col-unit">{{ a.headline.units }}</div>
+      <div class="sub">sold</div>
+    </div>
+    <div class="hl-card">
+      <div class="label">COGS</div>
+      <div class="val col-marg">${{ "%.0f"|format(a.headline.cogs) }}</div>
+      <div class="sub">cost of goods</div>
+    </div>
+  </div>
+
+  {# ── DAILY CUT-LINE ── #}
+  <div class="sec-head"><h2>Day-by-Day Activity</h2><span class="sec-badge">{{ a.headline.span_days }} days</span></div>
+  <div class="an-card">
+    <div class="an-card-head">
+      Sales density
+      <span class="note">■ 1 sale &nbsp;■ 2 &nbsp;■ 3 &nbsp;■ 4+</span>
+    </div>
+    <div class="cutline">
+      {% for n in a.daily.counts %}
+        {% if n == 0 %}
+          <div class="cut-day" title="{{ loop.index0 }} days after {{ a.daily.start }}"></div>
+        {% elif n == 1 %}
+          <div class="cut-day s1"></div>
+        {% elif n == 2 %}
+          <div class="cut-day s2"></div>
+        {% elif n == 3 %}
+          <div class="cut-day s3"></div>
+        {% else %}
+          <div class="cut-day s4"></div>
+        {% endif %}
+      {% endfor %}
+    </div>
+  </div>
+
+  {# ── CADENCE ── #}
+  <div class="sec-head"><h2>Selling Cadence</h2></div>
+  <div class="an-card">
+    <div class="badge-row">
+      <div class="cbadge"><b>{{ a.cadence.selling_days }}</b> selling days</div>
+      <div class="cbadge"><b>{{ a.cadence.coverage_pct }}%</b> coverage</div>
+      <div class="cbadge">avg gap <b>{{ a.cadence.mean_gap }}d</b></div>
+      <div class="cbadge">median gap <b>{{ a.cadence.median_gap }}d</b></div>
+      <div class="cbadge">max gap <b>{{ a.cadence.max_gap }}d</b></div>
+      <div class="cbadge">1st-half avg <b>{{ a.cadence.first_half_gap }}d</b></div>
+      <div class="cbadge">2nd-half avg <b>{{ a.cadence.second_half_gap }}d</b></div>
+    </div>
+  </div>
+  {% if a.cadence.droughts %}
+  <div class="an-card">
+    <div class="an-card-head">Top droughts</div>
+    <div class="drought-row">
+      {% for d in a.cadence.droughts %}
+      <div class="drought-pill"><b>{{ d.days }}d</b> gap<span class="dt">ended {{ d.ended }}</span></div>
+      {% endfor %}
+    </div>
+  </div>
+  {% endif %}
+
+  {# ── MONTHLY ── #}
+  <div class="sec-head"><h2>Monthly Breakdown</h2><span class="sec-badge">{{ a.monthly|length }} months</span></div>
+  <div class="an-card">
+    <table class="an-tbl">
+      <thead><tr>
+        <th>Month</th><th>Units</th><th>MoM</th><th>Revenue</th><th>Profit</th><th>Cum Units</th><th>Cum Rev</th>
+      </tr></thead>
+      <tbody>
+        {% for m in a.monthly|reverse %}
+        <tr>
+          <td class="hi">{{ m.label }} {{ m.month[:4] }}</td>
+          <td class="cy">{{ m.units }}</td>
+          <td>
+            {% if m.mom_pct is none %}
+              <span class="mom flat">—</span>
+            {% elif m.mom_pct >= 0 %}
+              <span class="mom up">+{{ m.mom_pct }}%</span>
+            {% else %}
+              <span class="mom down">{{ m.mom_pct }}%</span>
+            {% endif %}
+          </td>
+          <td class="ye">${{ "%.2f"|format(m.revenue) }}</td>
+          <td class="gr">${{ "%.2f"|format(m.profit) }}</td>
+          <td>{{ m.cum_units }}</td>
+          <td>${{ "%.0f"|format(m.cum_revenue) }}</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+
+  {# ── PACE ── #}
+  <div class="sec-head"><h2>Current Month Pace</h2></div>
+  <div class="an-card">
+    <div class="pace-wrap">
+      {% set pct_elapsed = (a.pace.days_elapsed / a.pace.days_in_month * 100)|round(1) %}
+      {% set pct_proj = [((a.pace.projected_units / (a.pace.units_so_far / (pct_elapsed/100) if pct_elapsed > 0 else 1)) * pct_elapsed)|round(1), 100]|min %}
+      <div style="display:flex;justify-content:space-between;margin-bottom:.35rem;">
+        <span style="font-size:.78rem;color:var(--text);font-weight:600;">{{ a.pace.units_so_far }} units in {{ a.pace.days_elapsed }}d</span>
+        <span style="font-size:.78rem;color:var(--water);">→ {{ a.pace.projected_units }} projected</span>
+      </div>
+      <div class="pace-bar-track">
+        <div class="pace-bar-proj" style="width:{{ [pct_elapsed * (a.pace.projected_units / a.pace.units_so_far if a.pace.units_so_far else 1), 100]|min|round(1) }}%;"></div>
+        <div class="pace-bar-done" style="width:{{ pct_elapsed }}%;"></div>
+      </div>
+      <div class="pace-meta">
+        <span>{{ a.pace.days_elapsed }}d elapsed / {{ a.pace.days_in_month }}d in month</span>
+        <span>{{ a.pace.per_day }} units/day · ${{ "%.0f"|format(a.pace.projected_revenue) }} proj revenue</span>
+      </div>
+    </div>
+  </div>
+
+  {# ── WEEKDAY ── #}
+  <div class="sec-head"><h2>Weekday Index</h2><span class="sec-badge">{{ a.weekday.weekday_pct }}% weekday / {{ a.weekday.weekend_pct }}% weekend</span></div>
+  <div class="an-card">
+    <table class="an-tbl">
+      <thead><tr>
+        <th>Day</th><th>Units</th><th>Share</th><th>Index</th><th>p-value</th>
+      </tr></thead>
+      <tbody>
+        {% for row in a.weekday.rows %}
+        <tr>
+          <td class="hi">{{ row.day|title }}</td>
+          <td class="cy">{{ row.units }}</td>
+          <td>{{ row.share_pct }}%</td>
+          <td {% if row.index >= 1.3 %}class="gr"{% elif row.index <= 0.7 %}class="or"{% endif %}>{{ row.index }}</td>
+          <td>
+            {% if row.p_value <= 0.007 %}
+              <span class="pv sig">{{ row.p_value }}</span>
+            {% elif row.p_value <= 0.05 %}
+              <span class="pv sug">{{ row.p_value }}</span>
+            {% else %}
+              <span class="pv ns">{{ row.p_value }}</span>
+            {% endif %}
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+    <div style="padding:.5rem 1rem .75rem;font-size:.65rem;color:var(--faint);">{{ a.weekday.note }}</div>
+  </div>
+
+  {# ── GEO ── #}
+  {% if a.geo.states %}
+  {% set state_data = {} %}
+  {% for s in a.geo.states %}{% set _ = state_data.update({s.abbr: s}) %}{% endfor %}
+  {% set max_u = a.geo.states[0].units if a.geo.states else 1 %}
+  <div class="sec-head"><h2>Geography</h2><span class="sec-badge">{{ a.geo.state_count }} states · HHI {{ a.geo.hhi }}</span></div>
+
+  {# SVG US map #}
+  <div class="an-card" id="map-card">
+    <div class="an-card-head">State heat map <span class="note">tap to select</span></div>
+    <div class="map-wrap">
+      <svg class="us-map-svg" viewBox="0 0 975 610" xmlns="http://www.w3.org/2000/svg" aria-label="US sales heat map">
+        {% include '_us_map.svg.html' %}
+      </svg>
+    </div>
+    <div class="map-detail" id="map-detail">
+      <span class="md-empty">Tap a state for details</span>
+    </div>
+  </div>
+
+  {# State list: all states with sales, sorted by units desc #}
+  <div class="an-card" id="geo-list-card">
+    <div class="an-card-head">All states with sales <span class="note">per-million vs national avg {{ a.geo.national_per_million }} / M</span></div>
+    <table class="an-tbl geo-list-tbl">
+      <thead><tr>
+        <th>State</th><th>Units</th><th>Revenue</th><th>Per M pop</th><th>Index</th>
+      </tr></thead>
+      <tbody>
+        {% for s in a.geo.states %}
+        <tr id="row-{{ s.abbr }}" data-abbr="{{ s.abbr }}" style="height:44px;">
+          <td class="hi">{{ s.state }} <span style="color:var(--faint);font-size:.72rem;">{{ s.abbr }}</span></td>
+          <td class="cy">{{ s.units }}</td>
+          <td class="ye">${{ "%.0f"|format(s.revenue) }}</td>
+          <td>{{ s.per_million }}</td>
+          <td {% if s.index >= 2 %}class="gr"{% elif s.index >= 1 %}class="cy"{% endif %}>{{ s.index }}×</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+
+  {# Region table #}
+  <div class="an-card">
+    <div class="an-card-head">Region breakdown</div>
+    <table class="an-tbl">
+      <thead><tr><th>Region</th><th>Units</th><th>Unit %</th><th>Pop %</th><th>Index</th></tr></thead>
+      <tbody>
+        {% for r in a.geo.regions %}
+        <tr>
+          <td class="hi">{{ r.region }}</td>
+          <td class="cy">{{ r.units }}</td>
+          <td>{{ r.unit_share_pct }}%</td>
+          <td style="color:var(--faint)">{{ r.pop_share_pct }}%</td>
+          <td {% if r.index >= 1.5 %}class="gr"{% elif r.index >= 1 %}class="cy"{% endif %}>{{ r.index }}×</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+
+  {# Map data + interaction script #}
+  <script>
+  (function(){
+    // State data keyed by abbreviation
+    var GEO = {
+      {% for s in a.geo.states %}
+      "{{ s.abbr }}": {name:"{{ s.state }}",units:{{ s.units }},rev:{{ s.revenue }},pm:{{ s.per_million }},idx:{{ s.index }}},
+      {% endfor %}
+    };
+    var MAX_U = {{ max_u }};
+
+    // Colour each state path
+    document.querySelectorAll('#map-card .state').forEach(function(path){
+      var abbr = path.dataset.state;
+      var d = GEO[abbr];
+      if(d){
+        var t = d.units / MAX_U;
+        var alpha = (0.12 + 0.55 * t).toFixed(3);
+        path.style.fill = 'rgba(45,212,191,' + alpha + ')';
+        path.classList.add('has-sales');
+        // store data attrs for JS
+        path.dataset.units   = d.units;
+        path.dataset.rev     = d.rev;
+        path.dataset.pm      = d.pm;
+        path.dataset.idx     = d.idx;
+        path.dataset.name    = d.name;
+      } else {
+        // no sales: dim fill, slightly lighter stroke so outline still reads
+        path.style.fill   = 'rgba(255,255,255,0.025)';
+        path.style.stroke = 'rgba(255,255,255,0.09)';
+      }
+    });
+
+    var selectedAbbr = null;
+    var detail = document.getElementById('map-detail');
+
+    function fmt$(v){ return '$' + parseFloat(v).toLocaleString('en-US',{maximumFractionDigits:0}); }
+
+    function renderDetail(abbr, d){
+      detail.innerHTML =
+        '<span class="md-name">' + d.name + ' (' + abbr + ')</span>' +
+        '<span class="md-stat"><span>Units</span><b>' + d.units + '</b></span>' +
+        '<span class="md-stat"><span>Revenue</span><b>' + fmt$(d.rev) + '</b></span>' +
+        '<span class="md-stat"><span>Per M pop</span><b>' + d.pm + '</b></span>' +
+        '<span class="md-stat"><span>Index</span><b>' + d.idx + '×</b></span>';
+    }
+    function clearDetail(){
+      detail.innerHTML = '<span class="md-empty">Tap a state for details</span>';
+    }
+
+    function selectState(abbr){
+      // deselect old
+      if(selectedAbbr){
+        var old = document.getElementById('st-' + selectedAbbr);
+        if(old) old.classList.remove('selected');
+        var oldRow = document.getElementById('row-' + selectedAbbr);
+        if(oldRow) oldRow.classList.remove('list-selected');
+      }
+      if(abbr === selectedAbbr){ selectedAbbr = null; clearDetail(); return; }
+      selectedAbbr = abbr;
+      var path = document.getElementById('st-' + abbr);
+      if(path) path.classList.add('selected');
+      var row = document.getElementById('row-' + abbr);
+      if(row){ row.classList.add('list-selected'); }
+      var d = GEO[abbr];
+      if(d){ renderDetail(abbr, d); } else { clearDetail(); }
+    }
+
+    // Map clicks
+    document.querySelectorAll('#map-card .state').forEach(function(path){
+      path.addEventListener('click', function(e){
+        e.stopPropagation();
+        selectState(path.dataset.state);
+      });
+    });
+
+    // Click SVG background to clear
+    var svg = document.querySelector('#map-card .us-map-svg');
+    if(svg) svg.addEventListener('click', function(){ selectState(null); });
+
+    // List rows → map + scroll
+    document.querySelectorAll('.geo-list-tbl tbody tr').forEach(function(row){
+      row.addEventListener('click', function(){
+        var abbr = row.dataset.abbr;
+        selectState(abbr);
+        var mapCard = document.getElementById('map-card');
+        if(mapCard) mapCard.scrollIntoView({behavior:'smooth', block:'nearest'});
+      });
+    });
+
+    // Map selection → scroll list row into view
+    var _orig = selectState;
+    selectState = function(abbr){
+      _orig(abbr);
+      if(abbr){
+        var r = document.getElementById('row-' + abbr);
+        if(r) r.scrollIntoView({behavior:'smooth', block:'nearest'});
+      }
+    };
+  })();
+  </script>
+  {% endif %}
+
+  {# ── PLATFORM ── #}
+  <div class="sec-head"><h2>Platform Split</h2><span class="sec-badge">HHI {{ a.platform.hhi }}</span></div>
+  <div class="an-card">
+    <table class="an-tbl">
+      <thead><tr><th>Platform</th><th>Units</th><th>Share</th><th></th></tr></thead>
+      <tbody>
+        {% for row in a.platform.rows %}
+        <tr>
+          <td class="hi">{{ row.platform }}</td>
+          <td class="cy">{{ row.units }}</td>
+          <td>{{ row.share_pct }}%</td>
+          <td style="padding-right:1rem;">
+            <div class="bar-wrap">
+              <div class="bar-track"><div class="bar-fill" style="width:{{ row.share_pct }}%;"></div></div>
+            </div>
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+
+  {# ── STACKS ── #}
+  {% if a.stacks.stacks %}
+  <div class="sec-head"><h2>Multi-Unit Events</h2><span class="sec-badge">{{ a.stacks.stacked_pct }}% of units in stacks</span></div>
+  <div class="an-card">
+    <div class="an-card-head">
+      Same-day same-state orders
+      <span class="note">{{ a.stacks.units_in_stacks }} stacked units · {{ a.stacks.multi_order_days }} multi-order days</span>
+    </div>
+    <table class="an-tbl">
+      <thead><tr><th>Date</th><th>State</th><th>Units</th></tr></thead>
+      <tbody>
+        {% for s in a.stacks.stacks %}
+        <tr>
+          <td class="hi">{{ s.date }}</td>
+          <td>{{ s.state }}</td>
+          <td class="cy">{{ s.units }}</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  {% endif %}
+
+  {# ── DISCOVERY ── #}
+  <div class="sec-head"><h2>State Discovery</h2><span class="sec-badge">{{ a.discovery.total_states }} states reached · {{ a.discovery.repeat_state_pct }}% repeat-state orders</span></div>
+  <div class="an-card">
+    <table class="an-tbl">
+      <thead><tr><th>Month</th><th>Units</th><th>States Active</th><th>New States</th><th>Discovered</th></tr></thead>
+      <tbody>
+        {% for row in a.discovery.rows|reverse %}
+        <tr>
+          <td class="hi">{{ row.month }}</td>
+          <td class="cy">{{ row.units }}</td>
+          <td>{{ row.states }}</td>
+          <td {% if row.new_states > 0 %}class="gr"{% endif %}>{{ row.new_states }}</td>
+          <td style="color:var(--faint);font-size:.72rem;">{{ row.new|join(", ") if row.new else "—" }}</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+
+  {# ── PRICE POINTS ── #}
+  <div class="sec-head"><h2>Price Points</h2></div>
+  <div class="an-card">
+    <table class="an-tbl">
+      <thead><tr><th>Amount</th><th>Profit</th><th>COGS</th><th>Margin</th><th>Units</th><th>First seen</th></tr></thead>
+      <tbody>
+        {% for pp in a.price_points %}
+        <tr>
+          <td class="hi ye">${{ "%.2f"|format(pp.amount) }}</td>
+          <td class="gr">${{ "%.2f"|format(pp.profit) }}</td>
+          <td style="color:var(--faint)">${{ "%.2f"|format(pp.cost) }}</td>
+          <td>{{ pp.margin }}%</td>
+          <td class="cy">{{ pp.units }}</td>
+          <td style="color:var(--faint)">{{ pp.first_seen }}</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+
+  {% endif %}{# end if not empty #}
+</div>
+{% endblock %}

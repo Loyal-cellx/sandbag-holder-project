@@ -60,7 +60,7 @@
 
     /* ── Top bar ── */
     nav {
-      position: relative; z-index: 2;
+      position: relative; z-index: 200;
       display: flex; align-items: baseline; justify-content: space-between;
       gap: 1rem;
       max-width: var(--maxw); margin: 0 auto;
@@ -80,6 +80,81 @@
       transition: color .15s, border-color .15s;
     }
     nav a.link:hover, nav a.link.active { color: var(--text); border-color: var(--water); }
+
+    /* ── Mobile nav ── */
+    .nav-page-name {
+      display: none;
+      font-size: 0.72rem; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase;
+      color: var(--muted);
+    }
+    .nav-hamburger {
+      display: none;
+      background: none; border: none; cursor: pointer; padding: 0.3rem 0.1rem;
+      color: var(--text);
+      align-items: center; justify-content: center;
+      flex-shrink: 0;
+    }
+    .nav-hamburger svg { display: block; overflow: visible; }
+    .nav-hamburger .bar {
+      transform-origin: center;
+      transition: transform 0.2s ease, opacity 0.15s ease;
+    }
+    /* X state */
+    .nav-hamburger[aria-expanded="true"] .bar-1 { transform: translateY(5px) rotate(45deg); }
+    .nav-hamburger[aria-expanded="true"] .bar-2 { opacity: 0; }
+    .nav-hamburger[aria-expanded="true"] .bar-3 { transform: translateY(-5px) rotate(-45deg); }
+
+    /* Mobile dropdown panel */
+    #nav-panel {
+      display: none;
+      position: absolute;
+      top: 100%; left: 0; right: 0;
+      z-index: 199;
+      background: var(--card);
+      border-top: 1px solid var(--border);
+      border-bottom: 1px solid var(--border);
+      padding: 0.5rem 0;
+      /* slide+fade animation */
+      transform-origin: top center;
+      opacity: 0;
+      transform: scaleY(0.92) translateY(-4px);
+      transition: opacity 0.17s ease, transform 0.17s ease;
+    }
+    #nav-panel.open {
+      display: block;
+      opacity: 1;
+      transform: scaleY(1) translateY(0);
+    }
+    #nav-panel a.link {
+      display: flex; align-items: center;
+      font-size: 0.8rem; font-weight: 600; letter-spacing: 0.06em; text-transform: uppercase;
+      color: var(--faint); text-decoration: none;
+      padding: 0.75rem 1.4rem;
+      min-height: 44px;
+      border-bottom: none;
+      border-left: 3px solid transparent;
+      transition: color .15s, background .15s, border-color .15s;
+    }
+    #nav-panel a.link:hover  { color: var(--text); background: var(--card-2); }
+    #nav-panel a.link.active { color: var(--text); border-left-color: var(--water); background: rgba(45,212,191,0.06); }
+
+    /* nav wrapper needs relative positioning for the dropdown */
+    .nav-wrapper {
+      position: relative; z-index: 200;
+    }
+
+    @media (max-width: 767px) {
+      .nav-wrapper { position: relative; }
+      nav .links    { display: none; }
+      .nav-page-name { display: block; }
+      .nav-hamburger { display: flex; }
+      nav { align-items: center; }
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      .nav-hamburger .bar { transition: none; }
+      #nav-panel { transition: none; }
+    }
 
     .container {
       position: relative; z-index: 1;
@@ -213,15 +288,42 @@
     </svg>
   </div>
 
-  <nav>
-    <a class="brand" href="{{ url_for('index') }}">Sandbag <span class="slash">//</span> Sales</a>
-    <div class="links">
+  {%- set _page_names = {
+      'index': 'Dashboard',
+      'log_sale': 'Log Sale',
+      'milestones': 'Milestones',
+      'history': 'Patterns',
+      'analytics.analytics_page': 'Analytics'
+  } -%}
+  {%- set _current_page = _page_names.get(request.endpoint, '') -%}
+  <div class="nav-wrapper">
+    <nav>
+      <a class="brand" href="{{ url_for('index') }}">Sandbag <span class="slash">//</span> Sales</a>
+      <span class="nav-page-name" aria-hidden="true">{{ _current_page }}</span>
+      <div class="links">
+        <a class="link {% if request.endpoint == 'index' %}active{% endif %}" href="{{ url_for('index') }}" {% if request.endpoint == 'index' %}aria-current="page"{% endif %}>Dashboard</a>
+        <a class="link {% if request.endpoint == 'log_sale' %}active{% endif %}" href="{{ url_for('log_sale') }}" {% if request.endpoint == 'log_sale' %}aria-current="page"{% endif %}>Log Sale</a>
+        <a class="link {% if request.endpoint == 'milestones' %}active{% endif %}" href="{{ url_for('milestones') }}" {% if request.endpoint == 'milestones' %}aria-current="page"{% endif %}>Milestones</a>
+        <a class="link {% if request.endpoint == 'history' %}active{% endif %}" href="{{ url_for('history') }}" {% if request.endpoint == 'history' %}aria-current="page"{% endif %}>Patterns</a>
+        <a class="link {% if request.endpoint == 'analytics.analytics_page' %}active{% endif %}" href="{{ url_for('analytics.analytics_page') }}" {% if request.endpoint == 'analytics.analytics_page' %}aria-current="page"{% endif %}>Analytics</a>
+      </div>
+      <button class="nav-hamburger" id="nav-toggle"
+              aria-label="Menu" aria-expanded="false" aria-controls="nav-panel">
+        <svg width="22" height="16" viewBox="0 0 22 16" fill="none" aria-hidden="true">
+          <rect class="bar bar-1" x="0" y="0"  width="22" height="2" rx="1" fill="currentColor"/>
+          <rect class="bar bar-2" x="0" y="7"  width="22" height="2" rx="1" fill="currentColor"/>
+          <rect class="bar bar-3" x="0" y="14" width="22" height="2" rx="1" fill="currentColor"/>
+        </svg>
+      </button>
+    </nav>
+    <div id="nav-panel" role="dialog" aria-label="Navigation menu">
       <a class="link {% if request.endpoint == 'index' %}active{% endif %}" href="{{ url_for('index') }}" {% if request.endpoint == 'index' %}aria-current="page"{% endif %}>Dashboard</a>
       <a class="link {% if request.endpoint == 'log_sale' %}active{% endif %}" href="{{ url_for('log_sale') }}" {% if request.endpoint == 'log_sale' %}aria-current="page"{% endif %}>Log Sale</a>
       <a class="link {% if request.endpoint == 'milestones' %}active{% endif %}" href="{{ url_for('milestones') }}" {% if request.endpoint == 'milestones' %}aria-current="page"{% endif %}>Milestones</a>
       <a class="link {% if request.endpoint == 'history' %}active{% endif %}" href="{{ url_for('history') }}" {% if request.endpoint == 'history' %}aria-current="page"{% endif %}>Patterns</a>
+      <a class="link {% if request.endpoint == 'analytics.analytics_page' %}active{% endif %}" href="{{ url_for('analytics.analytics_page') }}" {% if request.endpoint == 'analytics.analytics_page' %}aria-current="page"{% endif %}>Analytics</a>
     </div>
-  </nav>
+  </div>
 
   <div class="container">
     {% with messages = get_flashed_messages() %}
@@ -234,5 +336,43 @@
 
     {% block content %}{% endblock %}
   </div>
+  <script>
+    (function () {
+      var toggle = document.getElementById('nav-toggle');
+      var panel  = document.getElementById('nav-panel');
+      if (!toggle || !panel) return;
+
+      function open() {
+        panel.classList.add('open');
+        toggle.setAttribute('aria-expanded', 'true');
+        panel.removeAttribute('hidden');
+      }
+      function close() {
+        panel.classList.remove('open');
+        toggle.setAttribute('aria-expanded', 'false');
+      }
+      function isOpen() { return panel.classList.contains('open'); }
+
+      toggle.addEventListener('click', function (e) {
+        e.stopPropagation();
+        isOpen() ? close() : open();
+      });
+
+      // Close on panel link tap
+      panel.querySelectorAll('a').forEach(function (a) {
+        a.addEventListener('click', close);
+      });
+
+      // Close on outside tap
+      document.addEventListener('click', function (e) {
+        if (isOpen() && !panel.contains(e.target) && e.target !== toggle) close();
+      });
+
+      // Close on Escape
+      document.addEventListener('keydown', function (e) {
+        if (e.key === 'Escape' && isOpen()) { close(); toggle.focus(); }
+      });
+    })();
+  </script>
 </body>
 </html>

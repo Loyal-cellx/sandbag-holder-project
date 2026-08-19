@@ -20,7 +20,6 @@ loader actually found:
 
 import argparse
 import json
-import math
 import os
 import sqlite3
 from collections import Counter, defaultdict
@@ -109,19 +108,6 @@ REGION = {
 }
 STATE_REGION = {s: r for r, ss in REGION.items() for s in ss}
 
-# Tile-grid map layout, 8 rows by 11 columns. All 50 states plus DC.
-TILE_GRID = [
-    ["AK", "", "", "", "", "", "", "", "", "", "ME"],
-    ["", "", "", "", "", "", "WI", "", "VT", "NH", ""],
-    ["WA", "ID", "MT", "ND", "MN", "IL", "MI", "", "NY", "MA", "RI"],
-    ["OR", "NV", "WY", "SD", "IA", "IN", "OH", "PA", "NJ", "CT", ""],
-    ["CA", "UT", "CO", "NE", "MO", "KY", "WV", "VA", "MD", "DE", ""],
-    ["", "AZ", "NM", "KS", "AR", "TN", "NC", "SC", "DC", "", ""],
-    ["", "", "", "OK", "LA", "MS", "AL", "GA", "", "", ""],
-    ["HI", "", "", "TX", "", "", "", "", "FL", "", ""],
-]
-
-
 # --------------------------------------------------------------------------
 # Loading
 # --------------------------------------------------------------------------
@@ -193,20 +179,6 @@ def _parse_date(v):
 # Small stats helpers, no scipy
 # --------------------------------------------------------------------------
 
-def _binom_pmf(k, n, p):
-    return math.comb(n, k) * (p ** k) * ((1 - p) ** (n - k))
-
-
-def binom_two_sided(k, n, p):
-    """Exact two-sided binomial p-value. Fine at n in the thousands."""
-    if n == 0:
-        return 1.0
-    obs = _binom_pmf(k, n, p)
-    tol = obs * (1 + 1e-9)
-    return min(1.0, sum(_binom_pmf(i, n, p) for i in range(n + 1)
-                        if _binom_pmf(i, n, p) <= tol))
-
-
 def _median(xs):
     xs = sorted(xs)
     if not xs:
@@ -249,7 +221,6 @@ def compute(orders):
         "cadence": _cadence(orders, first, last, span),
         "monthly": _monthly(orders),
         "pace": _pace(orders, last),
-        "weekday": _weekday(orders, first, last),
         "geo": _geo(orders),
         "platform": _platform(orders),
         "stacks": _stacks(orders),
@@ -330,41 +301,6 @@ def _pace(orders, last):
     }
 
 
-def _weekday(orders, first, last):
-    """Index of 1.00 means exactly the share an even spread would give."""
-    labels = ["MONDAY", "TUESDAY", "WEDNESDAY", "THURSDAY",
-              "FRIDAY", "SATURDAY", "SUNDAY"]
-    got = Counter(o["date"].weekday() for o in orders)
-
-    avail = Counter()
-    d = first
-    while d <= last:
-        avail[d.weekday()] += 1
-        d += timedelta(days=1)
-    total_days = sum(avail.values())
-    n = len(orders)
-
-    rows = []
-    for i, name in enumerate(labels):
-        share = got[i] / n if n else 0
-        expect = avail[i] / total_days if total_days else 0
-        rows.append({
-            "day": name,
-            "units": got[i],
-            "share_pct": round(share * 100, 1),
-            "index": round(share / expect, 2) if expect else 0,
-            "p_value": round(binom_two_sided(got[i], n, expect), 4),
-        })
-    weekday_units = sum(got[i] for i in range(5))
-    return {
-        "rows": rows,
-        "weekday_pct": _pct(weekday_units, n),
-        "weekend_pct": _pct(n - weekday_units, n),
-        "note": ("p-values are unadjusted. Seven days were tested, so treat "
-                 "anything above 0.007 as suggestive rather than settled."),
-    }
-
-
 def _geo(orders):
     known = [o for o in orders if o["known_state"]]
     if not known:
@@ -414,9 +350,7 @@ def _geo(orders):
         "state_count": len(units),
         "national_per_million": round(natl_rate, 3),
         "hhi": round(sum(s * s for s in shares) * 10000),
-        "top3_pct": round(sum(sorted(shares, reverse=True)[:3]) * 100, 1),
         "unknown": len(orders) - len(known),
-        "tile_grid": TILE_GRID,
     }
 
 
@@ -428,7 +362,6 @@ def _platform(orders):
     return {
         "rows": rows,
         "hhi": round(sum((u / n) ** 2 for u in c.values()) * 10000),
-        "top_share_pct": rows[0]["share_pct"] if rows else 0,
     }
 
 
@@ -447,7 +380,6 @@ def _stacks(orders):
         "units_in_stacks": in_stacks,
         "stacked_pct": _pct(in_stacks, len(orders)),
         "multi_order_days": sum(1 for v in per_day.values() if v > 1),
-        "biggest": stacks[0] if stacks else None,
     }
 
 

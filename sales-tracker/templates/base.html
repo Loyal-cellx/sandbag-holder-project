@@ -3,94 +3,174 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <meta name="theme-color" content="#0a0f15" />
-  <link rel="icon" type="image/svg+xml" href="data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><defs><linearGradient id='g' x1='0' y1='0' x2='1' y2='1'><stop offset='8%25' stop-color='%23d8b483'/><stop offset='55%25' stop-color='%23f97316'/><stop offset='100%25' stop-color='%23facc15'/></linearGradient></defs><rect width='32' height='32' rx='6' fill='%23121c28'/><text x='16' y='23' text-anchor='middle' font-family='system-ui,sans-serif' font-weight='800' font-size='22' fill='url(%23g)'>S</text></svg>" />
+  <meta name="theme-color" content="#fffefb" />
+  <link rel="icon" type="image/svg+xml" href="data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><rect width='32' height='32' rx='6' fill='%23fffefb'/><text x='16' y='23' text-anchor='middle' font-family='system-ui,sans-serif' font-weight='700' font-size='22' fill='%23ff4f00'>S</text></svg>" />
   <title>{% block title %}Sandbag Sales{% endblock %}</title>
 
-  <!-- Self-hosted fonts + Chart.js (renders offline on the Pi) -->
+  <!-- Set theme before first paint so there is no flash of the wrong palette -->
+  <script>try{if(localStorage.getItem('theme')==='dark')document.documentElement.setAttribute('data-theme','dark')}catch(e){}</script>
+
+  <!-- Self-hosted fonts (renders offline over Tailscale) -->
   <link rel="stylesheet" href="{{ url_for('static', filename='fonts/fonts.css') }}" />
-  <script src="{{ url_for('static', filename='js/chart.umd.js') }}"></script>
 
   <style>
     :root {
-      /* ── Surfaces ── */
-      --bg:        #0a0f15;
-      --bg-2:      #0e151e;
-      --card:      #121c28;
-      --card-2:    #16212f;
-      --border:    #223141;
-      --border-2:  #2c3e52;
+      color-scheme: light;
+
+      /* ── Tuftler surfaces ── */
+      --bg:    #fffefb;
+      --panel: #f8f4f0;
+      --card:  #fffefb;
+      --line:  #eee8df;
 
       /* ── Type colors ── */
-      --text:   #e8eef4;
-      --muted:  #8a9bad;
-      --faint:  #56697c;
+      --fg:    #201515;
+      --body:  #605d52;
+      --muted: #939084;
 
-      /* ── Brand / story palette ── */
-      --hazard:    #f97316;   /* orange — alerts & energy */
-      --hazard-2:  #facc15;   /* yellow */
-      --water:     #2dd4bf;   /* floodwater teal */
-      --water-2:   #38bdf8;   /* sky/cyan */
-      --water-deep:#0e7490;
-      --kraft:     #d8b483;   /* sandbag tan */
-      --good:      #34d399;
-      --bad:       #fb7185;
+      /* ── Accent ── */
+      --accent:       #ff4f00;
+      --accent-hover: #cc3f00;
+
+      /* ── Inverted "flip" band ── */
+      --flip-bg:      #201515;
+      --flip-fg:      #fffefb;
+      --flip-body:    #c5c0b1;
+      --flip-eyebrow: #ff4f00;
+
+      /* ── Data semantics ── */
+      --good: #1a7f4f;
+      --bad:  #c0392b;
+      --plat-amazon:  #1a7f4f;
+      --plat-ebay:    #3467c4;
+      --plat-walmart: #b0761c;
+
+      --shadow: 0 10px 30px rgba(32,21,21,.14);
+
+      /* ── Chart tokens: literal values only — canvas reads these raw ── */
+      --chart-grid:        rgba(32,21,21,.07);
+      --chart-tick:        #939084;
+      --chart-accent-soft: rgba(255,79,0,.16);
+      --chart-neutral:     rgba(96,93,82,.35);
+      --map-rgb: 255,79,0;
 
       /* ── Type ── */
-      --font-display: 'Bricolage Grotesque', system-ui, sans-serif;
-      --font-body:    'Instrument Sans', system-ui, sans-serif;
+      --font-display: 'Mona Sans', system-ui, sans-serif;
+      --font-body:    'Inter', system-ui, sans-serif;
 
       --maxw: 1080px;
+
+      /* ── Legacy Floodworks aliases — delete after per-page migration ── */
+      --bg-2:      var(--panel);
+      --card-2:    var(--panel);
+      --border:    var(--line);
+      --border-2:  var(--line);
+      --text:      var(--fg);
+      --faint:     var(--muted);
+      --hazard:    var(--accent);
+      --hazard-2:  var(--plat-walmart);
+      --water:     var(--accent);
+      --water-2:   var(--plat-ebay);
+      --water-deep:var(--accent-hover);
+      --kraft:     var(--body);
+    }
+
+    :root[data-theme="dark"] {
+      color-scheme: dark;
+
+      --bg:    #1b1310;
+      --panel: #251c17;
+      --card:  #2f2520;
+      --line:  #3a2f28;
+
+      --fg:    #fffefb;
+      --body:  #c5c0b1;
+      --muted: #939084;
+
+      --accent:       #ff4f00;
+      --accent-hover: #ff6a26;
+
+      --flip-bg:      #f8f4f0;
+      --flip-fg:      #201515;
+      --flip-body:    #605d52;
+      --flip-eyebrow: #cc3f00;
+
+      --good: #4fc98a;
+      --bad:  #f07868;
+      --plat-amazon:  #4fc98a;
+      --plat-ebay:    #6ba3e8;
+      --plat-walmart: #d9a24a;
+
+      --shadow: 0 10px 30px rgba(0,0,0,.4);
+
+      --chart-grid:        rgba(255,254,251,.08);
+      --chart-tick:        #939084;
+      --chart-accent-soft: rgba(255,79,0,.22);
+      --chart-neutral:     rgba(197,192,177,.3);
     }
 
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
     body {
       font-family: var(--font-body);
+      font-size: 17px; line-height: 1.6;
       background: var(--bg);
-      color: var(--text);
+      color: var(--body);
       min-height: 100vh;
       -webkit-font-smoothing: antialiased;
       overflow-x: hidden;
+      transition: background-color .35s ease, color .35s ease;
     }
-
-    /* ── Topographic / floodplain contour backdrop (all pages) ── */
-    .topo { position: fixed; inset: 0; z-index: 0; pointer-events: none; opacity: 0.5; }
-    .topo svg { width: 100%; height: 100%; }
+    h1, h2, h3, h4 { color: var(--fg); font-family: var(--font-display); }
 
     /* ── Top bar ── */
     nav {
       position: relative; z-index: 200;
-      display: flex; align-items: baseline; justify-content: space-between;
+      display: flex; align-items: center; justify-content: space-between;
       gap: 1rem;
       max-width: var(--maxw); margin: 0 auto;
       padding: 1.25rem 1.1rem 1.1rem;
     }
     nav .brand {
-      font-family: var(--font-display); font-weight: 800;
-      font-size: 1.05rem; letter-spacing: 0.14em; text-transform: uppercase;
-      color: var(--text); text-decoration: none;
+      font-family: var(--font-display); font-weight: 600;
+      font-size: 1.02rem; letter-spacing: 0.1em; text-transform: uppercase;
+      color: var(--fg); text-decoration: none;
     }
-    nav .brand .slash { color: var(--hazard); }
-    nav .links { display: flex; gap: 1.25rem; }
+    nav .brand .slash { color: var(--accent); }
+    nav .links { display: flex; gap: 1.25rem; align-items: center; }
     nav a.link {
-      font-size: 0.78rem; font-weight: 600; letter-spacing: 0.05em; text-transform: uppercase;
-      color: var(--faint); text-decoration: none;
+      font-size: 0.78rem; font-weight: 500; letter-spacing: 0.07em; text-transform: uppercase;
+      color: var(--muted); text-decoration: none;
       border-bottom: 2px solid transparent; padding-bottom: 0.15rem;
       transition: color .15s, border-color .15s;
     }
-    nav a.link:hover, nav a.link.active { color: var(--text); border-color: var(--water); }
+    nav a.link:hover, nav a.link.active { color: var(--fg); border-color: var(--accent); }
+
+    /* ── Theme toggle ── */
+    .theme-toggle {
+      display: inline-flex; align-items: center; justify-content: center;
+      width: 34px; height: 34px; flex-shrink: 0;
+      background: none; border: 1px solid var(--line); border-radius: 9999px;
+      color: var(--muted); cursor: pointer;
+      transition: color .15s, border-color .15s;
+    }
+    .theme-toggle:hover { color: var(--fg); border-color: var(--muted); }
+    .theme-toggle svg { display: block; }
+    .theme-toggle .i-sun { display: none; }
+    :root[data-theme="dark"] .theme-toggle .i-sun  { display: block; }
+    :root[data-theme="dark"] .theme-toggle .i-moon { display: none; }
 
     /* ── Mobile nav ── */
     .nav-page-name {
       display: none;
-      font-size: 0.72rem; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase;
+      font-size: 0.72rem; font-weight: 500; letter-spacing: 0.08em; text-transform: uppercase;
       color: var(--muted);
     }
+    .nav-right { display: flex; align-items: center; gap: 0.75rem; }
     .nav-hamburger {
       display: none;
       background: none; border: none; cursor: pointer; padding: 0.3rem 0.1rem;
-      color: var(--text);
+      color: var(--fg);
       align-items: center; justify-content: center;
       flex-shrink: 0;
     }
@@ -111,10 +191,10 @@
       top: 100%; left: 0; right: 0;
       z-index: 199;
       background: var(--card);
-      border-top: 1px solid var(--border);
-      border-bottom: 1px solid var(--border);
+      border-top: 1px solid var(--line);
+      border-bottom: 1px solid var(--line);
+      box-shadow: var(--shadow);
       padding: 0.5rem 0;
-      /* slide+fade animation */
       transform-origin: top center;
       opacity: 0;
       transform: scaleY(0.92) translateY(-4px);
@@ -127,28 +207,24 @@
     }
     #nav-panel a.link {
       display: flex; align-items: center;
-      font-size: 0.8rem; font-weight: 600; letter-spacing: 0.06em; text-transform: uppercase;
-      color: var(--faint); text-decoration: none;
+      font-size: 0.8rem; font-weight: 500; letter-spacing: 0.06em; text-transform: uppercase;
+      color: var(--muted); text-decoration: none;
       padding: 0.75rem 1.4rem;
       min-height: 44px;
       border-bottom: none;
       border-left: 3px solid transparent;
       transition: color .15s, background .15s, border-color .15s;
     }
-    #nav-panel a.link:hover  { color: var(--text); background: var(--card-2); }
-    #nav-panel a.link.active { color: var(--text); border-left-color: var(--water); background: rgba(45,212,191,0.06); }
+    #nav-panel a.link:hover  { color: var(--fg); background: var(--panel); }
+    #nav-panel a.link.active { color: var(--fg); border-left-color: var(--accent); background: rgba(255,79,0,0.06); }
 
-    /* nav wrapper needs relative positioning for the dropdown */
-    .nav-wrapper {
-      position: relative; z-index: 200;
-    }
+    .nav-wrapper { position: relative; z-index: 200; }
 
     @media (max-width: 767px) {
       .nav-wrapper { position: relative; }
       nav .links    { display: none; }
       .nav-page-name { display: block; }
       .nav-hamburger { display: flex; }
-      nav { align-items: center; }
     }
 
     @media (prefers-reduced-motion: reduce) {
@@ -163,108 +239,130 @@
     }
 
     .flash {
-      background: rgba(251,113,133,0.10);
-      border: 1px solid rgba(251,113,133,0.4);
-      color: #fda4af;
-      border-radius: 10px; padding: 0.75rem 1rem; margin-bottom: 1.1rem; font-size: 0.9rem;
+      background: var(--panel);
+      border: 1px solid var(--bad);
+      color: var(--bad);
+      border-radius: 12px; padding: 0.75rem 1rem; margin-bottom: 1.1rem; font-size: 0.9rem;
     }
 
     /* ════════ Shared building blocks (used across pages) ════════ */
     .eyebrow {
-      font-size: 0.66rem; font-weight: 700; letter-spacing: 0.18em; text-transform: uppercase;
-      color: var(--faint); display: flex; align-items: center; gap: .5rem;
+      font-family: var(--font-display);
+      font-size: 0.72rem; font-weight: 500; letter-spacing: 0.09em; text-transform: uppercase;
+      color: var(--muted); display: flex; align-items: center; gap: .5rem;
     }
-    .eyebrow::before { content: ""; width: 18px; height: 2px; background: var(--hazard); display: inline-block; }
+    .eyebrow::before { content: ""; width: 18px; height: 2px; background: var(--accent); display: inline-block; }
 
     .section-h {
-      font-family: var(--font-display); font-weight: 700;
-      font-size: .78rem; letter-spacing: .14em; text-transform: uppercase; color: var(--muted);
+      font-family: var(--font-display); font-weight: 500;
+      font-size: .78rem; letter-spacing: .09em; text-transform: uppercase; color: var(--muted);
       margin-bottom: .85rem; display: flex; align-items: center; gap: .5rem;
     }
 
-    .divider {
-      height: 2px; margin: 1.6rem 0;
-      background: linear-gradient(90deg, var(--hazard), var(--water) 60%, transparent);
-      transform: skewX(-24deg); transform-origin: left; opacity: .55;
-    }
+    .divider { height: 1px; margin: 1.6rem 0; background: var(--line); }
 
-    .card { background: var(--card); border: 1px solid var(--border); border-radius: 14px; }
+    .card { background: var(--panel); border: none; border-radius: 12px; transition: background-color .35s ease; }
 
     .chip {
-      font-size: 0.7rem; font-weight: 600; padding: .28rem .6rem; border-radius: 999px;
-      border: 1px solid var(--border-2); color: var(--muted);
+      font-size: 0.7rem; font-weight: 500; padding: .28rem .6rem; border-radius: 9999px;
+      border: 1px solid var(--line); color: var(--muted);
       display: inline-flex; align-items: center; gap: .35rem;
     }
-    .chip b { color: var(--text); }
+    .chip b { color: var(--fg); }
 
     /* ── KPI tiles ── */
-    .kpi { background: var(--card); border: 1px solid var(--border); border-radius: 14px; padding: 1rem 1.1rem; position: relative; overflow: hidden; }
-    .kpi::after { content: ""; position: absolute; left: 0; top: 0; bottom: 0; width: 3px; }
-    .kpi.k-water::after { background: var(--water); }
-    .kpi.k-kraft::after { background: var(--kraft); }
-    .kpi.k-haz::after   { background: var(--hazard); }
-    .kpi .lbl { font-size: .64rem; font-weight: 700; letter-spacing: .12em; text-transform: uppercase; color: var(--faint); }
-    .kpi .val { font-family: var(--font-display); font-weight: 800; font-size: 1.7rem; color: var(--text); margin: .25rem 0 .15rem; line-height: 1; }
+    .kpi { background: var(--panel); border: none; border-radius: 12px; padding: 1rem 1.1rem; position: relative; overflow: hidden; transition: background-color .35s ease; }
+    .kpi .lbl { font-family: var(--font-display); font-size: .66rem; font-weight: 500; letter-spacing: .09em; text-transform: uppercase; color: var(--muted); }
+    .kpi .val { font-family: var(--font-display); font-weight: 600; font-size: 1.7rem; letter-spacing: -0.01em; color: var(--fg); margin: .25rem 0 .15rem; line-height: 1.05; }
     .kpi .sub { font-size: .74rem; color: var(--muted); }
 
-    /* ── Platform badges + % pills ── */
-    .badge { font-size: .64rem; font-weight: 700; padding: .12rem .55rem; border-radius: 999px; display: inline-block; }
-    .b-amazon  { background: rgba(52,211,153,0.14); color: var(--good); }
-    .b-ebay    { background: rgba(56,189,248,0.14); color: var(--water-2); }
-    .b-walmart { background: rgba(250,204,21,0.14); color: var(--hazard-2); }
-    .b-new { background: var(--hazard); color: #1a1008; font-size: .55rem; font-weight: 800; padding: .06rem .4rem; border-radius: 999px; margin-left: .4rem; letter-spacing: .04em; vertical-align: middle; }
-    .pct-up   { color: var(--good); font-weight: 700; }
-    .pct-down { color: var(--bad);  font-weight: 700; }
-    .pct-flat { color: var(--faint); }
+    /* ── Buttons ── */
+    .btn-primary {
+      display: inline-flex; align-items: center; justify-content: center; gap: .4rem;
+      background: var(--accent); color: #fffefb; border: none; border-radius: 12px;
+      font-family: var(--font-body); font-size: .9rem; font-weight: 600;
+      padding: .6rem 1.3rem; cursor: pointer; text-decoration: none;
+      transition: background-color .15s;
+    }
+    .btn-primary:hover { background: var(--accent-hover); }
+    .btn-pill {
+      display: inline-flex; align-items: center; justify-content: center; gap: .4rem;
+      background: none; color: var(--body); border: 1px solid var(--line); border-radius: 9999px;
+      font-family: var(--font-body); font-size: .82rem; font-weight: 500;
+      padding: .45rem 1rem; cursor: pointer; text-decoration: none;
+      transition: color .15s, border-color .15s;
+    }
+    .btn-pill:hover { color: var(--accent); border-color: var(--accent); }
 
-    /* ── Floodwater vessel (signature element: dashboard + milestones) ── */
+    /* ── Inverted flip band ── */
+    .flip { background: var(--flip-bg); color: var(--flip-body); border-radius: 12px; transition: background-color .35s ease; }
+    .flip h2, .flip h3, .flip .val, .flip b { color: var(--flip-fg); }
+    .flip .eyebrow { color: var(--flip-eyebrow); }
+    .flip .eyebrow::before { background: var(--flip-eyebrow); }
+
+    /* ── Hover lift ── */
+    .lift { transition: transform .2s ease, box-shadow .2s ease; }
+    .lift:hover { transform: translateY(-3px); box-shadow: var(--shadow); }
+
+    /* ── Platform badges + % pills ── */
+    .badge {
+      font-size: .64rem; font-weight: 600; padding: .14rem .55rem; border-radius: 9999px;
+      display: inline-flex; align-items: center; gap: .35rem;
+      border: 1px solid var(--line); color: var(--body); background: transparent;
+    }
+    .badge::before { content: ""; width: 6px; height: 6px; border-radius: 50%; flex-shrink: 0; }
+    .b-amazon::before  { background: var(--plat-amazon); }
+    .b-ebay::before    { background: var(--plat-ebay); }
+    .b-walmart::before { background: var(--plat-walmart); }
+    .b-new { background: var(--accent); border: none; color: #fffefb; font-size: .55rem; font-weight: 700; padding: .1rem .45rem; border-radius: 9999px; margin-left: .4rem; letter-spacing: .04em; vertical-align: middle; display: inline-block; }
+    .b-new::before { content: none; }
+    .pct-up   { color: var(--good); font-weight: 600; }
+    .pct-down { color: var(--bad);  font-weight: 600; }
+    .pct-flat { color: var(--muted); }
+
+    /* ── Fill gauge (signature element: dashboard + milestones) ── */
     .vessel {
-      position: relative; border-radius: 14px;
-      background:
-        repeating-linear-gradient(0deg, rgba(255,255,255,0.025) 0 1px, transparent 1px 28px),
-        var(--bg-2);
-      border: 1px solid var(--border-2); overflow: hidden;
+      position: relative; border-radius: 12px;
+      background: var(--panel);
+      border: 1px solid var(--line); overflow: hidden;
+      transition: background-color .35s ease, border-color .35s ease;
     }
     .vessel .water {
       position: absolute; left: 0; right: 0; bottom: 0; height: 0;
-      background: linear-gradient(180deg, var(--water) 0%, var(--water-deep) 100%);
+      background: var(--accent);
       transition: height 1.8s cubic-bezier(.22,1,.36,1);
-      box-shadow: 0 -10px 30px rgba(45,212,191,0.35);
     }
     .vessel .water::before, .vessel .water::after { content: ""; position: absolute; bottom: 100%; left: -50%; width: 200%; height: 22px; }
     .vessel .water::before {
-      background: radial-gradient(14px 12px at 14px 22px, var(--water) 49%, transparent 51%) repeat-x;
+      background: radial-gradient(14px 12px at 14px 22px, var(--accent) 49%, transparent 51%) repeat-x;
       background-size: 28px 22px; animation: wave 5s linear infinite; opacity: .9;
     }
     .vessel .water::after {
-      background: radial-gradient(16px 12px at 16px 22px, var(--water-deep) 49%, transparent 51%) repeat-x;
+      background: radial-gradient(16px 12px at 16px 22px, var(--accent-hover) 49%, transparent 51%) repeat-x;
       background-size: 32px 22px; animation: wave 7s linear infinite reverse; opacity: .7;
     }
     @keyframes wave { from { transform: translateX(0); } to { transform: translateX(32px); } }
-    .vessel-mark { position: absolute; left: 0; right: 0; border-top: 1px dashed rgba(232,238,244,0.25); display: flex; justify-content: flex-end; }
-    .vessel-mark span { font-size: .58rem; letter-spacing: .08em; text-transform: uppercase; color: var(--faint); padding: 0 .4rem; background: var(--bg-2); transform: translateY(-50%); }
+    .vessel-mark { position: absolute; left: 0; right: 0; border-top: 1px dashed var(--muted); opacity: .8; display: flex; justify-content: flex-end; }
+    .vessel-mark span { font-size: .58rem; letter-spacing: .08em; text-transform: uppercase; color: var(--muted); padding: 0 .4rem; background: var(--panel); transform: translateY(-50%); }
 
-    /* ── Hero gradient text (kraft→hazard→hazard-2), continuously flowing ── */
+    /* ── Legacy .flowtext stub — neutralized; delete after per-page migration ── */
     .flowtext {
-      background: linear-gradient(90deg, var(--kraft), var(--hazard), var(--hazard-2), var(--hazard), var(--kraft));
-      background-size: 200% auto;
-      -webkit-background-clip: text; background-clip: text;
-      color: var(--hazard); -webkit-text-fill-color: transparent;
-      will-change: background-position;
-      animation: grad-flow 4.5s linear infinite;
+      background: none; color: var(--fg);
+      -webkit-background-clip: initial; background-clip: initial;
+      -webkit-text-fill-color: currentColor;
+      animation: none;
     }
-    @keyframes grad-flow { to { background-position: -200% center; } }
 
     /* ── Page-load staggered reveal ── */
-    @keyframes rise { from { opacity: 0; transform: translateY(14px); } to { opacity: 1; transform: none; } }
-    .reveal { opacity: 0; animation: rise .6s cubic-bezier(.22,1,.36,1) forwards; }
+    @keyframes rise { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: none; } }
+    .reveal { opacity: 0; animation: rise .45s cubic-bezier(.22,1,.36,1) forwards; }
 
     /* ── Respect reduced motion ── */
     @media (prefers-reduced-motion: reduce) {
       .reveal { animation: none; opacity: 1; transform: none; }
-      .flowtext { animation: none; background-position: 0% center; }
       .vessel .water { transition: none; }
       .vessel .water::before, .vessel .water::after { animation: none; }
+      .lift, .lift:hover { transition: none; transform: none; }
       * { scroll-behavior: auto; }
     }
 
@@ -272,57 +370,40 @@
   </style>
 </head>
 <body>
-  <!-- Topographic floodplain contour backdrop -->
-  <div class="topo" aria-hidden="true">
-    <svg viewBox="0 0 1200 800" preserveAspectRatio="xMidYMid slice" fill="none">
-      <g stroke="rgba(45,212,191,0.07)" stroke-width="1">
-        <path d="M-50 120 C 200 60, 380 200, 620 140 S 1000 60, 1260 160" />
-        <path d="M-50 220 C 220 160, 400 300, 640 240 S 1010 160, 1260 260" />
-        <path d="M-50 330 C 240 270, 420 410, 660 350 S 1020 270, 1260 370" />
-      </g>
-      <g stroke="rgba(249,115,22,0.06)" stroke-width="1">
-        <path d="M-50 470 C 240 410, 430 560, 670 500 S 1030 420, 1260 520" />
-        <path d="M-50 580 C 250 520, 440 670, 680 610 S 1040 530, 1260 630" />
-        <path d="M-50 690 C 260 630, 450 780, 690 720 S 1050 640, 1260 740" />
-      </g>
-    </svg>
-  </div>
-
-  {%- set _page_names = {
-      'index': 'Dashboard',
-      'log_sale': 'Log Sale',
-      'milestones': 'Milestones',
-      'history': 'Patterns',
-      'analytics.analytics_page': 'Analytics'
-  } -%}
-  {%- set _current_page = _page_names.get(request.endpoint, '') -%}
+  {%- set NAV = [
+      ('index', 'Dashboard'),
+      ('log_sale', 'Log Sale'),
+      ('milestones', 'Milestones'),
+      ('history', 'Patterns'),
+      ('analytics.analytics_page', 'Analytics')
+  ] -%}
+  {%- macro nav_links() -%}
+    {%- for endpoint, label in NAV -%}
+      <a class="link {% if request.endpoint == endpoint %}active{% endif %}" href="{{ url_for(endpoint) }}" {% if request.endpoint == endpoint %}aria-current="page"{% endif %}>{{ label }}</a>
+    {%- endfor -%}
+  {%- endmacro -%}
+  {%- set _current_page = dict(NAV).get(request.endpoint, '') -%}
   <div class="nav-wrapper">
     <nav>
       <a class="brand" href="{{ url_for('index') }}">Sandbag <span class="slash">//</span> Sales</a>
       <span class="nav-page-name" aria-hidden="true">{{ _current_page }}</span>
-      <div class="links">
-        <a class="link {% if request.endpoint == 'index' %}active{% endif %}" href="{{ url_for('index') }}" {% if request.endpoint == 'index' %}aria-current="page"{% endif %}>Dashboard</a>
-        <a class="link {% if request.endpoint == 'log_sale' %}active{% endif %}" href="{{ url_for('log_sale') }}" {% if request.endpoint == 'log_sale' %}aria-current="page"{% endif %}>Log Sale</a>
-        <a class="link {% if request.endpoint == 'milestones' %}active{% endif %}" href="{{ url_for('milestones') }}" {% if request.endpoint == 'milestones' %}aria-current="page"{% endif %}>Milestones</a>
-        <a class="link {% if request.endpoint == 'history' %}active{% endif %}" href="{{ url_for('history') }}" {% if request.endpoint == 'history' %}aria-current="page"{% endif %}>Patterns</a>
-        <a class="link {% if request.endpoint == 'analytics.analytics_page' %}active{% endif %}" href="{{ url_for('analytics.analytics_page') }}" {% if request.endpoint == 'analytics.analytics_page' %}aria-current="page"{% endif %}>Analytics</a>
+      <div class="nav-right">
+        <div class="links">{{ nav_links() }}</div>
+        <button class="theme-toggle" id="theme-toggle" aria-label="Switch theme">
+          <svg class="i-moon" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
+          <svg class="i-sun" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M4.93 19.07l1.41-1.41M17.66 6.34l1.41-1.41"/></svg>
+        </button>
+        <button class="nav-hamburger" id="nav-toggle"
+                aria-label="Menu" aria-expanded="false" aria-controls="nav-panel">
+          <svg width="22" height="16" viewBox="0 0 22 16" fill="none" aria-hidden="true">
+            <rect class="bar bar-1" x="0" y="0"  width="22" height="2" rx="1" fill="currentColor"/>
+            <rect class="bar bar-2" x="0" y="7"  width="22" height="2" rx="1" fill="currentColor"/>
+            <rect class="bar bar-3" x="0" y="14" width="22" height="2" rx="1" fill="currentColor"/>
+          </svg>
+        </button>
       </div>
-      <button class="nav-hamburger" id="nav-toggle"
-              aria-label="Menu" aria-expanded="false" aria-controls="nav-panel">
-        <svg width="22" height="16" viewBox="0 0 22 16" fill="none" aria-hidden="true">
-          <rect class="bar bar-1" x="0" y="0"  width="22" height="2" rx="1" fill="currentColor"/>
-          <rect class="bar bar-2" x="0" y="7"  width="22" height="2" rx="1" fill="currentColor"/>
-          <rect class="bar bar-3" x="0" y="14" width="22" height="2" rx="1" fill="currentColor"/>
-        </svg>
-      </button>
     </nav>
-    <div id="nav-panel" role="dialog" aria-label="Navigation menu">
-      <a class="link {% if request.endpoint == 'index' %}active{% endif %}" href="{{ url_for('index') }}" {% if request.endpoint == 'index' %}aria-current="page"{% endif %}>Dashboard</a>
-      <a class="link {% if request.endpoint == 'log_sale' %}active{% endif %}" href="{{ url_for('log_sale') }}" {% if request.endpoint == 'log_sale' %}aria-current="page"{% endif %}>Log Sale</a>
-      <a class="link {% if request.endpoint == 'milestones' %}active{% endif %}" href="{{ url_for('milestones') }}" {% if request.endpoint == 'milestones' %}aria-current="page"{% endif %}>Milestones</a>
-      <a class="link {% if request.endpoint == 'history' %}active{% endif %}" href="{{ url_for('history') }}" {% if request.endpoint == 'history' %}aria-current="page"{% endif %}>Patterns</a>
-      <a class="link {% if request.endpoint == 'analytics.analytics_page' %}active{% endif %}" href="{{ url_for('analytics.analytics_page') }}" {% if request.endpoint == 'analytics.analytics_page' %}aria-current="page"{% endif %}>Analytics</a>
-    </div>
+    <div id="nav-panel" role="dialog" aria-label="Navigation menu">{{ nav_links() }}</div>
   </div>
 
   <div class="container">
@@ -371,6 +452,24 @@
       // Close on Escape
       document.addEventListener('keydown', function (e) {
         if (e.key === 'Escape' && isOpen()) { close(); toggle.focus(); }
+      });
+    })();
+
+    (function () {
+      var btn = document.getElementById('theme-toggle');
+      if (!btn) return;
+      var meta = document.querySelector('meta[name="theme-color"]');
+      function apply(dark) {
+        if (dark) document.documentElement.setAttribute('data-theme', 'dark');
+        else document.documentElement.removeAttribute('data-theme');
+        if (meta) meta.setAttribute('content', dark ? '#1b1310' : '#fffefb');
+        try { localStorage.setItem('theme', dark ? 'dark' : 'light'); } catch (e) {}
+        window.dispatchEvent(new Event('themechange'));
+      }
+      // Sync meta color if we booted into dark via the head script
+      if (document.documentElement.getAttribute('data-theme') === 'dark' && meta) meta.setAttribute('content', '#1b1310');
+      btn.addEventListener('click', function () {
+        apply(document.documentElement.getAttribute('data-theme') !== 'dark');
       });
     })();
   </script>

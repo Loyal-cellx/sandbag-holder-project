@@ -306,6 +306,25 @@
     .pct-down { color: var(--bad);  font-weight: 600; }
     .pct-flat { color: var(--muted); }
 
+    /* ── Contribution calendar (GitHub-style; dashboard + analytics) ── */
+    .cal-scroll { overflow-x: auto; padding: .9rem 1rem .4rem; }
+    .cal { --cell: 11px; --pitch: 14px; display: flex; gap: 6px; width: max-content; margin: 0 auto; }
+    @media (min-width: 700px) { .cal { --cell: 13px; --pitch: 16px; } }
+    .cal-days { display: grid; grid-template-rows: repeat(7, var(--cell)); gap: 3px; padding-top: 18px; }
+    .cal-days span { font-size: .58rem; color: var(--muted); line-height: var(--cell); text-align: right; }
+    .cal-months { display: grid; grid-auto-columns: var(--pitch); height: 14px; margin-bottom: 4px; }
+    .cal-months span { grid-row: 1; font-size: .58rem; color: var(--muted); line-height: 14px; white-space: nowrap; }
+    .cal-grid { display: grid; grid-auto-flow: column; grid-template-rows: repeat(7, var(--cell)); grid-auto-columns: var(--cell); gap: 3px; }
+    .cal-cell { width: var(--cell); height: var(--cell); border-radius: 2px; background: var(--line); }
+    .cal-cell.empty { background: transparent; }
+    .cal-cell.l1 { background: rgba(255,79,0,.3); }
+    .cal-cell.l2 { background: rgba(255,79,0,.55); }
+    .cal-cell.l3 { background: rgba(255,79,0,.78); }
+    .cal-cell.l4 { background: var(--accent); }
+    .cal-foot { display: flex; justify-content: space-between; align-items: center; gap: 1rem; padding: .35rem 1rem .8rem; font-size: .65rem; color: var(--muted); flex-wrap: wrap; }
+    .cal-legend { display: inline-flex; align-items: center; gap: 3px; }
+    .cal-legend .cal-cell { flex-shrink: 0; width: 11px; height: 11px; }
+
     /* ── Page-load staggered reveal ── */
     @keyframes rise { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: none; } }
     .reveal { opacity: 0; animation: rise .45s cubic-bezier(.22,1,.36,1) forwards; }

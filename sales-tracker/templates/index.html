@@ -23,6 +23,19 @@
   .hero-sub .dot { color: var(--muted); margin: 0 .45rem; }
   .hero-chips { display: flex; gap: .4rem; margin-top: 1rem; flex-wrap: wrap; }
 
+  /* Hero splits into number | activity calendar on desktop */
+  .hero-cols { display: grid; grid-template-columns: 1fr; gap: 1.5rem; align-items: end; }
+  .hero-cols > * { min-width: 0; }   /* let the calendar column shrink so cal-scroll scrolls instead of clipping */
+  .hero-activity { max-width: 100%; }
+  .hero-activity h3 { font-family: var(--font-display); font-size: .66rem; font-weight: 500; letter-spacing: .09em; text-transform: uppercase; color: var(--muted); margin-bottom: .55rem; }
+  .hero-activity .cal-scroll { padding: 0; }
+  .hero-activity .cal { margin: 0; }
+  .hero-activity .cal-foot { padding: .5rem 0 0; }
+  @media (min-width: 980px) {
+    .hero-cols { grid-template-columns: minmax(0, 1fr) auto; }
+    .hero-num { font-size: clamp(3.2rem, 6.5vw, 5.6rem); width: 100%; }
+  }
+
   /* ── Slim milestone strip ── */
   .milestone-strip {
     display: grid; grid-template-columns: auto 1fr auto; align-items: center; gap: 1rem;
@@ -176,17 +189,39 @@
 <!-- HERO: oversized total revenue + slim milestone strip -->
 <section class="hero">
   <div class="hero-figure reveal" style="animation-delay:60ms">
-    <div class="eyebrow">Total hauled &bull; all time</div>
-    <div class="hero-num" id="kpiRevenue">${{ "%.0f"|format(stats.total_revenue) }}</div>
-    <div class="hero-sub">
-      <b id="kpiProfit">${{ "%.0f"|format(stats.total_profit) }} profit</b>
-      <span class="dot">/</span>{{ stats.total_sales }} units moved
-      <span class="dot">/</span><span id="kpiVelocity"></span>
-    </div>
-    <div class="hero-chips">
-      <span id="streakBadge" class="chip" style="display:none"></span>
-      <span class="chip">Longest streak <b>{{ stats.longest_streak }}d</b></span>
-      <span class="chip">Avg gap <b id="statFrequency">—</b></span>
+    <div class="hero-cols">
+      <div class="hero-main">
+        <div class="eyebrow">Total hauled &bull; all time</div>
+        <div class="hero-num" id="kpiRevenue">${{ "%.0f"|format(stats.total_revenue) }}</div>
+        <div class="hero-sub">
+          <b id="kpiProfit">${{ "%.0f"|format(stats.total_profit) }} profit</b>
+          <span class="dot">/</span>{{ stats.total_sales }} units moved
+          <span class="dot">/</span><span id="kpiVelocity"></span>
+        </div>
+        <div class="hero-chips">
+          <span id="streakBadge" class="chip" style="display:none"></span>
+          <span class="chip">Longest streak <b>{{ stats.longest_streak }}d</b></span>
+          <span class="chip">Avg gap <b id="statFrequency">—</b></span>
+        </div>
+      </div>
+      <div class="hero-activity" id="activityCard" style="display:none;">
+        <h3>Activity</h3>
+        <div class="cal-scroll">
+          <div class="cal" role="img" aria-label="Calendar of daily sales activity">
+            <div class="cal-days" aria-hidden="true"><span></span><span>Mon</span><span></span><span>Wed</span><span></span><span>Fri</span><span></span></div>
+            <div>
+              <div class="cal-months" aria-hidden="true"></div>
+              <div class="cal-grid"></div>
+            </div>
+          </div>
+        </div>
+        <div class="cal-foot">
+          <span data-cal-summary></span>
+          <span class="cal-legend" aria-hidden="true">Less
+            <span class="cal-cell"></span><span class="cal-cell l1"></span><span class="cal-cell l2"></span><span class="cal-cell l3"></span><span class="cal-cell l4"></span>
+          More</span>
+        </div>
+      </div>
     </div>
   </div>
 </section>
@@ -494,6 +529,7 @@
 
 <script src="{{ url_for('static', filename='js/chart.umd.js') }}"></script>
 <script src="{{ url_for('static', filename='js/chartjs-plugin-datalabels.min.js') }}"></script>
+<script src="{{ url_for('static', filename='js/activity-cal.js') }}"></script>
 <script>
 const stats = {{ stats | tojson }};
 const css = getComputedStyle(document.documentElement);
@@ -770,6 +806,17 @@ window.addEventListener('themechange', () => {
   renderCharts();
   if (txPanelEnriched) enrichTxPanel();   // redraw month sparklines in new colors
 });
+
+// Hero activity calendar — same data the Analytics page uses (server caches it 5 min)
+fetch('/api/analytics.json')
+  .then(r => r.json())
+  .then(d => {
+    if (!d || d.empty || !d.daily) return;
+    const card = document.getElementById('activityCard');
+    buildActivityCalendar(card, d.daily);
+    card.style.display = '';
+  })
+  .catch(() => {});
 
 // ── Delete transaction (event delegation — dashboard + panel) ──
 let pendingSaleId = null;

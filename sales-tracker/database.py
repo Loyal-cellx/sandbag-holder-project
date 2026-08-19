@@ -480,6 +480,18 @@ def get_milestones():
         {"slug": "month_1000",    "name": "$1,000 in a Single Month",    "type": "monthly",  "threshold": 1000},
         {"slug": "rev_2500",      "name": "$2,500 Revenue",              "type": "revenue",  "threshold": 2500},
         {"slug": "sales_100",     "name": "100 Sales",                   "type": "count",    "threshold": 100},
+        # ── Second tier (added Aug 2026; earlier goals retro-hit from history) ──
+        {"slug": "rev_3000",      "name": "$3,000 Revenue",              "type": "revenue",  "threshold": 3000},
+        {"slug": "rev_4000",      "name": "$4,000 Revenue",              "type": "revenue",  "threshold": 4000},
+        {"slug": "states_20",     "name": "Sell in 20 Different States", "type": "states",   "threshold": 20},
+        {"slug": "rev_5000",      "name": "$5,000 Revenue",              "type": "revenue",  "threshold": 5000},
+        {"slug": "month_1500",    "name": "$1,500 in a Single Month",    "type": "monthly",  "threshold": 1500},
+        {"slug": "sales_150",     "name": "150 Sales",                   "type": "count",    "threshold": 150},
+        {"slug": "rev_7500",      "name": "$7,500 Revenue",              "type": "revenue",  "threshold": 7500},
+        {"slug": "states_30",     "name": "Sell in 30 Different States", "type": "states",   "threshold": 30},
+        {"slug": "rev_10000",     "name": "$10,000 Revenue",             "type": "revenue",  "threshold": 10000},
+        {"slug": "sales_250",     "name": "250 Sales",                   "type": "count",    "threshold": 250},
+        {"slug": "states_40",     "name": "Sell in 40 Different States", "type": "states",   "threshold": 40},
     ]
 
     conn = _connect()

@@ -3,60 +3,67 @@
 {% block title %}Milestones — Sandbag Sales{% endblock %}
 
 {% block extra_style %}
-  .ms-head { text-align: center; padding-bottom: 1.5rem; }
-  .ms-head h1 { font-family: var(--font-display); font-size: 2rem; font-weight: 800; letter-spacing: -0.02em; }
-  .ms-head p { color: var(--faint); font-size: .875rem; margin-top: .25rem; }
+  .ms-head { padding: .5rem 0 1.5rem; }
+  .ms-head h1 { font-family: var(--font-display); font-size: 2rem; font-weight: 600; letter-spacing: -0.01em; margin-top: .35rem; }
+  .ms-head p { color: var(--muted); font-size: .875rem; margin-top: .15rem; }
 
-  /* Next-milestone vessel hero */
+  /* Next-goal hero */
   .ms-hero { display: grid; grid-template-columns: 1fr 1fr; gap: 1.25rem; margin-bottom: 1.25rem; }
-  .ms-hero-info { background: var(--card); border: 1px solid var(--border); border-top: 4px solid var(--water); border-radius: 18px; padding: 1.5rem 1.6rem; display: flex; flex-direction: column; justify-content: space-between; gap: 1rem; }
-  .ms-hero-name { font-family: var(--font-display); font-size: clamp(2.2rem, 4.2vw, 3.6rem); font-weight: 800; line-height: .95; letter-spacing: -0.02em; color: var(--text); margin: .5rem 0 .35rem; }
-  .ms-hero-gap { font-size: clamp(1rem, 1.8vw, 1.35rem); color: var(--water); font-weight: 700; }
-  .ms-hero-stat { font-size: clamp(.85rem, 1.4vw, 1rem); color: var(--faint); font-variant-numeric: tabular-nums; }
-  .ms-hero-bar { background: var(--bg-2); border-radius: 999px; height: 8px; overflow: hidden; margin-top: .35rem; }
-  .ms-hero-bar > span { display: block; height: 100%; border-radius: 999px; background: linear-gradient(90deg, var(--water-deep), var(--water)); width: 0; transition: width 1s cubic-bezier(.22,1,.36,1); }
-  .ms-vessel-card { background: var(--card); border: 1px solid var(--border); border-radius: 18px; padding: 1.25rem; display: flex; flex-direction: column; }
-  .ms-vessel-card .vessel { flex: 1; min-height: 180px; }
+  .ms-hero-info { background: var(--panel); border-radius: 12px; padding: 1.5rem 1.6rem; display: flex; flex-direction: column; justify-content: space-between; gap: 1rem; transition: background-color .35s ease; }
+  .ms-hero-name { font-family: var(--font-display); font-size: clamp(2.2rem, 4.2vw, 3.4rem); font-weight: 600; line-height: 1; letter-spacing: -0.02em; color: var(--fg); margin: .5rem 0 .35rem; }
+  .ms-hero-gap { font-size: clamp(1rem, 1.8vw, 1.3rem); color: var(--accent); font-weight: 600; }
+  .ms-hero-stat { font-size: clamp(.85rem, 1.4vw, 1rem); color: var(--muted); font-variant-numeric: tabular-nums; }
+  .ms-hero-bar { background: var(--line); border-radius: 9999px; height: 8px; overflow: hidden; margin-top: .35rem; }
+  .ms-hero-bar > span { display: block; height: 100%; border-radius: 9999px; background: var(--accent); width: 0; transition: width 1s cubic-bezier(.22,1,.36,1); }
+  .ms-vessel-card { background: var(--panel); border-radius: 12px; padding: 1.25rem; display: flex; flex-direction: column; transition: background-color .35s ease; }
+  .ms-vessel-card .vessel { flex: 1; min-height: 180px; background: var(--card); }
   .ms-vessel-head { display: flex; justify-content: space-between; align-items: baseline; margin-bottom: .9rem; }
-  .ms-vessel-pct { font-family: var(--font-display); font-weight: 800; font-size: 1.6rem; color: var(--water); }
-  .hero-complete { background: var(--card); border: 1px solid var(--border); border-top: 4px solid var(--good); border-radius: 18px; padding: 1.75rem; margin-bottom: 1.25rem; text-align: center; color: var(--good); font-family: var(--font-display); font-size: 1.2rem; font-weight: 700; }
+  .ms-vessel-pct { font-family: var(--font-display); font-weight: 600; font-size: 1.6rem; color: var(--accent); }
+  .hero-complete { background: var(--panel); border-radius: 12px; padding: 1.75rem; margin-bottom: 1.25rem; text-align: center; color: var(--good); font-family: var(--font-display); font-size: 1.2rem; font-weight: 600; }
 
-  .stats-strip { display: flex; gap: .9rem; margin-bottom: 1.5rem; }
-  .stats-strip .kpi { flex: 1; text-align: center; }
-  .stats-strip .kpi::after { display: none; }
+  /* Journey flip band */
+  .journey-band { display: grid; grid-template-columns: repeat(3, 1fr); gap: 1rem; padding: 1.4rem 1.6rem; margin-bottom: 1.75rem; }
+  .journey-band .jb-val { font-family: var(--font-display); font-weight: 600; font-size: 1.7rem; letter-spacing: -0.01em; line-height: 1.1; margin-top: .3rem; }
+  .journey-band .jb-sub { font-size: .74rem; margin-top: .15rem; }
 
-  .ms-row-hit { background: var(--card); border: 1px solid var(--border); border-left: 4px solid var(--good); border-radius: 12px; padding: .875rem 1rem; margin-bottom: .5rem; display: flex; align-items: flex-start; gap: .75rem; }
-  .ms-row-upcoming { background: var(--card); border: 1px solid var(--border); border-left: 4px solid var(--border-2); border-radius: 12px; padding: .875rem 1rem; margin-bottom: .5rem; }
-  .check-icon { color: var(--good); font-size: 1rem; flex-shrink: 0; margin-top: .125rem; }
-  .lock-icon { color: var(--faint); font-size: .875rem; margin-right: .5rem; }
-  .ms-name { font-weight: 600; color: var(--text); font-size: .9rem; }
-  .ms-meta { font-size: .75rem; color: var(--faint); margin-top: .2rem; }
-  .ms-meta-days { font-size: .7rem; color: var(--faint); margin-top: .125rem; }
+  /* Timeline */
+  .timeline { list-style: none; margin: 0 0 1.75rem; padding: 0; position: relative; }
+  .timeline::before { content: ""; position: absolute; left: 5px; top: 8px; bottom: 8px; width: 2px; background: var(--line); }
+  .tl-item { position: relative; padding: 0 0 1.05rem 1.6rem; }
+  .tl-item:last-child { padding-bottom: 0; }
+  .tl-item::before { content: ""; position: absolute; left: 0; top: 6px; width: 12px; height: 12px; border-radius: 50%; background: var(--accent); border: 2px solid var(--bg); transition: border-color .35s ease; }
+  .tl-date { font-size: .72rem; color: var(--muted); font-variant-numeric: tabular-nums; letter-spacing: .03em; }
+  .tl-name { font-weight: 600; color: var(--fg); font-size: .95rem; display: inline-flex; align-items: center; gap: .4rem; }
+  .tl-gap { display: inline-block; font-size: .62rem; font-weight: 500; color: var(--muted); border: 1px solid var(--line); border-radius: 9999px; padding: .05rem .45rem; margin-left: .5rem; vertical-align: middle; white-space: nowrap; }
 
-  .ms-prog-track { background: var(--bg-2); border-radius: 999px; height: 6px; overflow: hidden; margin: .5rem 0 .35rem; }
-  .ms-prog-fill { height: 100%; border-radius: 999px; background: linear-gradient(90deg, var(--hazard), var(--hazard-2)); width: 0; transition: width .9s cubic-bezier(.22,1,.36,1); }
-  .ms-prog-label { display: flex; justify-content: space-between; font-size: .7rem; color: var(--faint); }
+  /* Upcoming */
+  .ms-row-upcoming { background: var(--panel); border-radius: 12px; padding: .875rem 1rem; margin-bottom: .5rem; transition: background-color .35s ease; }
+  .ms-name { font-weight: 600; color: var(--fg); font-size: .9rem; }
+  .ms-prog-track { background: var(--line); border-radius: 9999px; height: 6px; overflow: hidden; margin: .5rem 0 .35rem; }
+  .ms-prog-fill { height: 100%; border-radius: 9999px; background: var(--accent); width: 0; transition: width .9s cubic-bezier(.22,1,.36,1); }
+  .ms-prog-label { display: flex; justify-content: space-between; font-size: .7rem; color: var(--muted); }
 
-  @keyframes badge-pulse { 0%,100% { opacity: 1; } 50% { opacity: .55; } }
-  .badge-new { background: var(--hazard); color: #1a1008; font-size: .5625rem; font-weight: 800; padding: .0625rem .375rem; border-radius: 999px; vertical-align: middle; margin-left: .35rem; animation: badge-pulse 2.4s ease-in-out infinite; }
-
-  @media (max-width: 600px) { .ms-hero { grid-template-columns: 1fr; } }
-  @media (prefers-reduced-motion: reduce) { .badge-new { animation: none; } .ms-prog-fill, .ms-hero-bar > span { transition: none; } }
+  @media (max-width: 600px) {
+    .ms-hero { grid-template-columns: 1fr; }
+    .journey-band { grid-template-columns: 1fr; gap: .9rem; padding: 1.25rem 1.4rem; }
+  }
+  @media (prefers-reduced-motion: reduce) { .ms-prog-fill, .ms-hero-bar > span { transition: none; } }
 {% endblock %}
 
 {% block content %}
 
 <div class="ms-head">
-  <h1 class="flowtext">Milestones</h1>
-  <p>{{ data.total_hit }} of {{ data.total_possible }} unlocked</p>
+  <div class="eyebrow">Milestones</div>
+  <h1>The long haul</h1>
+  <p>{{ data.total_hit }} of {{ data.total_possible }} goals reached</p>
 </div>
 
-<!-- Next milestone — floodwater vessel hero -->
+<!-- Next goal — fill-gauge hero -->
 {% if data.next_milestone %}
   {% set nm = data.next_milestone %}
   <div class="ms-hero">
     <div class="ms-hero-info reveal" style="animation-delay:60ms">
-      <div class="eyebrow">Next milestone</div>
+      <div class="eyebrow">Next goal</div>
       <div>
         <div class="ms-hero-name">{{ nm.name }}</div>
         <div class="ms-hero-gap">{{ nm.gap_display }}</div>
@@ -67,8 +74,6 @@
             ${{ "{:,.0f}".format(nm.current) }} / ${{ "{:,.0f}".format(nm.threshold) }}
           {% elif nm.type in ("count", "states") %}
             {{ nm.current }} / {{ nm.threshold }}
-          {% else %}
-            0 / 1
           {% endif %}
         </div>
         <div class="ms-hero-bar"><span data-pct="{{ nm.progress_pct }}"></span></div>
@@ -85,48 +90,52 @@
     </div>
   </div>
 {% else %}
-  <div class="hero-complete">🎉 All milestones complete! Amazing work.</div>
+  <div class="hero-complete">All goals reached. Time to set new ones.</div>
 {% endif %}
 
-<!-- Stats strip -->
-<div class="stats-strip">
-  <div class="kpi">
-    <div class="lbl">Milestones Hit</div>
-    <div class="val">{{ data.total_hit }} / {{ data.total_possible }}</div>
-    <div class="sub">of {{ data.total_possible }} total</div>
-  </div>
-  <div class="kpi">
-    <div class="lbl">Velocity</div>
-    <div class="val">{% if data.milestone_velocity %}{{ data.milestone_velocity | round(1) }}{% else %}—{% endif %}</div>
-    <div class="sub">per month</div>
-  </div>
-</div>
-
-<!-- Completed -->
+<!-- The journey so far — inverted band -->
 {% set completed = data.milestones | selectattr("hit") | list | sort(attribute="hit_date") %}
-{% if completed %}
-<div class="section-h">Completed — {{ completed | length }}</div>
-{% for m in completed %}
-<div class="ms-row-hit">
-  <div class="check-icon">✓</div>
-  <div style="flex:1; min-width:0;">
-    <div class="ms-name">{{ m.name }}{% if m.is_newest %}<span class="badge-new">NEW</span>{% endif %}</div>
-    <div class="ms-meta">{{ m.hit_date_display }}</div>
-    {% if m.days_since_prev is not none %}
-    <div class="ms-meta-days">{{ m.days_since_prev }} day{{ 's' if m.days_since_prev != 1 else '' }} after previous milestone</div>
+<div class="flip journey-band reveal" style="animation-delay:200ms">
+  <div>
+    <div class="eyebrow">Goals reached</div>
+    <div class="jb-val val">{{ data.total_hit }} <span style="font-size:1rem; font-weight:500;">of {{ data.total_possible }}</span></div>
+  </div>
+  <div>
+    <div class="eyebrow">Pace</div>
+    <div class="jb-val val">{% if data.milestone_velocity %}{{ data.milestone_velocity | round(1) }}{% else %}—{% endif %}</div>
+    <div class="jb-sub">milestones per month</div>
+  </div>
+  <div>
+    <div class="eyebrow">Latest</div>
+    {% if completed %}
+    <div class="jb-val val" style="font-size:1.15rem;">{{ completed[-1].name }}</div>
+    <div class="jb-sub">{{ completed[-1].hit_date_display }}</div>
+    {% else %}
+    <div class="jb-val val">—</div>
     {% endif %}
   </div>
 </div>
-{% endfor %}
+
+<!-- Completed → timeline -->
+{% if completed %}
+<div class="section-h">The journey so far — {{ completed | length }}</div>
+<ul class="timeline">
+  {% for m in completed %}
+  <li class="tl-item">
+    <div class="tl-date">{{ m.hit_date_display }}</div>
+    <div class="tl-name">{{ m.name }}{% if m.is_newest %}<span class="b-new">NEW</span>{% endif %}{% if m.days_since_prev is not none %}<span class="tl-gap">+{{ m.days_since_prev }}d</span>{% endif %}</div>
+  </li>
+  {% endfor %}
+</ul>
 {% endif %}
 
-<!-- Upcoming -->
-{% set upcoming = data.milestones | rejectattr("hit") | list %}
+<!-- Upcoming — sorted by progress -->
+{% set upcoming = data.milestones | rejectattr("hit") | sort(attribute="progress_pct", reverse=true) | list %}
 {% if upcoming %}
-<div class="section-h" style="margin-top:1.25rem;">Upcoming — {{ upcoming | length }}</div>
+<div class="section-h" style="margin-top:1.25rem;">Up next — {{ upcoming | length }}</div>
 {% for m in upcoming %}
 <div class="ms-row-upcoming">
-  <div><span class="lock-icon">🔒</span><span class="ms-name">{{ m.name }}</span></div>
+  <div><span class="ms-name">{{ m.name }}</span></div>
   <div class="ms-prog-track"><div class="ms-prog-fill" data-pct="{{ m.progress_pct }}"></div></div>
   <div class="ms-prog-label">
     <span>{{ m.gap_display }}</span>
@@ -136,7 +145,7 @@
       {% elif m.type in ("count", "states") %}
         {{ m.current }} / {{ m.threshold }}
       {% else %}
-        Not started
+        —
       {% endif %}
     </span>
   </div>
@@ -147,7 +156,7 @@
 <script>
 const REDUCED = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 
-// Hero vessel water fill + percent count-up
+// Hero gauge fill + percent count-up
 (function() {
   const water = document.getElementById('heroFill');
   if (!water) return;

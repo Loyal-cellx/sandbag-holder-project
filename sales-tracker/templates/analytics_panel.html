@@ -248,7 +248,7 @@
       <tbody>
         {% for s in a.geo.states %}
         <tr id="row-{{ s.abbr }}" data-abbr="{{ s.abbr }}" style="height:44px;">
-          <td class="hi">{{ s.state }} <span style="color:var(--faint);font-size:.72rem;">{{ s.abbr }}</span></td>
+          <td class="hi">{{ s.state }} <span style="color:var(--muted);font-size:.72rem;">{{ s.abbr }}</span></td>
           <td class="cy">{{ s.units }}</td>
           <td class="ye">${{ "%.0f"|format(s.revenue) }}</td>
           <td>{{ s.per_million }}</td>
@@ -426,7 +426,7 @@
           <td class="cy">{{ row.units }}</td>
           <td>{{ row.states }}</td>
           <td {% if row.new_states > 0 %}class="gr"{% endif %}>{{ row.new_states }}</td>
-          <td style="color:var(--faint);font-size:.72rem;">{{ row.new|join(", ") if row.new else "—" }}</td>
+          <td style="color:var(--muted);font-size:.72rem;">{{ row.new|join(", ") if row.new else "—" }}</td>
         </tr>
         {% endfor %}
       </tbody>
@@ -443,10 +443,10 @@
         <tr>
           <td class="hi ye">${{ "%.2f"|format(pp.amount) }}</td>
           <td class="gr">${{ "%.2f"|format(pp.profit) }}</td>
-          <td style="color:var(--faint)">${{ "%.2f"|format(pp.cost) }}</td>
+          <td style="color:var(--muted)">${{ "%.2f"|format(pp.cost) }}</td>
           <td>{{ pp.margin }}%</td>
           <td class="cy">{{ pp.units }}</td>
-          <td style="color:var(--faint)">{{ pp.first_seen }}</td>
+          <td style="color:var(--muted)">{{ pp.first_seen }}</td>
         </tr>
         {% endfor %}
       </tbody>

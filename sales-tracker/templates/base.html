@@ -59,20 +59,6 @@
       --font-body:    'Inter', system-ui, sans-serif;
 
       --maxw: 1080px;
-
-      /* ── Legacy Floodworks aliases — delete after per-page migration ── */
-      --bg-2:      var(--panel);
-      --card-2:    var(--panel);
-      --border:    var(--line);
-      --border-2:  var(--line);
-      --text:      var(--fg);
-      --faint:     var(--muted);
-      --hazard:    var(--accent);
-      --hazard-2:  var(--plat-walmart);
-      --water:     var(--accent);
-      --water-2:   var(--plat-ebay);
-      --water-deep:var(--accent-hover);
-      --kraft:     var(--body);
     }
 
     :root[data-theme="dark"] {
@@ -344,14 +330,6 @@
     @keyframes wave { from { transform: translateX(0); } to { transform: translateX(32px); } }
     .vessel-mark { position: absolute; left: 0; right: 0; border-top: 1px dashed var(--muted); opacity: .8; display: flex; justify-content: flex-end; }
     .vessel-mark span { font-size: .58rem; letter-spacing: .08em; text-transform: uppercase; color: var(--muted); padding: 0 .4rem; background: var(--panel); transform: translateY(-50%); }
-
-    /* ── Legacy .flowtext stub — neutralized; delete after per-page migration ── */
-    .flowtext {
-      background: none; color: var(--fg);
-      -webkit-background-clip: initial; background-clip: initial;
-      -webkit-text-fill-color: currentColor;
-      animation: none;
-    }
 
     /* ── Page-load staggered reveal ── */
     @keyframes rise { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: none; } }

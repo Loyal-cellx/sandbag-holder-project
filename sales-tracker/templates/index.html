@@ -80,18 +80,18 @@
   .chart-col-stack > .chart-card { flex: 0 1 auto; }
   .chart-col-stack > .rolling-card { flex: 0 1 auto; }
   .r30-chart { position: relative; height: 120px; }
-  .r30-legend { display: flex; gap: 1rem; margin-top: .4rem; font-size: .6rem; color: var(--faint); letter-spacing: .04em; text-transform: uppercase; }
+  .r30-legend { display: flex; gap: 1rem; margin-top: .4rem; font-size: .6rem; color: var(--muted); letter-spacing: .04em; text-transform: uppercase; }
   .r30-legend span { display: inline-flex; align-items: center; gap: .35rem; }
   .r30-legend .sw { width: 12px; height: 0; border-top-width: 2px; border-top-style: solid; }
   .r30-legend .sw-now  { border-top-color: var(--accent); }
   .r30-legend .sw-prev { border-top-color: var(--muted); border-top-style: dashed; }
   .r30-top { display: flex; justify-content: space-between; align-items: flex-start; gap: .75rem; margin-bottom: .6rem; }
   .r30-num { font-family: var(--font-display); font-weight: 600; font-size: 1.75rem; letter-spacing: -0.01em; color: var(--fg); line-height: 1; }
-  .r30-sub { font-size: .72rem; color: var(--faint); margin-top: .25rem; letter-spacing: .04em; }
+  .r30-sub { font-size: .72rem; color: var(--muted); margin-top: .25rem; letter-spacing: .04em; }
   .r30-delta { text-align: right; font-family: var(--font-display); font-weight: 700; font-size: .95rem; }
   .r30-delta.up   { color: var(--good); }
   .r30-delta.down { color: var(--bad); }
-  .r30-delta-sub { font-family: var(--font-body); font-weight: 400; font-size: .65rem; color: var(--faint); margin-top: .1rem; letter-spacing: .04em; }
+  .r30-delta-sub { font-family: var(--font-body); font-weight: 400; font-size: .65rem; color: var(--muted); margin-top: .1rem; letter-spacing: .04em; }
 
   /* ════════ Transactions table ════════ */
   .table-wrap { background: var(--panel); border-radius: 12px; overflow-x: auto; margin-top: .9rem; transition: background-color .35s ease; }
@@ -335,7 +335,7 @@
           <div class="r30-delta-sub">vs prev 30d</div>
         </div>
         {% else %}
-        <div class="r30-delta" style="color:var(--faint);">—<div class="r30-delta-sub">no prior data</div></div>
+        <div class="r30-delta" style="color:var(--muted);">—<div class="r30-delta-sub">no prior data</div></div>
         {% endif %}
       </div>
       <div class="r30-chart"><canvas id="chartRolling30"></canvas></div>
@@ -386,8 +386,8 @@
       {% endfor %}
     </tbody>
     <tfoot>
-      <tr style="border-top:1px solid var(--border);">
-        <td style="color:var(--faint); font-size:.75rem; padding:.625rem .75rem;">ALL TIME</td>
+      <tr style="border-top:1px solid var(--line);">
+        <td style="color:var(--muted); font-size:.75rem; padding:.625rem .75rem;">ALL TIME</td>
         <td class="td-amount">${{ "%.2f"|format(sales | sum(attribute='amount')) }}</td>
         <td class="td-profit">${{ "%.2f"|format(sales | sum(attribute='profit')) }}</td>
         <td colspan="2"></td>

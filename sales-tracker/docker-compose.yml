@@ -2,12 +2,24 @@ services:
   sales-tracker:
     build: .
     ports:
-      - "5050:5050"
+      # Bound to specific addresses, not 0.0.0.0 — Docker's nat rules bypass
+      # ufw, so the interface binding is what actually controls exposure.
+      #
+      # Two bindings because the name "amboss" has two answers: the router
+      # resolves it to the LAN IP (DHCP reservation) and MagicDNS resolves it
+      # to the tailnet IP. Binding only the tailnet address meant whichever
+      # answer a client got decided whether the page loaded. Both are bound
+      # now so either answer works.
+      #
+      # LAN_IP defaults to localhost so an unset var fails closed rather than
+      # falling back to an empty host IP, which Docker treats as 0.0.0.0.
+      - "${TS_IP}:5050:5050"
+      - "${LAN_IP:-127.0.0.1}:5050:5050"
     env_file:
       - .env
     volumes:
       - db-data:/app/data
-      - /srv/data/backups/sales-tracker:/app/backups
+      - /srv/backups/sales-tracker:/app/backups
     environment:
       - DB_PATH=/app/data/sales.db
     restart: unless-stopped

@@ -29,7 +29,7 @@ py app.py                        # http://localhost:5050
 
 ### Tests
 
-There are **19 pytest tests** in `sales-tracker/tests/` (`test_app.py`, `test_database.py`). `pytest` is deliberately *not* in `requirements.txt` — the production image ships without it, so install it separately to run the suite.
+There are **22 pytest tests** in `sales-tracker/tests/` (`test_app.py`, `test_database.py`). `pytest` is deliberately *not* in `requirements.txt` — the production image ships without it, so install it separately to run the suite.
 
 ```bash
 cd sales-tracker
@@ -47,7 +47,7 @@ docker run --rm -v "$PWD":/src -w /src sales-tracker-sales-tracker \
 
 `tests/conftest.py` provides a `db` fixture (points `database.DB_PATH` at a throwaway SQLite file via monkeypatch) and a `client` fixture layered on it. Every DB function resolves `DB_PATH` at call time, which is what makes that patching work for both direct DB tests and Flask routes.
 
-**`test_api_prediction_keys` currently fails** — see "Known bug" below. 18 pass, 1 fails.
+All 22 pass as of 2026-08-19 (the long-failing `test_api_prediction_keys` was fixed along with the empty-`state_codes` bug — see below).
 
 To re-seed historical sales data (not committed — one-time use):
 ```bash
@@ -91,9 +91,9 @@ Both are set in `sales-tracker/.env`. `LAN_IP` carries a `:-127.0.0.1` default s
 
 | File | Role |
 |---|---|
-| `app.py` | Flask routes — pages: `/` dashboard, `/log` sale form, `/milestones`, `/history`. Mutations: `/sales/<id>/delete`, `/sales/<id>/edit` (POST). JSON: `/api/sales`, `/api/stats`, `/api/prediction`, `/api/ai-forecast`, `/api/sale-weather[/<id>]`, `/api/snapshots`, `/api/take-snapshot` (POST). Ops: `/health` (used by the Docker HEALTHCHECK). |
+| `app.py` | Flask routes — pages: `/` dashboard, `/log` sale form, `/milestones`, `/history`. Fragments: `/partial/forecast` (server-rendered forecast section, fetched async by the dashboard). Mutations: `/sales/<id>/delete`, `/sales/<id>/edit` (POST). JSON: `/api/sales`, `/api/stats`, `/api/prediction`, `/api/ai-forecast`, `/api/sale-weather[/<id>]`, `/api/snapshots`, `/api/take-snapshot` (POST). Ops: `/health` (used by the Docker HEALTHCHECK). |
 | `database.py` | All SQLite access. `db_init()` must run before first request. Resolves `DB_PATH` at call time, not import time — this is what lets tests monkeypatch it. |
-| `prediction.py` | Weather-aware next-sale prediction. Fans **5 external feeds** out concurrently (`ThreadPoolExecutor(max_workers=5)`): NWS alerts, NIFC active fires, NIFC burn scars, NHC tropical cyclones, USGS flood gauges. Combines them with WMA-based frequency + seasonal baselines into a 0-99 score. Called synchronously by the `/` route. **Read the cold-start trap below before touching this file.** |
+| `prediction.py` | Weather-aware next-sale prediction. Fans **5 external feeds** out concurrently (`ThreadPoolExecutor(max_workers=5)`): NWS alerts, NIFC active fires, NIFC burn scars, NHC tropical cyclones, USGS flood gauges. Combines them with WMA-based frequency + seasonal baselines into a 0-99 score. Called by `/partial/forecast` (fetched async from the dashboard), `/api/prediction`, and `/api/ai-forecast` — **not** by `/` since 2026-08-19. **Read the cold-start trap below before touching this file.** |
 | `tuftler_analytics.py` | Flask **blueprint** (`analytics_bp`), registered in `app.py:20`. Adds `/analytics` (rendered Jinja panel) and `/api/analytics.json`. Stdlib only — computes the July 2026 teardown breakdowns straight off the SQLite DB. Its routes won't show up in an `@app.route` grep of `app.py`. |
 | `snapshot.py` | Daily climate + sales snapshot collector. CLI: `python snapshot.py` (today) or `--date YYYY-MM-DD` (backfill). Idempotent — rerunning a date overwrites it. Feeds `/api/snapshots`. |
 | `backfill_weather.py` | One-off backfill of historical weather for sales missing it, via the Open-Meteo archive API (no key). Maps each sale's state to a capital-centroid lat/lon. Flags: `--all` (re-fetch everything), `--dry-run`. |
@@ -113,16 +113,11 @@ Both are set in `sales-tracker/.env`. `LAN_IP` carries a `:-127.0.0.1` default s
 | By Month | Vertical bar + ChartDataLabels | `by_month` |
 | Weekly Revenue | Line | `by_week` |
 
-### Cold-start trap (`/` can hang for a minute)
+### Cold-start trap (the forecast fragment can take tens of seconds)
 
-Measured on amboss 2026-08-15 against the live DB:
+**Fixed for the dashboard on 2026-08-19:** `/` no longer calls `get_prediction()` at all. It renders immediately (measured 0.04s cold / 0.005s warm) with a "Loading live hazard data…" placeholder in `#forecastSlot`; JS then fetches `/partial/forecast` (a server-rendered Jinja fragment, `templates/_forecast.html`), injects it, and only then kicks off `loadAiForecast()` so the AI call reuses the just-warmed feed cache. On fragment failure the slot shows a quiet "Forecast unavailable" card instead of breaking the page.
 
-```
-cold first request after container start   17.1s – 59.2s
-every subsequent request                    0.005s
-```
-
-The `/` route calls `get_prediction()` synchronously. Feeds are cached for 30 minutes (`CACHE_TTL`), but the cache is **in-process** — every container restart, redeploy, or `docker compose up -d --build` empties it, and the next visitor absorbs the full cost. This reads to a user as "the page never loads," because browsers give up first.
+The underlying slowness still exists — it has just been moved off the critical path. `/partial/forecast` measured 16.9s cold on 2026-08-19 (17.1–59.2s range on 2026-08-15). Feeds are cached for 30 minutes (`CACHE_TTL`), but the cache is **in-process** — every container restart, redeploy, or `docker compose up -d --build` empties it, and the first fragment fetch absorbs the full cost.
 
 The dominant cost is the NIFC burn-scar ArcGIS query, and it scales with the number of distinct customer states:
 
@@ -136,17 +131,9 @@ usgs          0.80s
 
 Note the interaction with gunicorn's `--timeout 60`: a 59.2s cold request is a few hundred milliseconds from having its worker killed.
 
-### Known bug: empty `state_codes` crashes the dashboard
+### Fixed bug (2026-08-19): empty `state_codes` used to crash the prediction
 
-`prediction.py:152` in the `_cached` wrapper:
-
-```python
-data = fetcher(state_codes) if state_codes else []
-```
-
-The `else []` applies to every feed, but `_score_usgs()` expects a dict and calls `.get()` on it — so an empty `state_codes` raises `AttributeError: 'list' object has no attribute 'get'`. `_fetch_usgs_flood` itself correctly returns `{"by_state": {}, "total_weight": 0.0}` on failure; only the generic wrapper's fallback is wrong.
-
-`state_codes` goes empty whenever no sale location maps to a `STATE_CODES` entry — an empty database, or one where every location is unmapped (`"Notspecified"` doesn't map). Since `/` calls `get_prediction()` with no `try`/`except`, **a fresh deployment with an empty DB returns a 500 on the dashboard.** This is what `test_api_prediction_keys` catches.
+The `_cached` wrapper's empty-`state_codes` fallback returns `[]` for every feed, but `_score_usgs()` expects a dict — so an empty database (or all-unmapped locations) raised `AttributeError: 'list' object has no attribute 'get'`, which 500'd the dashboard. Fixed by normalizing `usgs_data` to `{"by_state": {}, "total_weight": 0.0}` in `get_prediction()` when it isn't a dict; `test_api_prediction_keys` (which stubs `_cached` with a `[]`-returning lambda) now passes.
 
 ### `database.py` public API
 

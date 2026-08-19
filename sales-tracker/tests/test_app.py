@@ -95,3 +95,38 @@ def test_api_prediction_keys(client, monkeypatch):
                 "alerts", "storms", "generated_at", "cache_ttl_seconds"):
         assert key in body, f"missing {key}"
     assert body["cache_ttl_seconds"] == 1800
+
+
+def test_index_never_calls_get_prediction(client, monkeypatch):
+    # The dashboard must render instantly; the forecast arrives via /partial/forecast.
+    import app as app_module
+
+    def boom(*a, **kw):
+        raise AssertionError("index() must not call get_prediction")
+
+    monkeypatch.setattr(app_module, "get_prediction", boom)
+    resp = client.get("/")
+    assert resp.status_code == 200
+    assert b"forecastSlot" in resp.data
+
+
+def test_partial_forecast_offline_empty_db(client, monkeypatch):
+    # No sales -> no avg_freq -> empty fragment, but never a 500.
+    import prediction
+    monkeypatch.setattr(prediction, "_get_cached_alerts", lambda codes: [])
+    monkeypatch.setattr(prediction, "_cached", lambda *a, **kw: [])
+    resp = client.get("/partial/forecast")
+    assert resp.status_code == 200
+
+
+def test_partial_forecast_renders_score(client, monkeypatch):
+    import prediction
+    monkeypatch.setattr(prediction, "_get_cached_alerts", lambda codes: [])
+    monkeypatch.setattr(prediction, "_cached", lambda *a, **kw: [])
+    _add(database, date_str="2026-06-01")
+    _add(database, date_str="2026-06-08")
+    resp = client.get("/partial/forecast")
+    assert resp.status_code == 200
+    assert b"predScore" in resp.data
+    assert b'id="predFill"' in resp.data
+    assert b"data-score=" in resp.data

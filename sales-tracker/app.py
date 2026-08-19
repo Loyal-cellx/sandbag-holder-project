@@ -84,8 +84,16 @@ def _sync_revenue_background():
 def index():
     sales = get_all_sales()
     stats = get_stats()
-    prediction = get_prediction(stats, get_all_locations())
-    return render_template("index.html", sales=sales, stats=stats, prediction=prediction, year=datetime.now().year)
+    return render_template("index.html", sales=sales, stats=stats, year=datetime.now().year)
+
+
+@app.route("/partial/forecast")
+def partial_forecast():
+    # Server-rendered forecast fragment, fetched async by index.html so the
+    # dashboard never blocks on the external hazard feeds (cold cache can
+    # take tens of seconds — see the cold-start trap in CLAUDE.md).
+    prediction = get_prediction(get_stats(), get_all_locations())
+    return render_template("_forecast.html", prediction=prediction)
 
 
 @app.route("/log", methods=["GET", "POST"])

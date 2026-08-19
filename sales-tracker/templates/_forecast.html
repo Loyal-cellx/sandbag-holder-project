@@ -1,0 +1,73 @@
+{# Forecast fragment rendered by /partial/forecast and injected into #forecastSlot on the dashboard. #}
+{% if prediction.avg_freq %}
+<section class="hazard-feature flip reveal">
+  <div class="eyebrow">Next-sale forecast &bull; weather-aware</div>
+  <div style="display:flex; align-items:center; gap:.7rem; margin-top:.45rem; flex-wrap:wrap;">
+    <span class="hf-score" id="predScore">{{ prediction.score }}%</span>
+    <span class="hf-badge hf-badge-{{ prediction.label | lower }}" id="predLabel">{{ prediction.label }}</span>
+    {% if prediction.season_label %}<span class="hf-season">{{ prediction.season_label }}</span>{% endif %}
+    {% if prediction.combo_pts and prediction.combo_pts > 0 %}<span class="hf-pill hf-pill-haz">+{{ prediction.combo_pts }} combo risk</span>{% endif %}
+    {% if prediction.nhc_pts and prediction.nhc_pts > 0 %}<span class="hf-pill hf-pill-haz">+{{ prediction.nhc_pts }} cyclone risk</span>{% endif %}
+  </div>
+  <div class="hf-track">
+    <div class="hf-fill" id="predFill" data-score="{{ prediction.score }}" style="background:{% if prediction.label == 'HIGH' %}#2fa26a{% elif prediction.label == 'MEDIUM' %}var(--accent){% else %}#939084{% endif %};"></div>
+  </div>
+  <div class="hf-sub">
+    {% if prediction.eta_days and prediction.eta_days > 0 %}~{{ prediction.eta_days }}d until expected &bull; {% endif %}
+    {% if prediction.days_since is not none %}{{ prediction.days_since }}d since last &bull; {% endif %}
+    trend {{ prediction.wma_freq }}d{% if prediction.wma_freq != prediction.avg_freq %} (avg {{ prediction.avg_freq }}d){% endif %}
+  </div>
+
+  <div class="hf-grid">
+    {% if prediction.storms %}
+    <div>
+      <div class="hf-col-title">Tropical cyclones <span class="n">({{ prediction.storms|length }})</span></div>
+      {% for s in prediction.storms %}
+      <div class="hf-row"><strong>{{ s.class_label }} {{ s.name }}</strong>{% if s.wind_kt %} &bull; {{ s.wind_kt }} kt{% endif %} &bull; {{ s.affected_states|join(', ') }}</div>
+      {% endfor %}
+    </div>
+    {% endif %}
+
+    {% if prediction.fires %}
+    <div>
+      <div class="hf-col-title">Active wildfires <span class="n">({{ prediction.fires|length }})</span></div>
+      {% for f in prediction.fires %}
+      <div class="hf-row"><strong>{{ f.state }}</strong> — {{ f.name }} &bull; {{ "{:,}".format(f.acres) }} ac &bull; {{ f.contained }}% contained{% if f.state in prediction.combo_states %}<span class="hf-pill hf-pill-haz">flood × fire</span>{% endif %}</div>
+      {% endfor %}
+    </div>
+    {% endif %}
+
+    {% if prediction.burn_scars %}
+    <div>
+      <div class="hf-col-title">Burn scars <span class="n">(this season)</span></div>
+      {% for b in prediction.burn_scars %}
+      <div class="hf-row"><strong>{{ b.state }}</strong> — {{ b.name }} &bull; {{ "{:,}".format(b.acres) }} ac{% if b.year %} &bull; {{ b.year }}{% endif %}{% if b.state in prediction.combo_states %}<span class="hf-pill">flood watch</span>{% endif %}</div>
+      {% endfor %}
+    </div>
+    {% endif %}
+
+    <div>
+      <div class="hf-col-title">Active alerts <span class="n">({{ prediction.alerts|length }})</span></div>
+      {% if prediction.alerts %}
+        {% for alert in prediction.alerts[:5] %}
+        <div class="hf-row"><span>{{ alert.icon }}</span> {{ alert.event }}{% if alert.state %} — {{ alert.state }}{% endif %}</div>
+        {% endfor %}
+      {% else %}
+        <div class="hf-no-alerts">No active severe weather alerts</div>
+      {% endif %}
+    </div>
+  </div>
+</section>
+
+<!-- AI forecast card -->
+<section class="card reveal" style="margin-top:.75rem; margin-bottom:1.1rem; padding:1.25rem 1.4rem 1.35rem;">
+  <div style="display:flex; align-items:center; justify-content:space-between; gap:.5rem;">
+    <div class="eyebrow" style="margin:0;">AI analysis &bull; Claude Haiku</div>
+    <button id="aiForecastRefresh" onclick="loadAiForecast(true)" style="background:none;border:1px solid var(--line);border-radius:9999px;color:var(--muted);font-size:.7rem;padding:.2rem .55rem;cursor:pointer;line-height:1.4;">↺ refresh</button>
+  </div>
+  <div id="aiForecastText" style="margin-top:.6rem; font-size:.95rem; line-height:1.65; color:var(--fg); min-height:2rem;">
+    <span style="color:var(--muted); font-style:italic;">Loading…</span>
+  </div>
+  <div id="aiForecastMeta" style="margin-top:.3rem; font-size:.72rem; color:var(--muted);"></div>
+</section>
+{% endif %}

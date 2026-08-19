@@ -632,6 +632,9 @@ def get_prediction(stats, locations):
     burn_scars = f_scars.result()
     storms    = f_storms.result()
     usgs_data = f_usgs.result()
+    if not isinstance(usgs_data, dict):
+        # _cached's generic empty fallback is a list, but the scorer needs this shape
+        usgs_data = {"by_state": {}, "total_weight": 0.0}
 
     month = date.today().month
 

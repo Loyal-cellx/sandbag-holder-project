@@ -299,10 +299,13 @@ def history():
     for s in sales:
         dow_counts[_dt.strptime(s["date"], "%Y-%m-%d").weekday()] += 1
 
-    # Multi-sale days (days with 2+ sales)
+    # Multi-sale days (days with 2+ sales), with actual revenue for that day
     date_counts = Counter(s["date"] for s in sales)
+    date_revenue = defaultdict(float)
+    for s in sales:
+        date_revenue[s["date"]] += s["amount"]
     multi_days = sorted(
-        [{"date": d, "count": c} for d, c in date_counts.items() if c >= 2],
+        [{"date": d, "count": c, "revenue": round(date_revenue[d], 2)} for d, c in date_counts.items() if c >= 2],
         key=lambda x: x["date"], reverse=True
     )
 

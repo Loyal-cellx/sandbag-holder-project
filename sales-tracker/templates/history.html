@@ -4,11 +4,11 @@
 {% block extra_style %}
 .hist-hero { margin: 1.5rem 0 1.2rem; }
 .hist-hero h1 {
-  font-family: var(--font-display); font-weight: 800;
-  font-size: clamp(1.6rem, 5vw, 2.4rem); line-height: 1.1;
-  margin-bottom: .4rem;
+  font-family: var(--font-display); font-weight: 600;
+  font-size: clamp(1.6rem, 5vw, 2.4rem); line-height: 1.1; letter-spacing: -0.01em;
+  color: var(--fg); margin: .35rem 0 .4rem;
 }
-.hist-hero p { color: var(--muted); font-size: .88rem; max-width: 520px; line-height: 1.55; }
+.hist-hero p { color: var(--body); font-size: .88rem; max-width: 520px; line-height: 1.55; }
 
 /* ── Insight cards ───────────────────────────────────────────────────────── */
 .insight-grid {
@@ -17,81 +17,61 @@
   gap: .75rem; margin-bottom: 1.4rem;
 }
 .insight-card {
-  background: var(--card); border: 1px solid var(--border);
-  border-radius: 12px; padding: 1rem 1.1rem;
-  position: relative; overflow: hidden;
+  background: var(--panel); border-radius: 12px; padding: 1rem 1.1rem;
+  transition: background-color .35s ease;
 }
-.insight-card::before {
-  content: '';
-  position: absolute; top: 0; left: 0;
-  width: 3px; height: 100%;
-  border-radius: 12px 0 0 12px;
-}
-.insight-card.market::before  { background: var(--water); }
-.insight-card.accel::before   { background: var(--hazard); }
-.insight-card.bestday::before { background: var(--hazard-2); }
 .insight-card .i-eyebrow {
-  font-size: .6rem; font-weight: 700; letter-spacing: .12em;
-  text-transform: uppercase; margin-bottom: .35rem;
+  font-family: var(--font-display);
+  font-size: .62rem; font-weight: 500; letter-spacing: .09em;
+  text-transform: uppercase; color: var(--muted); margin-bottom: .35rem;
 }
-.insight-card.market  .i-eyebrow { color: var(--water); }
-.insight-card.accel   .i-eyebrow { color: var(--hazard); }
-.insight-card.bestday .i-eyebrow { color: var(--hazard-2); }
 .insight-card .i-stat {
-  font-family: var(--font-display); font-size: 1.5rem; font-weight: 800;
-  color: var(--text); line-height: 1.1; margin-bottom: .25rem;
+  font-family: var(--font-display); font-size: 1.5rem; font-weight: 600;
+  color: var(--fg); line-height: 1.1; letter-spacing: -0.01em; margin-bottom: .25rem;
 }
 .insight-card .i-body { font-size: .75rem; color: var(--muted); line-height: 1.5; }
 
 /* ── Charts / KPI ────────────────────────────────────────────────────────── */
 .chart-wrap {
-  background: var(--card); border: 1px solid var(--border);
-  border-radius: 14px; padding: 1.2rem 1.2rem 1rem; margin-bottom: 1.4rem;
+  background: var(--panel); border-radius: 12px;
+  padding: 1.2rem 1.2rem 1rem; margin-bottom: 1.4rem;
+  transition: background-color .35s ease;
 }
 
 .kpi-row {
   display: grid; grid-template-columns: repeat(auto-fit, minmax(130px, 1fr));
   gap: .8rem; margin-bottom: 1.4rem;
 }
-.kpi-card {
-  background: var(--card); border: 1px solid var(--border);
-  border-radius: 12px; padding: .9rem 1rem;
-}
-.kpi-card .label { font-size: .62rem; font-weight: 700; letter-spacing: .1em; text-transform: uppercase; color: var(--faint); }
-.kpi-card .val { font-family: var(--font-display); font-size: 1.6rem; font-weight: 800; color: var(--text); line-height: 1.1; margin-top: .2rem; }
-.kpi-card .sub { font-size: .72rem; color: var(--muted); margin-top: .15rem; }
-.kpi-card.accent-orange { border-color: rgba(249,115,22,0.3); }
-.kpi-card.accent-orange .label { color: var(--hazard); }
 
-.snap-table-wrap {
-  background: var(--card); border: 1px solid var(--border);
-  border-radius: 14px; overflow: hidden; margin-top: 1.4rem;
+/* ── Burst days table ────────────────────────────────────────────────────── */
+.tbl-wrap {
+  background: var(--panel); border-radius: 12px; overflow: hidden; margin-top: 1.4rem;
+  transition: background-color .35s ease;
 }
-.snap-table { width: 100%; border-collapse: collapse; font-size: .8rem; }
-.snap-table th {
-  background: var(--card-2); color: var(--faint);
-  font-size: .62rem; font-weight: 700; letter-spacing: .12em; text-transform: uppercase;
-  padding: .65rem .9rem; text-align: left; border-bottom: 1px solid var(--border);
+.tbl { width: 100%; border-collapse: collapse; font-size: .8rem; }
+.tbl th {
+  color: var(--muted);
+  font-size: .62rem; font-weight: 600; letter-spacing: .09em; text-transform: uppercase;
+  padding: .65rem .9rem; text-align: left; border-bottom: 1px solid var(--line);
   white-space: nowrap;
 }
-.snap-table td {
-  padding: .6rem .9rem; border-bottom: 1px solid rgba(34,49,65,0.5);
-  color: var(--text); vertical-align: middle;
+.tbl td {
+  padding: .6rem .9rem; border-bottom: 1px solid var(--line);
+  color: var(--fg); vertical-align: middle;
 }
-.snap-table tr:last-child td { border-bottom: none; }
-.snap-table tr:hover td { background: var(--card-2); }
+.tbl tr:last-child td { border-bottom: none; }
+.tbl tr:hover td { background: rgba(255,79,0,0.04); }
 .burst-badge {
-  display: inline-block; font-size: .62rem; font-weight: 700;
-  padding: .1rem .4rem; border-radius: 999px;
-  background: rgba(249,115,22,0.15); color: var(--hazard);
+  display: inline-block; font-size: .62rem; font-weight: 600;
+  padding: .1rem .45rem; border-radius: 9999px;
+  border: 1px solid var(--accent); color: var(--accent);
 }
-.muted-cell { color: var(--faint); }
 {% endblock %}
 
 {% block content %}
 <div class="hist-hero reveal" style="animation-delay:.05s">
-  <p class="eyebrow">Sales Intelligence</p>
-  <h1>Sale <span class="flowtext">Patterns</span></h1>
+  <p class="eyebrow">Sales intelligence</p>
+  <h1>Sale Patterns</h1>
   <p>When sales happen, how often, and where the bursts come from.</p>
 </div>
 
@@ -99,7 +79,7 @@
 <div class="insight-grid reveal" style="animation-delay:.07s">
 
   {% if patterns.top_state %}
-  <div class="insight-card market">
+  <div class="insight-card">
     <div class="i-eyebrow">Top Market</div>
     <div class="i-stat">{{ patterns.top_state.location }}</div>
     <div class="i-body">
@@ -111,7 +91,7 @@
   {% endif %}
 
   {% if patterns.pace_speedup %}
-  <div class="insight-card accel">
+  <div class="insight-card">
     <div class="i-eyebrow">Acceleration</div>
     <div class="i-stat">{{ patterns.pace_speedup }}&times; faster</div>
     <div class="i-body">
@@ -121,7 +101,7 @@
   </div>
   {% endif %}
 
-  <div class="insight-card bestday">
+  <div class="insight-card">
     <div class="i-eyebrow">Best Day</div>
     <div class="i-stat">{{ patterns.best_dow_name }}</div>
     <div class="i-body">
@@ -134,45 +114,21 @@
 
 <!-- ── KPI strip ─────────────────────────────────────────────────────────── -->
 <div class="kpi-row reveal" style="animation-delay:.1s">
-  <div class="kpi-card">
-    <div class="label">Avg gap</div>
+  <div class="kpi">
+    <div class="lbl">Avg gap</div>
     <div class="val">{{ patterns.avg_gap }}<span style="font-size:1rem;color:var(--muted)">d</span></div>
     <div class="sub">between sale days</div>
   </div>
-  <div class="kpi-card">
-    <div class="label">Fastest streak</div>
-    <div class="val">{{ patterns.min_gap }}<span style="font-size:1rem;color:var(--muted)">d</span></div>
-    <div class="sub">shortest gap</div>
-  </div>
-  <div class="kpi-card">
-    <div class="label">Longest dry spell</div>
+  <div class="kpi">
+    <div class="lbl">Longest dry spell</div>
     <div class="val">{{ patterns.max_gap }}<span style="font-size:1rem;color:var(--muted)">d</span></div>
     <div class="sub">longest gap</div>
   </div>
-  <div class="kpi-card">
-    <div class="label">Burst windows</div>
+  <div class="kpi">
+    <div class="lbl">Burst windows</div>
     <div class="val">{{ patterns.burst_days }}</div>
     <div class="sub">gaps &le; 3 days</div>
   </div>
-  <div class="kpi-card">
-    <div class="label">Multi-sale days</div>
-    <div class="val">{{ patterns.multi_days | length }}</div>
-    <div class="sub">2+ sales in one day</div>
-  </div>
-  {% if patterns.first_half %}
-  <div class="kpi-card accent-orange">
-    <div class="label">Early pace</div>
-    <div class="val">{{ patterns.first_half.rate }}<span style="font-size:1rem;color:var(--muted)">d</span></div>
-    <div class="sub">days per order, first half</div>
-  </div>
-  {% endif %}
-  {% if patterns.second_half %}
-  <div class="kpi-card accent-orange">
-    <div class="label">Recent pace</div>
-    <div class="val">{{ patterns.second_half.rate }}<span style="font-size:1rem;color:var(--muted)">d</span></div>
-    <div class="sub">days per order, now</div>
-  </div>
-  {% endif %}
 </div>
 
 <!-- ── Day of week chart ──────────────────────────────────────────────────── -->
@@ -181,26 +137,18 @@
   <canvas id="dowChart" height="80"></canvas>
 </div>
 
-<!-- ── Top States chart ───────────────────────────────────────────────────── -->
-{% if stats.by_location %}
-<div class="chart-wrap reveal" style="animation-delay:.16s">
-  <div class="section-h">Sales by State — Top {{ stats.by_location | length }}</div>
-  <canvas id="stateChart" height="120"></canvas>
-</div>
-{% endif %}
-
 <!-- ── Gap timeline chart ─────────────────────────────────────────────────── -->
-<div class="chart-wrap reveal" style="animation-delay:.19s">
+<div class="chart-wrap reveal" style="animation-delay:.16s">
   <div class="section-h">Days Between Sales (Gap Timeline)</div>
   <canvas id="gapChart" height="80"></canvas>
 </div>
 
 <!-- ── Multi-sale days table ─────────────────────────────────────────────── -->
 {% if patterns.multi_days %}
-<div class="divider reveal" style="animation-delay:.26s"></div>
-<div class="section-h reveal" style="animation-delay:.28s">Burst Days — Multiple Sales in One Day</div>
-<div class="snap-table-wrap reveal" style="animation-delay:.3s">
-  <table class="snap-table">
+<div class="divider reveal" style="animation-delay:.2s"></div>
+<div class="section-h reveal" style="animation-delay:.22s">Burst Days — Multiple Sales in One Day</div>
+<div class="tbl-wrap reveal" style="animation-delay:.24s">
+  <table class="tbl">
     <thead>
       <tr><th>Date</th><th>Sales</th><th>Revenue</th></tr>
     </thead>
@@ -209,7 +157,7 @@
       <tr>
         <td>{{ d.date }}</td>
         <td><span class="burst-badge">{{ d.count }}x</span></td>
-        <td style="font-family:var(--font-display);font-weight:700;color:var(--good)">${{ (d.count * 69) }}</td>
+        <td style="font-family:var(--font-display);font-weight:600;color:var(--good)">${{ "%.0f"|format(d.revenue) }}</td>
       </tr>
       {% endfor %}
     </tbody>
@@ -220,120 +168,93 @@
 <script src="{{ url_for('static', filename='js/chart.umd.js') }}"></script>
 <script>
 (function() {
-  const gridColor = 'rgba(34,49,65,0.6)';
-  const tickColor = '#56697c';
-  const tipOpts = {
-    backgroundColor: '#121c28', borderColor: '#223141', borderWidth: 1,
-    titleColor: '#e8eef4', bodyColor: '#8a9bad', padding: 10,
-  };
+  const css = getComputedStyle(document.documentElement);
+  const C = n => css.getPropertyValue(n).trim();
 
-  // ── Day of week ──────────────────────────────────────────────────────────
   const dowData   = {{ patterns.dow_counts | tojson }};
   const dowLabels = ['Mon','Tue','Wed','Thu','Fri','Sat','Sun'];
-  const dowMax    = Math.max(...dowData);
-  const dowColors = dowData.map(v => v === dowMax ? 'rgba(45,212,191,0.85)' : 'rgba(45,212,191,0.25)');
-  new Chart(document.getElementById('dowChart').getContext('2d'), {
-    type: 'bar',
-    data: {
-      labels: dowLabels,
-      datasets: [{
-        label: 'Sales',
-        data: dowData,
-        backgroundColor: dowColors,
-        borderColor: dowColors.map(c => c.replace('0.25','0.8').replace('0.85','1')),
-        borderWidth: 1,
-        borderRadius: 5,
-      }]
-    },
-    options: {
-      responsive: true,
-      plugins: { legend: { display: false }, tooltip: tipOpts },
-      scales: {
-        x: { ticks: { color: tickColor }, grid: { color: gridColor } },
-        y: { ticks: { color: tickColor, stepSize: 1 }, grid: { color: gridColor }, min: 0 },
-      }
-    }
-  });
+  const gaps      = {{ patterns.gaps | tojson }};
+  const avgGap    = {{ patterns.avg_gap or 0 }};
 
-  // ── Top States (horizontal bar) ──────────────────────────────────────────
-  const stateEl = document.getElementById('stateChart');
-  if (stateEl) {
-    const byLoc   = {{ stats.by_location | tojson }};
-    const stateLabels = byLoc.map(s => s.location);
-    const stateCounts = byLoc.map(s => s.count);
-    const stateMax    = Math.max(...stateCounts);
-    const stateColors = stateCounts.map(v =>
-      v === stateMax ? 'rgba(249,115,22,0.75)' : 'rgba(249,115,22,0.25)'
-    );
-    new Chart(stateEl.getContext('2d'), {
+  // Theme-aware: charts are destroyed + recreated with re-read CSS vars on themechange
+  let charts = [];
+  function renderCharts() {
+    charts.forEach(c => c.destroy());
+    charts = [];
+    const gridColor = C('--chart-grid');
+    const tickColor = C('--chart-tick');
+    const tipOpts = {
+      backgroundColor: C('--card'), borderColor: C('--line'), borderWidth: 1,
+      titleColor: C('--fg'), bodyColor: C('--body'), padding: 10,
+    };
+
+    // ── Day of week — best day in accent, rest neutral ─────────────────────
+    const dowMax    = Math.max(...dowData);
+    const dowColors = dowData.map(v => v === dowMax ? C('--accent') : C('--chart-neutral'));
+    charts.push(new Chart(document.getElementById('dowChart').getContext('2d'), {
       type: 'bar',
       data: {
-        labels: stateLabels,
+        labels: dowLabels,
         datasets: [{
-          label: 'Orders',
-          data: stateCounts,
-          backgroundColor: stateColors,
-          borderColor: stateColors.map(c => c.replace('0.25','0.7').replace('0.75','1')),
-          borderWidth: 1,
-          borderRadius: 4,
+          label: 'Sales',
+          data: dowData,
+          backgroundColor: dowColors,
+          borderRadius: 5,
         }]
       },
       options: {
-        indexAxis: 'y',
         responsive: true,
         plugins: { legend: { display: false }, tooltip: tipOpts },
         scales: {
-          x: { ticks: { color: tickColor, stepSize: 1 }, grid: { color: gridColor }, min: 0 },
-          y: { ticks: { color: tickColor, font: { size: 11 } }, grid: { color: gridColor } },
+          x: { ticks: { color: tickColor }, grid: { color: gridColor } },
+          y: { ticks: { color: tickColor, stepSize: 1 }, grid: { color: gridColor }, min: 0 },
         }
       }
-    });
+    }));
+
+    // ── Gap timeline — bursts accent, droughts muted red, rest neutral ─────
+    const gapLabels = gaps.map(g => g.to);
+    const gapDays   = gaps.map(g => g.days);
+    const gapColors = gapDays.map(d =>
+      d <= 3 ? C('--accent') : d > 10 ? C('--bad') : C('--chart-neutral')
+    );
+    charts.push(new Chart(document.getElementById('gapChart').getContext('2d'), {
+      type: 'bar',
+      data: {
+        labels: gapLabels,
+        datasets: [
+          {
+            label: 'Gap (days)',
+            data: gapDays,
+            backgroundColor: gapColors,
+            borderRadius: 3,
+          },
+          {
+            label: 'Avg gap',
+            data: gapDays.map(() => avgGap),
+            type: 'line',
+            borderColor: C('--chart-tick'),
+            borderDash: [4,3],
+            borderWidth: 1.5,
+            pointRadius: 0,
+            tension: 0,
+          }
+        ]
+      },
+      options: {
+        responsive: true,
+        interaction: { mode: 'index', intersect: false },
+        plugins: { legend: { display: false }, tooltip: tipOpts },
+        scales: {
+          x: { ticks: { color: tickColor, maxRotation: 45, font: { size: 9 } }, grid: { color: gridColor } },
+          y: { ticks: { color: tickColor, callback: v => v + 'd' }, grid: { color: gridColor }, min: 0 },
+        }
+      }
+    }));
   }
 
-  // ── Gap timeline ─────────────────────────────────────────────────────────
-  const gaps      = {{ patterns.gaps | tojson }};
-  const gapLabels = gaps.map(g => g.to);
-  const gapDays   = gaps.map(g => g.days);
-  const avgGap    = {{ patterns.avg_gap or 0 }};
-  const gapColors = gapDays.map(d =>
-    d <= 3 ? 'rgba(249,115,22,0.7)' : d > 10 ? 'rgba(251,113,133,0.5)' : 'rgba(45,212,191,0.35)'
-  );
-  new Chart(document.getElementById('gapChart').getContext('2d'), {
-    type: 'bar',
-    data: {
-      labels: gapLabels,
-      datasets: [
-        {
-          label: 'Gap (days)',
-          data: gapDays,
-          backgroundColor: gapColors,
-          borderColor: gapColors.map(c => c.replace('0.7','0.9').replace('0.5','0.7').replace('0.35','0.6')),
-          borderWidth: 1,
-          borderRadius: 3,
-        },
-        {
-          label: 'Avg gap',
-          data: gapDays.map(() => avgGap),
-          type: 'line',
-          borderColor: 'rgba(250,204,21,0.6)',
-          borderDash: [4,3],
-          borderWidth: 1.5,
-          pointRadius: 0,
-          tension: 0,
-        }
-      ]
-    },
-    options: {
-      responsive: true,
-      interaction: { mode: 'index', intersect: false },
-      plugins: { legend: { display: false }, tooltip: tipOpts },
-      scales: {
-        x: { ticks: { color: tickColor, maxRotation: 45, font: { size: 9 } }, grid: { color: gridColor } },
-        y: { ticks: { color: tickColor, callback: v => v + 'd' }, grid: { color: gridColor }, min: 0 },
-      }
-    }
-  });
-
+  renderCharts();
+  window.addEventListener('themechange', renderCharts);
 })();
 </script>
 {% endblock %}

@@ -306,31 +306,6 @@
     .pct-down { color: var(--bad);  font-weight: 600; }
     .pct-flat { color: var(--muted); }
 
-    /* ── Fill gauge (signature element: dashboard + milestones) ── */
-    .vessel {
-      position: relative; border-radius: 12px;
-      background: var(--panel);
-      border: 1px solid var(--line); overflow: hidden;
-      transition: background-color .35s ease, border-color .35s ease;
-    }
-    .vessel .water {
-      position: absolute; left: 0; right: 0; bottom: 0; height: 0;
-      background: var(--accent);
-      transition: height 1.8s cubic-bezier(.22,1,.36,1);
-    }
-    .vessel .water::before, .vessel .water::after { content: ""; position: absolute; bottom: 100%; left: -50%; width: 200%; height: 22px; }
-    .vessel .water::before {
-      background: radial-gradient(14px 12px at 14px 22px, var(--accent) 49%, transparent 51%) repeat-x;
-      background-size: 28px 22px; animation: wave 5s linear infinite; opacity: .9;
-    }
-    .vessel .water::after {
-      background: radial-gradient(16px 12px at 16px 22px, var(--accent-hover) 49%, transparent 51%) repeat-x;
-      background-size: 32px 22px; animation: wave 7s linear infinite reverse; opacity: .7;
-    }
-    @keyframes wave { from { transform: translateX(0); } to { transform: translateX(32px); } }
-    .vessel-mark { position: absolute; left: 0; right: 0; border-top: 1px dashed var(--muted); opacity: .8; display: flex; justify-content: flex-end; }
-    .vessel-mark span { font-size: .58rem; letter-spacing: .08em; text-transform: uppercase; color: var(--muted); padding: 0 .4rem; background: var(--panel); transform: translateY(-50%); }
-
     /* ── Page-load staggered reveal ── */
     @keyframes rise { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: none; } }
     .reveal { opacity: 0; animation: rise .45s cubic-bezier(.22,1,.36,1) forwards; }
@@ -338,8 +313,6 @@
     /* ── Respect reduced motion ── */
     @media (prefers-reduced-motion: reduce) {
       .reveal { animation: none; opacity: 1; transform: none; }
-      .vessel .water { transition: none; }
-      .vessel .water::before, .vessel .water::after { animation: none; }
       .lift, .lift:hover { transition: none; transform: none; }
       * { scroll-behavior: auto; }
     }

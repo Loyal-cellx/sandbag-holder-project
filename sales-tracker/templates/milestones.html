@@ -7,18 +7,34 @@
   .ms-head h1 { font-family: var(--font-display); font-size: 2rem; font-weight: 600; letter-spacing: -0.01em; margin-top: .35rem; }
   .ms-head p { color: var(--muted); font-size: .875rem; margin-top: .15rem; }
 
-  /* Next-goal hero */
-  .ms-hero { display: grid; grid-template-columns: 1fr 1fr; gap: 1.25rem; margin-bottom: 1.25rem; }
-  .ms-hero-info { background: var(--panel); border-radius: 12px; padding: 1.5rem 1.6rem; display: flex; flex-direction: column; justify-content: space-between; gap: 1rem; transition: background-color .35s ease; }
-  .ms-hero-name { font-family: var(--font-display); font-size: clamp(2.2rem, 4.2vw, 3.4rem); font-weight: 600; line-height: 1; letter-spacing: -0.02em; color: var(--fg); margin: .5rem 0 .35rem; }
-  .ms-hero-gap { font-size: clamp(1rem, 1.8vw, 1.3rem); color: var(--accent); font-weight: 600; }
-  .ms-hero-stat { font-size: clamp(.85rem, 1.4vw, 1rem); color: var(--muted); font-variant-numeric: tabular-nums; }
-  .ms-hero-bar { background: var(--line); border-radius: 9999px; height: 8px; overflow: hidden; margin-top: .35rem; }
-  .ms-hero-bar > span { display: block; height: 100%; border-radius: 9999px; background: var(--accent); width: 0; transition: width 1s cubic-bezier(.22,1,.36,1); }
-  .ms-vessel-card { background: var(--panel); border-radius: 12px; padding: 1.25rem; display: flex; flex-direction: column; transition: background-color .35s ease; }
-  .ms-vessel-card .vessel { flex: 1; min-height: 180px; background: var(--card); }
-  .ms-vessel-head { display: flex; justify-content: space-between; align-items: baseline; margin-bottom: .9rem; }
-  .ms-vessel-pct { font-family: var(--font-display); font-weight: 600; font-size: 1.6rem; color: var(--accent); }
+  /* Next-goal hero — odometer fraction + tape-measure rule */
+  .ms-hero-card { background: var(--panel); border-radius: 12px; padding: 1.5rem 1.6rem 1.4rem; margin-bottom: 1.25rem; transition: background-color .35s ease; }
+  .ms-goal-name { font-family: var(--font-display); font-size: clamp(1.35rem, 3vw, 1.9rem); font-weight: 600; line-height: 1.1; letter-spacing: -0.01em; color: var(--fg); margin-top: .6rem; }
+  .ms-hero-gap { font-size: clamp(.95rem, 1.6vw, 1.15rem); color: var(--accent); font-weight: 600; margin-top: .2rem; }
+
+  .ms-odometer { display: flex; align-items: baseline; gap: .4rem; margin-top: .9rem; font-variant-numeric: tabular-nums; }
+  .odo-current { display: inline-flex; font-family: var(--font-display); font-weight: 600; font-size: clamp(3.2rem, 9vw, 5.2rem); line-height: 1; letter-spacing: -0.02em; color: var(--fg); }
+  .odo-col { display: inline-block; height: 1em; overflow: hidden; }
+  .odo-strip { display: inline-flex; flex-direction: column; transition: transform 1.3s cubic-bezier(.22,1,.36,1); }
+  .odo-strip span { display: block; height: 1em; line-height: 1; }
+  .odo-target { font-family: var(--font-display); font-weight: 500; font-size: clamp(1.3rem, 3.4vw, 2rem); color: var(--muted); letter-spacing: -0.01em; white-space: nowrap; }
+
+  /* Tape-measure rule */
+  .tape { position: relative; margin-top: 1.5rem; }
+  .tape-ticks { position: relative; height: 10px; }
+  .ticks-minor, .ticks-major { position: absolute; bottom: 0; left: 0; right: 0; }
+  .ticks-minor { height: 5px;  background: repeating-linear-gradient(90deg, var(--line) 0 1px, transparent 1px calc(100%/40)); }
+  .ticks-major { height: 10px; background: repeating-linear-gradient(90deg, var(--line) 0 1px, transparent 1px calc(100%/10)); }
+  .tape-rule { position: relative; height: 2px; background: var(--line); }
+  .tape-fill { position: absolute; left: 0; top: 0; bottom: 0; width: 0; background: var(--accent); transition: width 1.3s cubic-bezier(.22,1,.36,1); }
+  .tape-mark {
+    position: absolute; bottom: -7px; left: 0; transform: translateX(-50%);
+    color: var(--accent); font-family: var(--font-display); font-weight: 700; font-size: 1rem; line-height: 1;
+    transition: left 1.3s cubic-bezier(.34,1.56,.64,1);
+    pointer-events: none;
+  }
+  .tape-labels { display: flex; justify-content: space-between; font-size: .7rem; color: var(--muted); margin-top: .6rem; font-variant-numeric: tabular-nums; }
+
   .hero-complete { background: var(--panel); border-radius: 12px; padding: 1.75rem; margin-bottom: 1.25rem; text-align: center; color: var(--good); font-family: var(--font-display); font-size: 1.2rem; font-weight: 600; }
 
   /* Journey flip band */
@@ -36,18 +52,22 @@
   .tl-name { font-weight: 600; color: var(--fg); font-size: .95rem; display: inline-flex; align-items: center; gap: .4rem; }
   .tl-gap { display: inline-block; font-size: .62rem; font-weight: 500; color: var(--muted); border: 1px solid var(--line); border-radius: 9999px; padding: .05rem .45rem; margin-left: .5rem; vertical-align: middle; white-space: nowrap; }
 
-  /* Upcoming */
+  /* Upcoming — mini tape measures */
   .ms-row-upcoming { background: var(--panel); border-radius: 12px; padding: .875rem 1rem; margin-bottom: .5rem; transition: background-color .35s ease; }
   .ms-name { font-weight: 600; color: var(--fg); font-size: .9rem; }
-  .ms-prog-track { background: var(--line); border-radius: 9999px; height: 6px; overflow: hidden; margin: .5rem 0 .35rem; }
-  .ms-prog-fill { height: 100%; border-radius: 9999px; background: var(--accent); width: 0; transition: width .9s cubic-bezier(.22,1,.36,1); }
+  .mini-tape { position: relative; height: 12px; margin: .55rem 0 .35rem; }
+  .mini-ticks { position: absolute; bottom: 2px; left: 0; right: 0; height: 4px; background: repeating-linear-gradient(90deg, var(--line) 0 1px, transparent 1px calc(100%/10)); }
+  .mini-rule { position: absolute; bottom: 0; left: 0; right: 0; height: 2px; background: var(--line); }
+  .mini-fill { position: absolute; bottom: 0; left: 0; height: 2px; width: 0; background: var(--accent); transition: width .9s cubic-bezier(.22,1,.36,1); }
+  .mini-mark { position: absolute; bottom: -4px; left: 0; transform: translateX(-50%); color: var(--accent); font-family: var(--font-display); font-weight: 700; font-size: .72rem; line-height: 1; transition: left .9s cubic-bezier(.34,1.4,.64,1); pointer-events: none; }
   .ms-prog-label { display: flex; justify-content: space-between; font-size: .7rem; color: var(--muted); }
 
   @media (max-width: 600px) {
-    .ms-hero { grid-template-columns: 1fr; }
     .journey-band { grid-template-columns: 1fr; gap: .9rem; padding: 1.25rem 1.4rem; }
   }
-  @media (prefers-reduced-motion: reduce) { .ms-prog-fill, .ms-hero-bar > span { transition: none; } }
+  @media (prefers-reduced-motion: reduce) {
+    .odo-strip, .tape-fill, .tape-mark, .mini-fill, .mini-mark { transition: none; }
+  }
 {% endblock %}
 
 {% block content %}
@@ -58,35 +78,28 @@
   <p>{{ data.total_hit }} of {{ data.total_possible }} goals reached</p>
 </div>
 
-<!-- Next goal — fill-gauge hero -->
+<!-- Next goal — odometer fraction + tape-measure rule -->
 {% if data.next_milestone %}
   {% set nm = data.next_milestone %}
-  <div class="ms-hero">
-    <div class="ms-hero-info reveal" style="animation-delay:60ms">
-      <div class="eyebrow">Next goal</div>
-      <div>
-        <div class="ms-hero-name">{{ nm.name }}</div>
-        <div class="ms-hero-gap">{{ nm.gap_display }}</div>
-      </div>
-      <div>
-        <div class="ms-hero-stat">
-          {% if nm.type == "revenue" or nm.type == "monthly" %}
-            ${{ "{:,.0f}".format(nm.current) }} / ${{ "{:,.0f}".format(nm.threshold) }}
-          {% elif nm.type in ("count", "states") %}
-            {{ nm.current }} / {{ nm.threshold }}
-          {% endif %}
-        </div>
-        <div class="ms-hero-bar"><span data-pct="{{ nm.progress_pct }}"></span></div>
-      </div>
+  {% set is_money = nm.type in ("revenue", "monthly") %}
+  {% set target_display = ("$" ~ "{:,.0f}".format(nm.threshold)) if is_money else (nm.threshold ~ "") %}
+  <div class="ms-hero-card reveal" style="animation-delay:60ms">
+    <div class="eyebrow">Next goal &middot; {{ nm.progress_pct|round|int }}%</div>
+    <div class="ms-goal-name">{{ nm.name }}</div>
+    <div class="ms-odometer">
+      <span class="odo-current" id="odoCurrent"
+            data-value="{{ ('$' ~ '{:,.0f}'.format(nm.current)) if is_money else (nm.current ~ '') }}"></span>
+      <span class="odo-target">/ {{ target_display }}</span>
     </div>
-    <div class="ms-vessel-card reveal" style="animation-delay:140ms">
-      <div class="ms-vessel-head">
-        <span class="eyebrow">Progress</span>
-        <span class="ms-vessel-pct" id="heroPct">0%</span>
-      </div>
-      <div class="vessel">
-        <div class="water" id="heroFill" data-pct="{{ nm.progress_pct }}"></div>
-      </div>
+    <div class="ms-hero-gap">{{ nm.gap_display }}</div>
+    <div class="tape" id="heroTape" data-pct="{{ nm.progress_pct }}">
+      <div class="tape-ticks"><div class="ticks-minor"></div><div class="ticks-major"></div></div>
+      <div class="tape-rule"><div class="tape-fill"></div></div>
+      <span class="tape-mark" aria-hidden="true">//</span>
+    </div>
+    <div class="tape-labels">
+      <span>{{ "$0" if is_money else "0" }}</span>
+      <span>{{ target_display }}</span>
     </div>
   </div>
 {% else %}
@@ -136,7 +149,12 @@
 {% for m in upcoming %}
 <div class="ms-row-upcoming">
   <div><span class="ms-name">{{ m.name }}</span></div>
-  <div class="ms-prog-track"><div class="ms-prog-fill" data-pct="{{ m.progress_pct }}"></div></div>
+  <div class="mini-tape" data-pct="{{ m.progress_pct }}">
+    <div class="mini-ticks"></div>
+    <div class="mini-rule"></div>
+    <div class="mini-fill"></div>
+    <span class="mini-mark" aria-hidden="true">/</span>
+  </div>
   <div class="ms-prog-label">
     <span>{{ m.gap_display }}</span>
     <span>
@@ -156,27 +174,50 @@
 <script>
 const REDUCED = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 
-// Hero gauge fill + percent count-up
+// Odometer: each digit is a column of 0–9 that rolls to its final value.
+// Non-digit characters ($ , .) render as static spans.
 (function() {
-  const water = document.getElementById('heroFill');
-  if (!water) return;
-  const pct = parseFloat(water.dataset.pct) || 0;
-  const pctEl = document.getElementById('heroPct');
-  setTimeout(() => { water.style.height = pct + '%'; }, 250);
-  if (REDUCED) { pctEl.textContent = Math.round(pct) + '%'; }
-  else {
-    const t0 = performance.now();
-    (function step(now){
-      const p = Math.min((now - t0) / 1600, 1);
-      pctEl.textContent = Math.round(pct * (1 - Math.pow(1 - p, 3))) + '%';
-      if (p < 1) requestAnimationFrame(step);
-    })(t0);
+  const el = document.getElementById('odoCurrent');
+  if (!el) return;
+  const finalStr = el.dataset.value || '0';
+  const cols = [];
+  [...finalStr].forEach(ch => {
+    if (/\d/.test(ch)) {
+      const col = document.createElement('span'); col.className = 'odo-col';
+      const strip = document.createElement('span'); strip.className = 'odo-strip';
+      for (let i = 0; i <= 9; i++) {
+        const d = document.createElement('span'); d.textContent = i; strip.appendChild(d);
+      }
+      col.appendChild(strip); el.appendChild(col);
+      cols.push({ strip, digit: +ch });
+    } else {
+      const s = document.createElement('span'); s.textContent = ch; el.appendChild(s);
+    }
+  });
+  if (REDUCED) {
+    cols.forEach(c => { c.strip.style.transform = 'translateY(-' + c.digit + 'em)'; });
+    return;
   }
+  // Double rAF so the initial 0-position paints before the roll starts
+  requestAnimationFrame(() => requestAnimationFrame(() => {
+    cols.forEach((c, i) => {
+      c.strip.style.transitionDelay = (150 + i * 90) + 'ms';
+      c.strip.style.transform = 'translateY(-' + c.digit + 'em)';
+    });
+  }));
 })();
 
-// Upcoming progress bars + hero bar
+// Tape rules: fill width + slide the // marker into place.
+// Near-full tapes drop the springy overshoot so the marker can't leave the rule.
 setTimeout(() => {
-  document.querySelectorAll('.ms-prog-fill[data-pct], .ms-hero-bar > span[data-pct]').forEach(el => { el.style.width = el.dataset.pct + '%'; });
+  document.querySelectorAll('.tape[data-pct], .mini-tape[data-pct]').forEach(tape => {
+    const pct = Math.min(100, parseFloat(tape.dataset.pct) || 0);
+    const fill = tape.querySelector('.tape-fill, .mini-fill');
+    const mark = tape.querySelector('.tape-mark, .mini-mark');
+    if (mark && pct > 92) mark.style.transitionTimingFunction = 'cubic-bezier(.22,1,.36,1)';
+    if (fill) fill.style.width = pct + '%';
+    if (mark) mark.style.left = pct + '%';
+  });
 }, 200);
 </script>
 {% endblock %}

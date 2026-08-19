@@ -80,13 +80,23 @@
   .geo-list-tbl tbody tr { cursor: pointer; }
   .geo-list-tbl tbody tr td { min-height: 44px; }
 
-  /* ── Cut-line strip ── */
-  .cutline { display: flex; gap: 2px; flex-wrap: wrap; padding: .75rem 1rem; }
-  .cut-day { width: 8px; height: 8px; border-radius: 2px; background: var(--line); flex-shrink: 0; }
-  .cut-day.s1 { background: rgba(255,79,0,.3); }
-  .cut-day.s2 { background: rgba(255,79,0,.55); }
-  .cut-day.s3 { background: rgba(255,79,0,.78); }
-  .cut-day.s4 { background: var(--accent); }
+  /* ── Contribution calendar (GitHub-style) ── */
+  .cal-scroll { overflow-x: auto; padding: .9rem 1rem .4rem; }
+  .cal { display: flex; gap: 6px; width: max-content; }
+  .cal-days { display: grid; grid-template-rows: repeat(7, 11px); gap: 3px; padding-top: 18px; }
+  .cal-days span { font-size: .58rem; color: var(--muted); line-height: 11px; text-align: right; }
+  .cal-months { display: grid; grid-auto-columns: 14px; height: 14px; margin-bottom: 4px; }
+  .cal-months span { grid-row: 1; font-size: .58rem; color: var(--muted); line-height: 14px; white-space: nowrap; }
+  .cal-grid { display: grid; grid-auto-flow: column; grid-template-rows: repeat(7, 11px); grid-auto-columns: 11px; gap: 3px; }
+  .cal-cell { width: 11px; height: 11px; border-radius: 2px; background: var(--line); }
+  .cal-cell.empty { background: transparent; }
+  .cal-cell.l1 { background: rgba(255,79,0,.3); }
+  .cal-cell.l2 { background: rgba(255,79,0,.55); }
+  .cal-cell.l3 { background: rgba(255,79,0,.78); }
+  .cal-cell.l4 { background: var(--accent); }
+  .cal-foot { display: flex; justify-content: space-between; align-items: center; gap: 1rem; padding: .35rem 1rem .8rem; font-size: .65rem; color: var(--muted); flex-wrap: wrap; }
+  .cal-legend { display: inline-flex; align-items: center; gap: 3px; }
+  .cal-legend .cal-cell { flex-shrink: 0; }
 
   /* ── Pace bar ── */
   .pace-wrap { padding: .85rem 1rem 1rem; }
@@ -148,26 +158,66 @@
   {# ── DAILY CUT-LINE ── #}
   <div class="sec-head"><h2>Day-by-Day Activity</h2><span class="sec-badge">{{ a.headline.span_days }} days</span></div>
   <div class="an-card">
-    <div class="an-card-head">
-      Sales density
-      <span class="note">■ 1 sale &nbsp;■ 2 &nbsp;■ 3 &nbsp;■ 4+</span>
+    <div class="cal-scroll">
+      <div class="cal" role="img" aria-label="Calendar of daily sales activity">
+        <div class="cal-days" aria-hidden="true"><span></span><span>Mon</span><span></span><span>Wed</span><span></span><span>Fri</span><span></span></div>
+        <div>
+          <div class="cal-months" id="calMonths" aria-hidden="true"></div>
+          <div class="cal-grid" id="calGrid"></div>
+        </div>
+      </div>
     </div>
-    <div class="cutline">
-      {% for n in a.daily.counts %}
-        {% if n == 0 %}
-          <div class="cut-day" title="{{ loop.index0 }} days after {{ a.daily.start }}"></div>
-        {% elif n == 1 %}
-          <div class="cut-day s1"></div>
-        {% elif n == 2 %}
-          <div class="cut-day s2"></div>
-        {% elif n == 3 %}
-          <div class="cut-day s3"></div>
-        {% else %}
-          <div class="cut-day s4"></div>
-        {% endif %}
-      {% endfor %}
+    <div class="cal-foot">
+      <span id="calSummary"></span>
+      <span class="cal-legend" aria-hidden="true">Less
+        <span class="cal-cell"></span><span class="cal-cell l1"></span><span class="cal-cell l2"></span><span class="cal-cell l3"></span><span class="cal-cell l4"></span>
+      More</span>
     </div>
   </div>
+  <script>
+  (function(){
+    var daily = {{ a.daily | tojson }};
+    var start = new Date(daily.start + 'T00:00:00');
+    var counts = daily.counts;
+    var grid = document.getElementById('calGrid');
+    var months = document.getElementById('calMonths');
+    var MONTHS = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+
+    var pad = start.getDay();               // 0 = Sunday, GitHub's top row
+    for (var p = 0; p < pad; p++) {
+      var e = document.createElement('div');
+      e.className = 'cal-cell empty';
+      grid.appendChild(e);
+    }
+
+    var total = 0, activeDays = 0, lastLabelCol = -2;
+    for (var i = 0; i < counts.length; i++) {
+      var d = new Date(start.getTime());
+      d.setDate(start.getDate() + i);
+      var n = counts[i];
+      var lvl = n > 3 ? 4 : n;
+      var cell = document.createElement('div');
+      cell.className = 'cal-cell' + (lvl ? ' l' + lvl : '');
+      cell.title = d.toISOString().slice(0, 10) + (n ? ' — ' + n + ' sale' + (n > 1 ? 's' : '') : ' — no sales');
+      grid.appendChild(cell);
+      if (n) { total += n; activeDays++; }
+
+      // month label above the first column that contains the 1st (or the start day)
+      if (i === 0 || d.getDate() === 1) {
+        var col = Math.floor((i + pad) / 7);
+        if (col > lastLabelCol + 1) {      // skip a label that would crowd the previous one
+          var m = document.createElement('span');
+          m.textContent = MONTHS[d.getMonth()];
+          m.style.gridColumnStart = col + 1;
+          months.appendChild(m);
+          lastLabelCol = col;
+        }
+      }
+    }
+    document.getElementById('calSummary').textContent =
+      total + ' sales across ' + activeDays + ' active days';
+  })();
+  </script>
 
   {# ── MONTHLY ── #}
   <div class="sec-head"><h2>Monthly Breakdown</h2><span class="sec-badge">{{ a.monthly|length }} months</span></div>
